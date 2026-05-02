@@ -75,7 +75,7 @@ CFG = {
     # ── データ ──────────────────────────────────────────────────────
     "data_root":    "./data",
     "meta_csv":     "./data/meta.events.csv",
-    "output_dir":   "./output_v3",
+    "output_dir":   "./output_v4",
     "train_split":  "train",
     "eval_split":   "eval",
 
@@ -101,7 +101,8 @@ CFG = {
     "epochs_p1":    100,            # 論文は 1000, 時間制約で短縮
     "epochs_p2":    100,            # 論文は 1000, 時間制約で短縮
     "iv_weight":    1.0,            # MIC: IV なし → 全均等 (論文は λ=10)
-    "active_weight": 10.0,          # 活性フレーム重み (trivial solution 防止)
+    "pos_weight":   9.0,            # BCE 正例重み (活性 10% → 9:1 補正)
+    "lambda_doa":   1.0,            # DOA 損失重み
     "freq_mask_bins": 8,            # 論文準拠
 
     # ── デバイス ─────────────────────────────────────────────────
@@ -398,28 +399,33 @@ def phase1_loss(pred, target):
     return F.l1_loss(pred, target)
 
 
-def adpit_loss_weighted(pred, target, active_weight=10.0):
+def phase2_loss(pred, target, pos_weight=9.0, lambda_doa=1.0):
     """
-    活性フレーム重み付き ADPIT 損失。
-    trivial solution（全ゼロ予測）を防ぐため活性フレームを active_weight 倍に。
+    BCE（検出）+ MSE（定位）分離損失。
+    n_tracks=1 を前提とし、squeeze して (B, T, n_classes, 3) で処理する。
+
+    - BCE: 活性フレームを pos_weight 倍に重み付け（クラス不均衡補正）
+    - MSE: 活性フレームのみ DOA 誤差を計算（非活性フレームは無視）
     """
     B, Tp, N, C, _ = pred.shape
     T = min(Tp, target.shape[1])
-    pred, target = pred[:,:T], target[:,:T]
-    total = 0.0
-    for c in range(C):
-        tc, pc = target[:,:,:,c,:], pred[:,:,:,c,:]
-        # 活性マスク: いずれかのトラックに方向ベクトルあり
-        active = (tc.norm(dim=-1) > 0.1).any(dim=-1)  # (B, T)
-        weight = torch.where(active,
-                             torch.tensor(active_weight, device=pred.device),
-                             torch.tensor(1.0, device=pred.device))
-        best = None
-        for perm in permutations(range(N)):
-            mse = ((pc[:,:,list(perm),:]-tc)**2).mean(dim=(2,3))  # (B,T)
-            best = mse if best is None else torch.minimum(best, mse)
-        total += (best * weight).mean()
-    return total / C
+    pred   = pred[:, :T, 0, :, :]    # (B, T, C, 3)  n_tracks=1 を squeeze
+    target = target[:, :T, 0, :, :]  # (B, T, C, 3)
+
+    # 活性ラベル: ||target|| > 0.1 なら 1
+    ref_act  = (target.norm(dim=-1) > 0.1).float()  # (B, T, C)
+    pred_act = pred.norm(dim=-1).clamp(0., 1.)       # (B, T, C)
+
+    # SED 損失: 重み付き BCE
+    w = ref_act * pos_weight + (1. - ref_act)        # (B, T, C)
+    sed_loss = F.binary_cross_entropy(pred_act, ref_act, weight=w)
+
+    # DOA 損失: 活性フレームのみ MSE
+    mask      = ref_act.unsqueeze(-1)                # (B, T, C, 1)
+    n_active  = mask.sum().clamp(min=1.)
+    doa_loss  = ((pred * mask - target * mask) ** 2).sum() / (n_active * 3)
+
+    return sed_loss + lambda_doa * doa_loss
 
 # =============================================================================
 # 7. 評価指標  (evaluation_metrics.py 相当・DCASE2023 標準準拠)
@@ -544,7 +550,7 @@ def train_p2(model, loader, opt, cfg):
         feat,tgt=batch[0].to(cfg["device"]),batch[1].to(cfg["device"])
         opt.zero_grad()
         _,sout=model(feat)
-        loss=adpit_loss_weighted(sout,tgt,cfg["active_weight"])
+        loss=phase2_loss(sout,tgt,cfg["pos_weight"],cfg["lambda_doa"])
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(),5.)
         opt.step(); tot+=loss.item()
