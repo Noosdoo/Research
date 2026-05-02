@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python /c/Users/satos/research/multi_sound.py)",
+      "Bash(python multi_sound.py)",
+      "Bash(tasklist)",
+      "Bash(findstr /I python)",
+      "Bash(python -c \"import subprocess; subprocess.run\\(['taskkill', '/PID', '26548', '/F']\\)\")",
+      "Bash(URBANSOUND8K=\"C:/Users/satos/Downloads/UrbanSound8K\" python -u \"C:/Users/satos/research/multi_sound.py\")",
+      "Bash(python -c ':*)",
+      "Bash(python -c \"import subprocess; r = subprocess.run\\(['taskkill', '/PID', '28284', '/F'], capture_output=True, encoding='cp932', errors='replace'\\); print\\(r.stdout, r.stderr\\)\")",
+      "Bash(gh api:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/arjunp17/POLYPHONIC-SOUND-EVENT-AND-SOUND-ACTIVITY-DETECTION/master/training/baselineSED.py\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/arjunp17/POLYPHONIC-SOUND-EVENT-AND-SOUND-ACTIVITY-DETECTION/master/training/baselineSAD.py\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/arjunp17/POLYPHONIC-SOUND-EVENT-AND-SOUND-ACTIVITY-DETECTION/master/training/sed_sad_joint.py\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/arjunp17/POLYPHONIC-SOUND-EVENT-AND-SOUND-ACTIVITY-DETECTION/master/testing/model_output.py\")",
+      "Bash(python -c \"import tensorflow, librosa, numpy, scipy; print\\('OK'\\)\")",
+      "Bash(pip list:*)",
+      "Bash(pip install:*)",
+      "Bash(python -c \"import tensorflow as tf; import librosa; import numpy as np; print\\('TF:', tf.__version__\\); print\\('All imports OK'\\)\")",
+      "Bash(python run_demo.py)",
+      "WebFetch(domain:arxiv.org)",
+      "Bash(python project1.py --mode demo)",
+      "Bash(python smartphone_eval.py --demo)",
+      "Bash(ffmpeg -i \"phone_recordings/car_right _rear_1.m4a\" \"phone_recordings/car_right_rear_1.wav\" -y)",
+      "Bash(winget install *)",
+      "PowerShell([System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"Machine\"\\) -split \";\" | Where-Object { $_ -match \"ffmpeg|gyan\" })",
+      "PowerShell([System.Environment]::GetEnvironmentVariable\\(\"PATH\", \"User\"\\) -split \";\" | Where-Object { $_ -match \"ffmpeg|gyan|bin\" } | Select-Object -First 5)",
+      "PowerShell($ffmpeg = \"C:\\\\Users\\\\satos\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ffmpeg-8.1-full_build\\\\bin\\\\ffmpeg.exe\"; cd \"c:\\\\Users\\\\satos\\\\research\\\\Evaluated_outdoor_data_SELDU_net\"; & $ffmpeg -i \"phone_recordings\\\\car_right _rear_1.m4a\" \"phone_recordings\\\\car_right_rear_1.wav\" -y 2>&1 | Select-Object -Last 5)",
+      "PowerShell($ffmpeg = \"C:\\\\Users\\\\satos\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ffmpeg-8.1-full_build\\\\bin\\\\ffmpeg.exe\"; Set-Location \"c:\\\\Users\\\\satos\\\\research\\\\Evaluated_outdoor_data_SELDU_net\"; & $ffmpeg -i \"phone_recordings/car_right _rear_1.m4a\" \"phone_recordings/car_right_rear_1.wav\" -y 2>&1 | Select-Object -Last 5)",
+      "PowerShell($ffmpeg = \"C:\\\\Users\\\\satos\\\\AppData\\\\Local\\\\Microsoft\\\\WinGet\\\\Packages\\\\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\\\\ffmpeg-8.1-full_build\\\\bin\\\\ffmpeg.exe\"; & $ffmpeg -i \"C:\\\\Users\\\\satos\\\\research\\\\Evaluated_outdoor_data_SELDU_net\\\\phone_recordings\\\\car_right_rear_1.m4a\" \"C:\\\\Users\\\\satos\\\\research\\\\Evaluated_outdoor_data_SELDU_net\\\\phone_recordings\\\\car_right_rear_1.wav\" -y 2>&1 | Select-Object -Last 8)",
+      "WebSearch",
+      "WebFetch(domain:dcase.community)",
+      "WebFetch(domain:zenodo.org)",
+      "WebFetch(domain:dcase-repo.github.io)",
+      "PowerShell(Get-PSDrive C | Select-Object @{N='空き容量\\(GB\\)';E={[math]::Round\\($_.Free/1GB,1\\)}}, @{N='合計\\(GB\\)';E={[math]::Round\\($_.Used/1GB+$_.Free/1GB,1\\)}})",
+      "Bash(curl -L --progress-bar -o \"/c/Users/satos/research/TAU-NIGENS2020/metadata_dev.zip\" \"https://zenodo.org/api/records/4064792/files/metadata_dev.zip/content\")"
+    ]
+  }
+}

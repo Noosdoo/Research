@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip -o metadata_dev.zip -d metadata_dev)",
+      "Read(//c/c/Users/satos/research/TAU-NIGENS2020/**)",
+      "Bash(curl -L --progress-bar -o \"/c/Users/satos/research/TAU-NIGENS2020/foa_dev.z01\" \"https://zenodo.org/api/records/4064792/files/foa_dev.z01/content\")",
+      "Bash(curl -L --progress-bar -o \"/c/Users/satos/research/TAU-NIGENS2020/foa_dev.z02\" \"https://zenodo.org/api/records/4064792/files/foa_dev.z02/content\")",
+      "Bash(curl -L --progress-bar -o \"/c/Users/satos/research/TAU-NIGENS2020/foa_dev.zip\" \"https://zenodo.org/api/records/4064792/files/foa_dev.zip/content\")",
+      "Bash(python -c \"import py7zr; print\\('py7zr available'\\)\")",
+      "Bash(curl -L -o \"/c/Users/satos/research/TAU-NIGENS2020/7z-extra.7z\" \"https://www.7-zip.org/a/7z2408-extra.7z\" --progress-bar)",
+      "Bash(python -c ' *)",
+      "Bash(python extract_split_zip.py)",
+      "Bash(curl -L -C - --progress-bar -o \"/c/Users/satos/research/TAU-NIGENS2020/foa_dev.z01\" \"https://zenodo.org/api/records/4064792/files/foa_dev.z01/content\")",
+      "PowerShell(Get-Process | Where-Object { $_.MainWindowTitle -match \"curl\" -or $_.ProcessName -match \"curl\" } | Select-Object Id, ProcessName; $handles = \\(Get-WmiObject Win32_Process | Where-Object { $_.CommandLine -match \"foa_dev\" }\\) | Select-Object ProcessId, CommandLine; $handles)",
+      "PowerShell(Stop-Process -Id 2444 -Force)",
+      "Bash(python \"c:/Users/satos/research/TAU-NIGENS2020/convert_labels.py\")",
+      "WebFetch(domain:www.researchgate.net)",
+      "WebFetch(domain:ieeexplore.ieee.org)",
+      "Bash(python3 -c ' *)",
+      "Bash(python -c \"import torch; print\\('CUDA:', torch.cuda.is_available\\(\\)\\); print\\('GPU:', torch.cuda.get_device_name\\(0\\) if torch.cuda.is_available\\(\\) else 'なし'\\)\")"
+    ]
+  }
+}
