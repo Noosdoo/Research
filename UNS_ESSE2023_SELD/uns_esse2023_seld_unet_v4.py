@@ -558,7 +558,7 @@ def train_p2(model, loader, opt, cfg):
     return tot/max(len(loader)-sk,1)
 
 
-def train(cfg=CFG):
+def train(cfg=CFG, skip_phase1=False):
     os.makedirs(cfg["output_dir"],exist_ok=True)
     ds   =UNSDataset(cfg,cfg["train_split"],augment=True)
     ldr  =DataLoader(ds,batch_size=cfg["batch_size"],shuffle=True,num_workers=0)
@@ -566,14 +566,19 @@ def train(cfg=CFG):
     print(f"[Model] {sum(p.numel() for p in model.parameters())/1e6:.2f}M params")
 
     ck1=os.path.join(cfg["output_dir"],"unet_best.pt")
+    h1=[]
 
-    print("\n=== Phase 1: U-Net ===")
-    o1=make_nadam(model.unet.parameters(),cfg["lr"]); b1=float("inf"); h1=[]
-    for ep in range(cfg["epochs_p1"]):
-        l=train_p1(model,ldr,o1,cfg); h1.append(l)
-        if l<b1: b1=l; torch.save(model.unet.state_dict(),ck1)
-        if (ep+1)%10==0: print(f"  ep{ep+1:3d}/{cfg['epochs_p1']} loss={l:.4f}")
-    model.unet.load_state_dict(torch.load(ck1,map_location=cfg["device"]))
+    if skip_phase1 and os.path.exists(ck1):
+        print(f"\n=== Phase 1 スキップ: {ck1} を読み込み ===")
+        model.unet.load_state_dict(torch.load(ck1,map_location=cfg["device"]))
+    else:
+        print("\n=== Phase 1: U-Net ===")
+        o1=make_nadam(model.unet.parameters(),cfg["lr"]); b1=float("inf")
+        for ep in range(cfg["epochs_p1"]):
+            l=train_p1(model,ldr,o1,cfg); h1.append(l)
+            if l<b1: b1=l; torch.save(model.unet.state_dict(),ck1)
+            if (ep+1)%10==0: print(f"  ep{ep+1:3d}/{cfg['epochs_p1']} loss={l:.4f}")
+        model.unet.load_state_dict(torch.load(ck1,map_location=cfg["device"]))
 
     print("\n=== Phase 2: SELDnet ===")
     o2=make_nadam(model.seld.parameters(),cfg["lr"]); b2=float("inf"); h2=[]
@@ -702,6 +707,8 @@ if __name__=="__main__":
     ap.add_argument("--epochs_p1",type=int,default=None)
     ap.add_argument("--epochs_p2",type=int,default=None)
     ap.add_argument("--threshold",type=float,default=0.5)
+    # 🔻 ここを追加しました
+    ap.add_argument("--skip_phase1", action="store_true", help="Phase1をスキップしてPhase2から再開")
     args=ap.parse_args()
 
     if args.data_root:  CFG["data_root"] =args.data_root
@@ -716,7 +723,8 @@ if __name__=="__main__":
         generate_demo(CFG); train(CFG); evaluate(CFG,args.threshold)
     elif args.mode=="train":
         print("="*60); print(f"学習 | split={CFG['train_split']}"); print("="*60)
-        train(CFG)
+        # 🔻 ここも修正しました（args.skip_phase1 を渡すように変更）
+        train(CFG, skip_phase1=args.skip_phase1)
     elif args.mode=="eval":
         print("="*60); print(f"評価 | split={CFG['eval_split']}"); print("="*60)
         evaluate(CFG,args.threshold)
