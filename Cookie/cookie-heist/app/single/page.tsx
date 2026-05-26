@@ -177,7 +177,7 @@ function SingleGameInner() {
         </div>
 
         {/* Sidebar: PC only */}
-        <div className="hidden md:flex w-56 flex-shrink-0 border-l border-gray-800 flex-col gap-3 p-3 overflow-y-auto">
+        <div className="max-md:hidden w-56 flex-shrink-0 border-l border-gray-800 flex flex-col gap-3 p-3 overflow-y-auto">
           <Ranking players={allPlayers} myPlayerId={myPlayerId} />
           {me && <PlayerStatus player={me} />}
         </div>
