@@ -15,6 +15,8 @@ export type SiteCategory =
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 
+export type SiteTemplate = 'consent-button' | 'ad-popup' | 'login-form' | 'survey' | 'quiz';
+
 export interface CookieAttributes {
   secure?: boolean;
   httpOnly?: boolean;
@@ -36,9 +38,10 @@ export interface Site {
   category: SiteCategory;
   description: string;
   cookie: SiteCookie;
-  visitDuration: number;
+  template: SiteTemplate;
   rarity: Rarity;
   isHoneypot?: boolean;
+  isMystery?: boolean;
   iconEmoji?: string;
 }
 
@@ -65,13 +68,6 @@ export interface Player {
   score: number;
   stats: PlayerStats;
   isVisiting: boolean;
-}
-
-export interface CurrentVisit {
-  siteId: SiteId;
-  startTime: number;
-  progress: number;
-  cancelRequested: boolean;
 }
 
 export interface SiteState {

@@ -7,14 +7,21 @@ import type {
   PlayerId,
   SiteId,
   SiteState,
-  CurrentVisit,
   OwnedCookie,
   StealEvent,
+  Rarity,
 } from '@/lib/types';
 
-const GAME_DURATION = 5 * 60; // seconds
+const GAME_DURATION = 3 * 60; // seconds
 
 const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b'];
+
+const RARITY_MS: Record<Rarity, number> = {
+  common: 1000,
+  uncommon: 2000,
+  rare: 3000,
+  legendary: 5000,
+};
 
 function makePlayer(id: PlayerId, name: string, isAI: boolean, colorIdx: number): Player {
   return {
@@ -37,12 +44,25 @@ function initSiteStates(): Map<SiteId, SiteState> {
   return m;
 }
 
+// Serialized player shape coming from server (cookies as plain object)
+export interface ServerPlayer {
+  id: string; name: string; color: string;
+  score: number; isVisiting: boolean;
+  cookies: Record<string, OwnedCookie>;
+  stats: { visitCount: number; stealCount: number; stolenCount: number };
+}
+
 interface GameStore {
   // meta
   gameId: string;
   phase: 'lobby' | 'playing' | 'result';
   startTime: number | null;
   timeLeft: number;
+  aiCount: number;
+
+  // online mode
+  mode: 'local' | 'online';
+  onlineGameId: string | null;
 
   // players
   players: Map<PlayerId, Player>;
@@ -51,21 +71,31 @@ interface GameStore {
   // sites
   sitesState: Map<SiteId, SiteState>;
 
-  // current human visit
-  currentVisit: CurrentVisit | null;
-
   // notifications
   stealEvents: StealEvent[];
 
   // actions
   initGame: (aiCount: number) => void;
-  startTimer: () => void;
   tickTimer: () => void;
-  visitSite: (siteId: SiteId) => Promise<void>;
-  cancelVisit: () => void;
+  completeVisit: (siteId: SiteId, pointOverride?: number) => void;
   processAITick: (aiId: PlayerId) => void;
   endGame: () => void;
   clearStealEvent: (id: string) => void;
+
+  // online-mode actions
+  initOnlineGame: (data: {
+    gameId: string;
+    myPlayerId: string;
+    players: Record<string, ServerPlayer>;
+    sitesState: Record<string, SiteState>;
+  }) => void;
+  applyServerUpdate: (data: {
+    players: Record<string, ServerPlayer>;
+    sitesState: Record<string, SiteState>;
+    stealEvents: StealEvent[];
+  }) => void;
+  setTimeLeft: (t: number) => void;
+  exitOnlineMode: () => void;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -73,16 +103,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   phase: 'lobby',
   startTime: null,
   timeLeft: GAME_DURATION,
+  aiCount: 1,
+  mode: 'local',
+  onlineGameId: null,
   players: new Map(),
   myPlayerId: 'player-human',
   sitesState: initSiteStates(),
-  currentVisit: null,
   stealEvents: [],
 
   initGame(aiCount: number) {
     const players = new Map<PlayerId, Player>();
-    const human = makePlayer('player-human', 'あなた', false, 0);
-    players.set('player-human', human);
+    players.set('player-human', makePlayer('player-human', 'あなた', false, 0));
     const aiNames = ['AI Bot 1', 'AI Bot 2', 'AI Bot 3'];
     for (let i = 0; i < aiCount; i++) {
       const id = `ai-${i}`;
@@ -93,16 +124,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       phase: 'playing',
       startTime: Date.now(),
       timeLeft: GAME_DURATION,
+      aiCount,
       players,
       myPlayerId: 'player-human',
       sitesState: initSiteStates(),
-      currentVisit: null,
       stealEvents: [],
     });
-  },
-
-  startTimer() {
-    // called once after initGame; actual ticking is done by the component via tickTimer
   },
 
   tickTimer() {
@@ -117,68 +144,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  async visitSite(siteId: SiteId) {
-    const { players, myPlayerId, sitesState, phase } = get();
+  completeVisit(siteId: SiteId, pointOverride?: number) {
+    const { phase, myPlayerId } = get();
     if (phase !== 'playing') return;
-    const me = players.get(myPlayerId);
-    if (!me || me.isVisiting) return;
-
-    const site = SITES.find(s => s.id === siteId);
-    if (!site) return;
-
-    // mark as visiting
-    const newPlayers = new Map(players);
-    newPlayers.set(myPlayerId, { ...me, isVisiting: true });
-    const newSites = new Map(sitesState);
-    const ss = newSites.get(siteId)!;
-    newSites.set(siteId, { ...ss, currentVisitorIds: [...ss.currentVisitorIds, myPlayerId] });
-
-    set({
-      players: newPlayers,
-      sitesState: newSites,
-      currentVisit: {
-        siteId,
-        startTime: Date.now(),
-        progress: 0,
-        cancelRequested: false,
-      },
-    });
-
-    // wait for visit duration
-    await new Promise<void>(resolve => {
-      const interval = setInterval(() => {
-        const cv = get().currentVisit;
-        if (!cv || cv.cancelRequested) {
-          clearInterval(interval);
-          resolve();
-          return;
-        }
-        const elapsed = Date.now() - cv.startTime;
-        const progress = Math.min(100, (elapsed / site.visitDuration) * 100);
-        set({ currentVisit: { ...cv, progress } });
-        if (progress >= 100) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 50);
-    });
-
-    const state = get();
-    const cv = state.currentVisit;
-    if (!cv || cv.cancelRequested || state.phase !== 'playing') {
-      // cancelled or game ended — remove from currentVisitors
-      finishVisit(get, set, siteId, myPlayerId, false);
-      return;
-    }
-
-    // complete visit
-    finishVisit(get, set, siteId, myPlayerId, true);
-  },
-
-  cancelVisit() {
-    const { currentVisit } = get();
-    if (!currentVisit) return;
-    set({ currentVisit: { ...currentVisit, cancelRequested: true } });
+    finishVisit(get, set, siteId, myPlayerId, true, pointOverride);
   },
 
   processAITick(aiId: PlayerId) {
@@ -187,16 +156,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const ai = players.get(aiId);
     if (!ai || ai.isVisiting) return;
 
-    // simple balanced AI: pick highest-point unowned site
     const candidates = SITES
       .filter(s => !s.isHoneypot)
       .map(s => {
         let score = s.cookie.points;
-        score -= s.visitDuration / 100;
-        if (ai.cookies.has(s.id)) score *= 0.3; // low priority if already owned
+        score -= RARITY_MS[s.rarity] / 100;
+        if (ai.cookies.has(s.id)) score *= 0.3;
         const othersOwn = sitesState.get(s.id)!.ownerIds.filter(id => id !== aiId).length;
-        score += othersOwn * 20; // bonus for stealing
-        return { id: s.id, score };
+        score += othersOwn * 20;
+        return { id: s.id, score, rarity: s.rarity };
       })
       .sort((a, b) => b.score - a.score);
 
@@ -209,19 +177,69 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   endGame() {
-    const { currentVisit, players, myPlayerId } = get();
-    if (currentVisit) {
-      const cv = currentVisit;
-      const newPlayers = new Map(players);
-      const me = newPlayers.get(myPlayerId);
-      if (me) newPlayers.set(myPlayerId, { ...me, isVisiting: false });
-      set({ currentVisit: null, players: newPlayers });
+    // Reset any AI isVisiting flags so result screen is clean
+    const { players } = get();
+    const newPlayers = new Map(players);
+    for (const [id, p] of newPlayers) {
+      if (p.isVisiting) newPlayers.set(id, { ...p, isVisiting: false });
     }
-    set({ phase: 'result' });
+    set({ phase: 'result', players: newPlayers });
   },
 
   clearStealEvent(id: string) {
     set(s => ({ stealEvents: s.stealEvents.filter(e => e.id !== id) }));
+  },
+
+  // ── Online mode ───────────────────────────────────────────────────
+  initOnlineGame({ gameId, myPlayerId, players: pObj, sitesState: ssObj }) {
+    const players = new Map<PlayerId, Player>();
+    for (const [id, p] of Object.entries(pObj)) {
+      players.set(id, {
+        ...p, isAI: false,
+        cookies: new Map(Object.entries(p.cookies || {})) as Map<SiteId, OwnedCookie>,
+      });
+    }
+    const sitesState = new Map<SiteId, SiteState>();
+    for (const [id, ss] of Object.entries(ssObj)) sitesState.set(id, ss);
+
+    set({
+      mode: 'online', onlineGameId: gameId,
+      gameId, myPlayerId, players, sitesState,
+      phase: 'playing', timeLeft: GAME_DURATION,
+      stealEvents: [], startTime: Date.now(),
+    });
+  },
+
+  applyServerUpdate({ players: pObj, sitesState: ssObj, stealEvents: newEvents }) {
+    const players = new Map<PlayerId, Player>();
+    for (const [id, p] of Object.entries(pObj)) {
+      players.set(id, {
+        ...p, isAI: false,
+        cookies: new Map(Object.entries(p.cookies || {})) as Map<SiteId, OwnedCookie>,
+      });
+    }
+    const prev = get().sitesState;
+    const sitesState = Object.keys(ssObj).length > 0
+      ? (() => {
+          const m = new Map<SiteId, SiteState>();
+          for (const [id, ss] of Object.entries(ssObj)) m.set(id, ss);
+          return m;
+        })()
+      : prev;
+
+    set({
+      players, sitesState,
+      stealEvents: [...get().stealEvents, ...(newEvents || [])].slice(-20),
+    });
+  },
+
+  setTimeLeft(t: number) {
+    if (t <= 0 && get().phase === 'playing') get().endGame();
+    else set({ timeLeft: t });
+  },
+
+  exitOnlineMode() {
+    set({ mode: 'local', onlineGameId: null, phase: 'lobby' });
   },
 }));
 
@@ -233,6 +251,7 @@ function finishVisit(
   siteId: SiteId,
   playerId: PlayerId,
   success: boolean,
+  pointOverride?: number,
 ) {
   const { players, sitesState } = get();
   const site = SITES.find(s => s.id === siteId)!;
@@ -248,18 +267,18 @@ function finishVisit(
   });
 
   const player = newPlayers.get(playerId);
-  if (!player) { set({ sitesState: newSites, currentVisit: null }); return; }
+  if (!player) { set({ sitesState: newSites }); return; }
 
   if (!success) {
     newPlayers.set(playerId, { ...player, isVisiting: false });
-    set({ players: newPlayers, sitesState: newSites, currentVisit: null });
+    set({ players: newPlayers, sitesState: newSites });
     return;
   }
 
   // steal from previous owners
   const newStealEvents: StealEvent[] = [];
-  const updatedSS = newSites.get(siteId)!;
-  for (const ownerId of [...updatedSS.ownerIds]) {
+  const latestSS = newSites.get(siteId)!;
+  for (const ownerId of [...latestSS.ownerIds]) {
     if (ownerId === playerId) continue;
     const owner = newPlayers.get(ownerId);
     if (!owner || !owner.cookies.has(siteId)) continue;
@@ -267,11 +286,10 @@ function finishVisit(
     const stolenCookie = owner.cookies.get(siteId)!;
     const newCookies = new Map(owner.cookies);
     newCookies.delete(siteId);
-    const newScore = owner.score - stolenCookie.points;
     newPlayers.set(ownerId, {
       ...owner,
       cookies: newCookies,
-      score: newScore,
+      score: owner.score - stolenCookie.points,
       stats: { ...owner.stats, stolenCount: owner.stats.stolenCount + 1 },
     });
 
@@ -292,46 +310,35 @@ function finishVisit(
     });
   }
 
-  // fetch real cookie (fire-and-forget, only for human player)
-  if (playerId === 'player-human') {
-    fetch(`/api/sites/${siteId}`).catch(() => {});
-  }
-
   // add cookie to player
+  const earnedPoints = pointOverride ?? site.cookie.points;
   const cookieValue = site.cookie.valueGenerator();
   const owned: OwnedCookie = {
     siteId,
     cookieName: site.cookie.name,
     cookieValue,
     acquiredAt: new Date(),
-    points: site.cookie.points,
+    points: earnedPoints,
   };
 
   const freshPlayer = newPlayers.get(playerId)!;
   const newCookies = new Map(freshPlayer.cookies);
   newCookies.set(siteId, owned);
-  const newScore = freshPlayer.score + site.cookie.points;
 
   newPlayers.set(playerId, {
     ...freshPlayer,
     isVisiting: false,
     cookies: newCookies,
-    score: newScore,
+    score: freshPlayer.score + earnedPoints,
     stats: { ...freshPlayer.stats, visitCount: freshPlayer.stats.visitCount + 1 },
   });
 
-  // update owner list
-  const finalSS = newSites.get(siteId)!;
-  const ownerIds = finalSS.ownerIds.filter(id => id === playerId);
-  if (!ownerIds.includes(playerId)) ownerIds.push(playerId);
-  // keep only current owner (last visitor takes it)
-  newSites.set(siteId, { ...finalSS, ownerIds: [playerId] });
+  // site now owned solely by this player (last visitor wins)
+  newSites.set(siteId, { ...newSites.get(siteId)!, ownerIds: [playerId] });
 
-  const isHuman = playerId === 'player-human';
   set({
     players: newPlayers,
     sitesState: newSites,
-    ...(isHuman ? { currentVisit: null } : {}),
     stealEvents: [...get().stealEvents, ...newStealEvents],
   });
 }
@@ -354,11 +361,12 @@ function aiVisitSite(
   newSites.set(siteId, { ...ss, currentVisitorIds: [...ss.currentVisitorIds, aiId] });
   set({ players: newPlayers, sitesState: newSites });
 
+  const delay = RARITY_MS[site.rarity] + Math.random() * 500;
   setTimeout(() => {
     if (get().phase !== 'playing') {
       finishVisit(get, set, siteId, aiId, false);
       return;
     }
     finishVisit(get, set, siteId, aiId, true);
-  }, site.visitDuration + Math.random() * 500);
+  }, delay);
 }

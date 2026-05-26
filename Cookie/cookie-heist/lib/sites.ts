@@ -3,7 +3,7 @@ import type { Site } from './types';
 const rand = (len = 12) => Math.random().toString(36).slice(2, 2 + len);
 
 export const SITES: Site[] = [
-  // ── finance ──────────────────────────────────────────────────────
+  // ── finance (rare → survey hard) ─────────────────────────────────
   {
     id: 'secure-bank',
     name: 'SecureBank',
@@ -15,7 +15,7 @@ export const SITES: Site[] = [
       attributes: { secure: true, httpOnly: true, sameSite: 'Strict', maxAge: 3600 },
       points: 150,
     },
-    visitDuration: 3000,
+    template: 'survey',
     rarity: 'rare',
     iconEmoji: '🏦',
   },
@@ -23,14 +23,14 @@ export const SITES: Site[] = [
     id: 'crypto-exchange',
     name: 'CryptoExchange',
     category: 'finance',
-    description: '24時間無休の仮想通貨取引所。セキュリティは最高水準（たぶん）。',
+    description: '24時間無休の仮想通貨取引所。秘密鍵は絶対に教えないでください。',
     cookie: {
       name: 'crypto_session',
       valueGenerator: () => `0x${rand(32)}`,
       attributes: { secure: true, httpOnly: true, sameSite: 'Strict', maxAge: 1800 },
       points: 130,
     },
-    visitDuration: 3000,
+    template: 'survey',
     rarity: 'rare',
     iconEmoji: '₿',
   },
@@ -45,12 +45,12 @@ export const SITES: Site[] = [
       attributes: { secure: true, httpOnly: true, sameSite: 'Lax', maxAge: 7200 },
       points: 120,
     },
-    visitDuration: 3000,
+    template: 'survey',
     rarity: 'rare',
     iconEmoji: '🪙',
   },
 
-  // ── ecommerce ─────────────────────────────────────────────────────
+  // ── ecommerce (uncommon → login-form) ────────────────────────────
   {
     id: 'shop-mart',
     name: 'ShopMart',
@@ -62,7 +62,7 @@ export const SITES: Site[] = [
       attributes: { sameSite: 'Lax', maxAge: 86400 * 30 },
       points: 60,
     },
-    visitDuration: 2000,
+    template: 'login-form',
     rarity: 'uncommon',
     iconEmoji: '🛒',
   },
@@ -77,12 +77,12 @@ export const SITES: Site[] = [
       attributes: { sameSite: 'Lax', maxAge: 86400 * 7 },
       points: 55,
     },
-    visitDuration: 2000,
+    template: 'login-form',
     rarity: 'uncommon',
     iconEmoji: '💻',
   },
 
-  // ── social ────────────────────────────────────────────────────────
+  // ── social (uncommon → login-form) ───────────────────────────────
   {
     id: 'tweet-space',
     name: 'TweetSpace',
@@ -94,7 +94,7 @@ export const SITES: Site[] = [
       attributes: { secure: true, sameSite: 'Lax', maxAge: 86400 * 30 },
       points: 70,
     },
-    visitDuration: 2000,
+    template: 'login-form',
     rarity: 'uncommon',
     iconEmoji: '🐦',
   },
@@ -109,7 +109,7 @@ export const SITES: Site[] = [
       attributes: { secure: true, sameSite: 'Lax', maxAge: 86400 * 90 },
       points: 75,
     },
-    visitDuration: 2000,
+    template: 'login-form',
     rarity: 'uncommon',
     iconEmoji: '👤',
   },
@@ -124,7 +124,7 @@ export const SITES: Site[] = [
       attributes: { secure: true, sameSite: 'Lax', maxAge: 86400 * 14 },
       points: 65,
     },
-    visitDuration: 2000,
+    template: 'login-form',
     rarity: 'uncommon',
     iconEmoji: '📸',
   },
@@ -134,14 +134,14 @@ export const SITES: Site[] = [
     id: 'news-portal',
     name: 'NewsPortal',
     category: 'media',
-    description: '速報 30% 誤報 70% のニュースサイト。登録メールは必須。',
+    description: '速報30% 誤報70% のニュースサイト。登録メールは必須。',
     cookie: {
       name: 'np_reader',
       valueGenerator: () => `np_${rand(10)}`,
       attributes: { sameSite: 'Lax', maxAge: 86400 },
       points: 40,
     },
-    visitDuration: 1000,
+    template: 'consent-button',
     rarity: 'common',
     iconEmoji: '📰',
   },
@@ -156,7 +156,7 @@ export const SITES: Site[] = [
       attributes: { secure: true, sameSite: 'Lax', maxAge: 86400 * 30 },
       points: 80,
     },
-    visitDuration: 2000,
+    template: 'login-form',
     rarity: 'uncommon',
     iconEmoji: '🎬',
   },
@@ -173,7 +173,7 @@ export const SITES: Site[] = [
       attributes: { sameSite: 'Lax', maxAge: 86400 * 7 },
       points: 90,
     },
-    visitDuration: 2000,
+    template: 'survey',
     rarity: 'uncommon',
     iconEmoji: '🎮',
   },
@@ -188,12 +188,12 @@ export const SITES: Site[] = [
       attributes: { secure: true, sameSite: 'Strict', maxAge: 86400 },
       points: 110,
     },
-    visitDuration: 3000,
+    template: 'survey',
     rarity: 'rare',
     iconEmoji: '🎰',
   },
 
-  // ── advertising ───────────────────────────────────────────────────
+  // ── advertising (common → ad-popup / consent-button) ─────────────
   {
     id: 'ad-network',
     name: 'AdNetwork',
@@ -205,7 +205,7 @@ export const SITES: Site[] = [
       attributes: { sameSite: 'None', maxAge: 86400 * 365 },
       points: 30,
     },
-    visitDuration: 1000,
+    template: 'ad-popup',
     rarity: 'common',
     iconEmoji: '📢',
   },
@@ -220,12 +220,12 @@ export const SITES: Site[] = [
       attributes: { sameSite: 'None', maxAge: 86400 * 365 * 2 },
       points: 25,
     },
-    visitDuration: 1000,
+    template: 'consent-button',
     rarity: 'common',
     iconEmoji: '👁️',
   },
 
-  // ── government ────────────────────────────────────────────────────
+  // ── government (uncommon → survey) ───────────────────────────────
   {
     id: 'tax-agency',
     name: 'TaxAgency',
@@ -237,12 +237,12 @@ export const SITES: Site[] = [
       attributes: { secure: true, httpOnly: true, sameSite: 'Strict', maxAge: 1800 },
       points: 100,
     },
-    visitDuration: 3000,
-    rarity: 'rare',
+    template: 'survey',
+    rarity: 'uncommon',
     iconEmoji: '🏛️',
   },
 
-  // ── niche ─────────────────────────────────────────────────────────
+  // ── niche (common → consent-button) ──────────────────────────────
   {
     id: 'conspiracy-forum',
     name: 'ConspiracyForum',
@@ -254,7 +254,7 @@ export const SITES: Site[] = [
       attributes: { sameSite: 'Lax', maxAge: 86400 * 365 },
       points: 35,
     },
-    visitDuration: 1000,
+    template: 'consent-button',
     rarity: 'common',
     iconEmoji: '👽',
   },
@@ -269,24 +269,24 @@ export const SITES: Site[] = [
       attributes: { sameSite: 'Lax', maxAge: 86400 * 13 },
       points: 45,
     },
-    visitDuration: 1000,
+    template: 'consent-button',
     rarity: 'common',
     iconEmoji: '👻',
   },
 
-  // ── honeypot ─────────────────────────────────────────────────────
+  // ── honeypot (ad-popup, negative points) ─────────────────────────
   {
     id: 'secuure-bank',
     name: 'SecuureBank',
     category: 'honeypot',
-    description: '銀行っぽいサイト。よく見ると "u" が2つ…',
+    description: '銀行っぽいサイト。よく見ると "u" が2つある…',
     cookie: {
       name: 'phish_trap',
       valueGenerator: () => `trap_${rand(8)}`,
       attributes: { sameSite: 'Lax', maxAge: 60 },
       points: -50,
     },
-    visitDuration: 1000,
+    template: 'ad-popup',
     rarity: 'common',
     isHoneypot: true,
     iconEmoji: '🏦',
@@ -295,32 +295,115 @@ export const SITES: Site[] = [
     id: 'add-network',
     name: 'AddNetwork',
     category: 'honeypot',
-    description: 'AdNetworkと似た名前の怪しいサイト。アクセスすると…',
+    description: 'AdNetworkに似た名前の怪しいサイト。d が2つある。',
     cookie: {
       name: 'malware_id',
       valueGenerator: () => `mal_${rand(6)}`,
       attributes: { maxAge: 86400 * 365 },
       points: -30,
     },
-    visitDuration: 1000,
+    template: 'ad-popup',
     rarity: 'common',
     isHoneypot: true,
     iconEmoji: '📢',
   },
 
-  // ── special ───────────────────────────────────────────────────────
+  // ── mystery (shown as ??? until visited) ─────────────────────────
+  {
+    id: 'mystery-alpha',
+    name: '謎のサイト α',
+    category: 'niche',
+    description: '訪問するまで何のサイトかわからない。同意するだけでCookieがもらえる。',
+    cookie: {
+      name: 'mystery_alpha',
+      valueGenerator: () => `mx_${rand(12)}`,
+      attributes: { sameSite: 'Lax', maxAge: 86400 },
+      points: 50,
+    },
+    template: 'consent-button',
+    rarity: 'common',
+    iconEmoji: '❓',
+    isMystery: true,
+  },
+  {
+    id: 'mystery-beta',
+    name: '暗号サービス β',
+    category: 'special',
+    description: '謎の暗号通信サービス。大学メールでログインすると Cookie がもらえる。',
+    cookie: {
+      name: 'mystery_beta',
+      valueGenerator: () => `mb_${rand(16)}`,
+      attributes: { secure: true, sameSite: 'Strict', maxAge: 3600 },
+      points: 85,
+    },
+    template: 'login-form',
+    rarity: 'uncommon',
+    iconEmoji: '🔐',
+    isMystery: true,
+  },
+  {
+    id: 'mystery-gamma',
+    name: '危険なサイト γ',
+    category: 'honeypot',
+    description: '見た目は普通。でも「賞品を受け取る」ボタンを押すと罠にはまる。',
+    cookie: {
+      name: 'mystery_gamma',
+      valueGenerator: () => `mg_${rand(8)}`,
+      attributes: { maxAge: 60 },
+      points: -40,
+    },
+    template: 'ad-popup',
+    rarity: 'common',
+    iconEmoji: '💀',
+    isHoneypot: true,
+    isMystery: true,
+  },
+  {
+    id: 'mystery-delta',
+    name: '研究機関 δ',
+    category: 'special',
+    description: '何かを研究している機関。セキュリティ知識を問うアンケートに答えると Cookie がもらえる。',
+    cookie: {
+      name: 'mystery_delta',
+      valueGenerator: () => `md_${rand(14)}`,
+      attributes: { httpOnly: true, sameSite: 'Strict', maxAge: 7200 },
+      points: 110,
+    },
+    template: 'survey',
+    rarity: 'rare',
+    iconEmoji: '🔬',
+    isMystery: true,
+  },
+  {
+    id: 'mystery-omega',
+    name: '伝説のサイト Ω',
+    category: 'special',
+    description: 'ネット上の都市伝説として語り継がれる謎のサービス。クイズに全問正解すると Cookie がもらえる。',
+    cookie: {
+      name: 'mystery_omega',
+      valueGenerator: () => `mo_${rand(20)}`,
+      attributes: { secure: true, httpOnly: true, sameSite: 'Strict', maxAge: 86400 * 30 },
+      points: 170,
+    },
+    template: 'quiz',
+    rarity: 'legendary',
+    iconEmoji: '🌀',
+    isMystery: true,
+  },
+
+  // ── special (legendary → quiz) ────────────────────────────────────
   {
     id: 'ghost-site',
     name: 'GhostSite',
     category: 'special',
-    description: 'Cookieの有効期限が10秒の謎のサイト。取得してもすぐ消える…？',
+    description: 'Max-Age=10のCookieを発行する謎のサイト。取得してもすぐ消える…？',
     cookie: {
       name: 'ghost_cookie',
       valueGenerator: () => `👻${rand(12)}`,
       attributes: { sameSite: 'Lax', maxAge: 10 },
       points: 200,
     },
-    visitDuration: 5000,
+    template: 'quiz',
     rarity: 'legendary',
     iconEmoji: '👾',
   },
@@ -335,7 +418,7 @@ export const SITES: Site[] = [
       attributes: { secure: true, sameSite: 'None', maxAge: 86400 * 365 * 100 },
       points: 180,
     },
-    visitDuration: 5000,
+    template: 'quiz',
     rarity: 'legendary',
     iconEmoji: '♾️',
   },

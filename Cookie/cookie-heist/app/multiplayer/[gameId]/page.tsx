@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { useGameStore } from '@/store/gameStore';
 import { SITES } from '@/lib/sites';
+import { getSocket } from '@/lib/socket';
 import type { SiteCategory } from '@/lib/types';
 
 import SiteCard from '@/components/SiteCard';
@@ -13,54 +14,55 @@ import PlayerStatus from '@/components/PlayerStatus';
 import CategoryFilter from '@/components/CategoryFilter';
 import StealNotification from '@/components/StealNotification';
 
-function SingleGameInner() {
-  const searchParams = useSearchParams();
+export default function MultiplayerGamePage() {
+  const { gameId } = useParams<{ gameId: string }>();
   const router = useRouter();
-  const aiCount = Math.min(3, Math.max(1, Number(searchParams.get('ai') ?? '1')));
 
   const {
     phase, timeLeft, players, myPlayerId,
-    sitesState, stealEvents,
-    initGame, tickTimer, processAITick, clearStealEvent,
+    sitesState, stealEvents, onlineGameId,
+    applyServerUpdate, setTimeLeft, exitOnlineMode, clearStealEvent,
   } = useGameStore();
 
   const [category, setCategory] = useState<SiteCategory | 'all'>('all');
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const aiRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const socket = getSocket();
 
-  // /visit/[id] から戻ってきた場合はリセットしない
+  // Redirect if not in the right game
   useEffect(() => {
-    if (useGameStore.getState().phase !== 'lobby') return;
-    initGame(aiCount);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (onlineGameId !== gameId) {
+      router.replace('/');
+    }
+  }, [gameId, onlineGameId, router]);
 
-  // timer tick
+  // Socket event listeners for game state
   useEffect(() => {
-    if (phase !== 'playing') return;
-    timerRef.current = setInterval(() => tickTimer(), 200);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [phase, tickTimer]);
+    function onStateUpdate(data: Parameters<typeof applyServerUpdate>[0]) {
+      useGameStore.getState().applyServerUpdate(data);
+    }
+    function onTick({ timeLeft }: { timeLeft: number }) {
+      useGameStore.getState().setTimeLeft(timeLeft);
+    }
+    function onEnded(data: Parameters<typeof applyServerUpdate>[0]) {
+      useGameStore.getState().applyServerUpdate(data);
+      useGameStore.getState().endGame();
+    }
 
-  // AI ticks
-  useEffect(() => {
-    if (phase !== 'playing') return;
-    const aiIds = [...players.keys()].filter(id => id !== myPlayerId);
-    aiRef.current = setInterval(() => {
-      aiIds.forEach(id => processAITick(id));
-    }, 1200);
-    return () => { if (aiRef.current) clearInterval(aiRef.current); };
-  }, [phase, players, myPlayerId, processAITick]);
+    socket.on('game:state-update', onStateUpdate);
+    socket.on('game:tick', onTick);
+    socket.on('game:ended', onEnded);
 
-  // Navigate to visit page on card click
+    return () => {
+      socket.off('game:state-update', onStateUpdate);
+      socket.off('game:tick', onTick);
+      socket.off('game:ended', onEnded);
+    };
+  }, [socket, applyServerUpdate, setTimeLeft]);
+
   const handleVisit = useCallback((siteId: string) => {
     router.push(`/visit/${siteId}`);
   }, [router]);
 
-  const filteredSites = SITES.filter(s =>
-    category === 'all' || s.category === category
-  );
-
+  const filteredSites = SITES.filter(s => category === 'all' || s.category === category);
   const me = players.get(myPlayerId);
   const allPlayers = [...players.values()];
 
@@ -99,26 +101,15 @@ function SingleGameInner() {
               <p className="font-semibold text-white mb-2">📊 あなたの統計</p>
               <p>訪問回数: {me.stats.visitCount}</p>
               <p>奪取: {me.stats.stealCount} / 奪われ: {me.stats.stolenCount}</p>
-              <p className="mt-2 text-xs text-gray-500">
-                F12 → Application → Cookies でブラウザに保存されたCookieを確認できます
-              </p>
             </div>
           )}
 
-          <div className="flex gap-3">
-            <button
-              onClick={() => initGame(aiCount)}
-              className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors"
-            >
-              もう一度
-            </button>
-            <button
-              onClick={() => router.push('/')}
-              className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors"
-            >
-              メニューへ
-            </button>
-          </div>
+          <button
+            onClick={() => { exitOnlineMode(); router.push('/'); }}
+            className="py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors"
+          >
+            トップに戻る
+          </button>
         </div>
       </div>
     );
@@ -126,22 +117,25 @@ function SingleGameInner() {
 
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
-      {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
         <span className="text-white font-black text-xl">🍪 Cookie Heist</span>
-        <Timer timeLeft={timeLeft} />
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-purple-400 font-bold bg-purple-900/40 px-2 py-0.5 rounded">
+            オンライン
+          </span>
+          <Timer timeLeft={timeLeft} />
+        </div>
         <span className="text-gray-400 text-sm">{me ? `${me.score}pt` : ''}</span>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: site map */}
         <div className="flex-1 flex flex-col overflow-hidden p-3 gap-3">
           <CategoryFilter selected={category} onChange={setCategory} />
-
           <div className="flex-1 overflow-y-auto">
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
               {filteredSites.map(site => {
-                const ss = sitesState.get(site.id)!;
+                const ss = sitesState.get(site.id);
+                if (!ss) return null;
                 return (
                   <SiteCard
                     key={site.id}
@@ -157,7 +151,6 @@ function SingleGameInner() {
           </div>
         </div>
 
-        {/* Right: sidebar */}
         <div className="w-56 flex-shrink-0 border-l border-gray-800 flex flex-col gap-3 p-3 overflow-y-auto">
           <Ranking players={allPlayers} myPlayerId={myPlayerId} />
           {me && <PlayerStatus player={me} />}
@@ -171,13 +164,5 @@ function SingleGameInner() {
         onDismiss={clearStealEvent}
       />
     </div>
-  );
-}
-
-export default function SinglePage() {
-  return (
-    <Suspense>
-      <SingleGameInner />
-    </Suspense>
   );
 }

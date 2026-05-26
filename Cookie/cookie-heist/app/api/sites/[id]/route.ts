@@ -24,10 +24,12 @@ export async function GET(
 }
 
 function buildCookieString(name: string, value: string, attrs: CookieAttributes): string {
+  const isDev = process.env.NODE_ENV === 'development';
   const parts = [`${name}=${value}`, 'Path=/'];
   if (attrs.maxAge != null) parts.push(`Max-Age=${attrs.maxAge}`);
-  if (attrs.sameSite) parts.push(`SameSite=${attrs.sameSite}`);
-  if (attrs.secure) parts.push('Secure');
+  const sameSite = attrs.sameSite === 'None' && isDev ? 'Lax' : attrs.sameSite;
+  if (sameSite) parts.push(`SameSite=${sameSite}`);
+  if (attrs.secure && !isDev) parts.push('Secure');
   if (attrs.httpOnly) parts.push('HttpOnly');
   return parts.join('; ');
 }

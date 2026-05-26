@@ -24,14 +24,20 @@ const RARITY_LABEL: Record<string, string> = {
   legendary: '超レア',
 };
 
+const TEMPLATE_LABEL: Record<string, string> = {
+  'consent-button': '同意',
+  'ad-popup': '広告',
+  'login-form': 'ログイン',
+  'survey': 'アンケート',
+  'quiz': 'クイズ',
+};
+
 interface Props {
   site: Site;
   siteState: SiteState;
   players: Map<string, Player>;
   myPlayerId: string;
-  isVisitingThis: boolean;
   onVisit: () => void;
-  disabled: boolean;
 }
 
 export default function SiteCard({
@@ -39,9 +45,7 @@ export default function SiteCard({
   siteState,
   players,
   myPlayerId,
-  isVisitingThis,
   onVisit,
-  disabled,
 }: Props) {
   const owners = siteState.ownerIds.map(id => players.get(id)).filter(Boolean) as Player[];
   const visitors = siteState.currentVisitorIds.map(id => players.get(id)).filter(Boolean) as Player[];
@@ -49,15 +53,13 @@ export default function SiteCard({
 
   return (
     <motion.button
-      whileHover={!disabled ? { scale: 1.03 } : {}}
-      whileTap={!disabled ? { scale: 0.97 } : {}}
-      onClick={disabled ? undefined : onVisit}
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.97 }}
+      onClick={onVisit}
       className={[
-        'relative flex flex-col gap-1 p-2 rounded-lg border-2 text-left transition-all',
+        'relative flex flex-col gap-1 p-2 rounded-lg border-2 text-left cursor-pointer hover:brightness-110 transition-all',
         RARITY_BORDER[site.rarity],
         RARITY_BG[site.rarity],
-        disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer hover:brightness-110',
-        isVisitingThis ? 'ring-2 ring-white' : '',
         isMine ? 'brightness-110' : '',
       ].join(' ')}
     >
@@ -68,23 +70,29 @@ export default function SiteCard({
 
       {/* icon + name */}
       <div className="flex items-center gap-1">
-        <span className="text-xl leading-none">{site.iconEmoji ?? '🌐'}</span>
-        <span className="text-xs font-bold truncate max-w-[80px] text-white">{site.name}</span>
+        <span className="text-xl leading-none">{site.isMystery ? '❓' : (site.iconEmoji ?? '🌐')}</span>
+        <span className="text-xs font-bold truncate max-w-[80px] text-white">
+          {site.isMystery ? '???' : site.name}
+        </span>
       </div>
 
       {/* points */}
-      <span
-        className={[
-          'text-lg font-black leading-none',
-          site.cookie.points < 0 ? 'text-red-400' : 'text-green-300',
-        ].join(' ')}
-      >
-        {site.cookie.points > 0 ? `+${site.cookie.points}` : site.cookie.points}pt
-      </span>
+      {site.isMystery || site.template === 'survey' ? (
+        <span className="text-lg font-black leading-none text-yellow-300">???pt</span>
+      ) : (
+        <span
+          className={[
+            'text-lg font-black leading-none',
+            site.cookie.points < 0 ? 'text-red-400' : 'text-green-300',
+          ].join(' ')}
+        >
+          {site.cookie.points > 0 ? `+${site.cookie.points}` : site.cookie.points}pt
+        </span>
+      )}
 
-      {/* visit duration */}
+      {/* template label */}
       <span className="text-[10px] text-gray-400">
-        {site.visitDuration / 1000}秒
+        {TEMPLATE_LABEL[site.template]}
       </span>
 
       {/* owner avatars */}
@@ -101,7 +109,7 @@ export default function SiteCard({
         </div>
       )}
 
-      {/* visiting indicators */}
+      {/* visiting indicators (AI) */}
       {visitors.length > 0 && (
         <div className="flex gap-0.5 flex-wrap items-center">
           <span className="text-[9px] text-yellow-400 animate-pulse">訪問中</span>
