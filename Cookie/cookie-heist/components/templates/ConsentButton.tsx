@@ -21,9 +21,9 @@ export default function ConsentButton({ site, onComplete, onCancel }: Props) {
       <main className="px-6 py-8 max-w-2xl">
         <p className="text-gray-500 text-sm mb-6">{site.description}</p>
         <div className="space-y-3">
-          {['記事を読み込み中...', '', ''].map((_, i) => (
-            <div key={i} className="h-4 bg-gray-200 rounded animate-pulse" style={{ width: `${85 - i * 15}%` }} />
-          ))}
+          <div className="h-4 bg-gray-200 rounded animate-pulse w-4/5" />
+          <div className="h-4 bg-gray-200 rounded animate-pulse w-3/5" />
+          <div className="h-4 bg-gray-200 rounded animate-pulse w-2/5" />
         </div>
       </main>
 

@@ -61,9 +61,9 @@ export default function VisitPage() {
     if (phase === 'lobby') router.replace('/');
   }, [phase, router, returnUrl]);
 
-  const handleComplete = useCallback(async (points?: number) => {
+  const handleComplete = useCallback((points?: number) => {
     completed.current = true;
-    try { await fetch(`/api/sites/${id}`, { credentials: 'include' }); } catch { /* ignore */ }
+    fetch(`/api/sites/${id}`, { credentials: 'include' }).catch(() => {});
 
     if (isOnline) {
       getSocket().emit('game:visit-complete', {
