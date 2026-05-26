@@ -56,7 +56,7 @@ function SingleGameInner() {
     const aiIds = [...players.keys()].filter(id => id !== myPlayerId);
     aiRef.current = setInterval(() => {
       aiIds.forEach(id => processAITick(id));
-    }, 1200);
+    }, 2000);
     return () => { if (aiRef.current) clearInterval(aiRef.current); };
   }, [phase, players, myPlayerId, processAITick]);
 

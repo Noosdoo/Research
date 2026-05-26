@@ -156,20 +156,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const ai = players.get(aiId);
     if (!ai || ai.isVisiting) return;
 
+    // 40%の確率でサボる
+    if (Math.random() < 0.4) return;
+
     const candidates = SITES
-      .filter(s => !s.isHoneypot)
       .map(s => {
+        // ハニーポットを10%の確率で踏む（プレイヤーと同じリスク）
+        if (s.isHoneypot && Math.random() > 0.1) return null;
         let score = s.cookie.points;
         score -= RARITY_MS[s.rarity] / 100;
         if (ai.cookies.has(s.id)) score *= 0.3;
+        // 奪取インセンティブを弱める
         const othersOwn = sitesState.get(s.id)!.ownerIds.filter(id => id !== aiId).length;
-        score += othersOwn * 20;
+        score += othersOwn * 8;
         return { id: s.id, score, rarity: s.rarity };
       })
-      .sort((a, b) => b.score - a.score);
+      .filter(Boolean)
+      .sort((a, b) => b!.score - a!.score) as { id: string; score: number; rarity: Rarity }[];
 
-    const pick = Math.random() < 0.25
-      ? candidates[Math.floor(Math.random() * Math.min(5, candidates.length))]
+    // 50%でランダム選択（上位8件から）
+    const pick = Math.random() < 0.5
+      ? candidates[Math.floor(Math.random() * Math.min(8, candidates.length))]
       : candidates[0];
 
     if (!pick) return;
