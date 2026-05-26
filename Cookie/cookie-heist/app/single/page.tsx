@@ -24,6 +24,7 @@ function SingleGameInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const aiCount = Math.min(3, Math.max(1, Number(searchParams.get('ai') ?? '1')));
+  const duration = Math.min(180, Math.max(30, Number(searchParams.get('duration') ?? '180')));
 
   const {
     phase, timeLeft, players, myPlayerId,
@@ -39,7 +40,7 @@ function SingleGameInner() {
   // /visit/[id] から戻ってきた場合はリセットしない
   useEffect(() => {
     if (useGameStore.getState().phase !== 'lobby') return;
-    initGame(aiCount);
+    initGame(aiCount, duration);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -105,7 +106,7 @@ function SingleGameInner() {
                 ].join(' ')}
               >
                 <span className="text-xl">{['🥇', '🥈', '🥉'][i] ?? `${i + 1}`}</span>
-                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: p.color }} />
+                <span className={`w-3 h-3 rounded-full flex-shrink-0 ${COLOR_BG[p.color] ?? 'bg-gray-400'}`} />
                 <span className="text-white font-semibold flex-1">{p.name}</span>
                 <span className="text-green-300 font-bold">{p.score}pt</span>
                 <span className="text-gray-400 text-sm">{p.cookies.size}種</span>
@@ -126,12 +127,14 @@ function SingleGameInner() {
 
           <div className="flex gap-3">
             <button
-              onClick={() => initGame(aiCount)}
+              type="button"
+              onClick={() => initGame(aiCount, duration)}
               className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors"
             >
               もう一度
             </button>
             <button
+              type="button"
               onClick={() => router.push('/')}
               className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors"
             >

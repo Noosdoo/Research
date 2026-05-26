@@ -58,6 +58,7 @@ interface GameStore {
   phase: 'lobby' | 'playing' | 'result';
   startTime: number | null;
   timeLeft: number;
+  gameDuration: number;
   aiCount: number;
 
   // online mode
@@ -75,7 +76,7 @@ interface GameStore {
   stealEvents: StealEvent[];
 
   // actions
-  initGame: (aiCount: number) => void;
+  initGame: (aiCount: number, duration?: number) => void;
   tickTimer: () => void;
   completeVisit: (siteId: SiteId, pointOverride?: number) => void;
   processAITick: (aiId: PlayerId) => void;
@@ -103,6 +104,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   phase: 'lobby',
   startTime: null,
   timeLeft: GAME_DURATION,
+  gameDuration: GAME_DURATION,
   aiCount: 1,
   mode: 'local',
   onlineGameId: null,
@@ -111,7 +113,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   sitesState: initSiteStates(),
   stealEvents: [],
 
-  initGame(aiCount: number) {
+  initGame(aiCount: number, duration?: number) {
+    const dur = Math.min(180, Math.max(30, duration ?? GAME_DURATION));
     const players = new Map<PlayerId, Player>();
     players.set('player-human', makePlayer('player-human', 'あなた', false, 0));
     const aiNames = ['AI Bot 1', 'AI Bot 2', 'AI Bot 3'];
@@ -123,7 +126,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gameId: `game-${Date.now()}`,
       phase: 'playing',
       startTime: Date.now(),
-      timeLeft: GAME_DURATION,
+      timeLeft: dur,
+      gameDuration: dur,
       aiCount,
       players,
       myPlayerId: 'player-human',
@@ -133,10 +137,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   tickTimer() {
-    const { startTime, phase } = get();
+    const { startTime, phase, gameDuration } = get();
     if (phase !== 'playing' || !startTime) return;
     const elapsed = Math.floor((Date.now() - startTime) / 1000);
-    const timeLeft = Math.max(0, GAME_DURATION - elapsed);
+    const timeLeft = Math.max(0, gameDuration - elapsed);
     if (timeLeft === 0) {
       get().endGame();
     } else {

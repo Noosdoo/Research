@@ -35,10 +35,18 @@ function QrView({ autoUrl, onBack }: { autoUrl: string; onBack: () => void }) {
   );
 }
 
+function formatDuration(s: number) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return sec === 0 ? `${m}分` : `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
 export default function LobbyPage() {
   const router = useRouter();
   const [view, setView] = useState<View>('top');
   const [autoUrl, setAutoUrl] = useState('');
+  const [aiCount, setAiCount] = useState(1);
+  const [duration, setDuration] = useState(180);
 
   useEffect(() => {
     fetch('/api/local-ip')
@@ -57,7 +65,7 @@ export default function LobbyPage() {
         <div>
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight whitespace-nowrap">🍪 Cookie Heist</h1>
           <p className="text-gray-400 mt-2 text-lg">
-            Webサイトを訪問してCookieを盗め。<br />制限時間は3分。
+            Webサイトを訪問してCookieを盗め。
           </p>
         </div>
 
@@ -84,17 +92,50 @@ export default function LobbyPage() {
           {/* ── AI count select ─────────────────────────────────── */}
           {view === 'ai-select' && (
             <motion.div key="ai" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="flex flex-col items-center gap-4 w-full">
-              <p className="text-gray-300 text-lg font-semibold">AI の人数を選んでください</p>
-              <div className="flex gap-3">
-                {[1, 2, 3].map(n => (
-                  <button type="button" key={n} onClick={() => router.push(`/single?ai=${n}`)}
-                    className="w-20 h-20 bg-gray-800 hover:bg-gray-700 border-2 border-gray-600 hover:border-blue-500 text-white font-black text-3xl rounded-xl transition-all">
-                    {n}
-                  </button>
-                ))}
+              className="flex flex-col items-center gap-5 w-full">
+              <div className="w-full">
+                <p className="text-gray-300 text-sm font-semibold mb-3 text-center">AI の人数</p>
+                <div className="flex gap-3 justify-center">
+                  {[1, 2, 3].map(n => (
+                    <button type="button" key={n} onClick={() => setAiCount(n)}
+                      className={[
+                        'w-20 h-20 border-2 text-white font-black text-3xl rounded-xl transition-all',
+                        aiCount === n
+                          ? 'bg-blue-600 border-blue-400'
+                          : 'bg-gray-800 hover:bg-gray-700 border-gray-600 hover:border-blue-500',
+                      ].join(' ')}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <button type="button" onClick={() => setView('top')} className="text-gray-500 hover:text-gray-300 text-sm mt-2">
+
+              <div className="w-full">
+                <p className="text-gray-300 text-sm font-semibold mb-2 text-center">
+                  制限時間：<span className="text-white font-black text-lg">{formatDuration(duration)}</span>
+                </p>
+                <input
+                  type="range"
+                  min={30}
+                  max={180}
+                  step={10}
+                  value={duration}
+                  onChange={e => setDuration(Number(e.target.value))}
+                  aria-label="制限時間"
+                  className="w-full accent-blue-500"
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>30秒</span>
+                  <span>3分</span>
+                </div>
+              </div>
+
+              <button type="button"
+                onClick={() => router.push(`/single?ai=${aiCount}&duration=${duration}`)}
+                className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-lg rounded-xl transition-colors">
+                ゲーム開始
+              </button>
+              <button type="button" onClick={() => setView('top')} className="text-gray-500 hover:text-gray-300 text-sm">
                 ← 戻る
               </button>
             </motion.div>

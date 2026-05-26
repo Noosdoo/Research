@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Site } from '@/lib/types';
 
 interface QuizQ {
@@ -61,24 +61,27 @@ export default function Quiz({ site, onComplete, onCancel }: Props) {
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [allCorrect, setAllCorrect] = useState(false);
+  const [result, setResult] = useState<'idle' | 'correct' | 'wrong'>('idle');
 
   const allAnswered = answers.every(a => a !== -1);
 
-  async function handleSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    if (result === 'idle') return;
+    const t = setTimeout(() => {
+      if (result === 'correct') onComplete();
+      else onCancel();
+    }, 1400);
+    return () => clearTimeout(t);
+  }, [result, onComplete, onCancel]);
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!allAnswered) return;
+    if (!allAnswered || submitting) return;
     setSubmitting(true);
     setSubmitted(true);
-
     const correct = answers.every((a, i) => a === questions[i].correct);
     setAllCorrect(correct);
-    await new Promise(r => setTimeout(r, 1400));
-
-    if (correct) {
-      onComplete();
-    } else {
-      onCancel();
-    }
+    setResult(correct ? 'correct' : 'wrong');
   }
 
   const correctCount = submitted
@@ -171,6 +174,7 @@ export default function Quiz({ site, onComplete, onCancel }: Props) {
 
         {!submitted && (
           <button
+            type="button"
             onClick={onCancel}
             className="w-full mt-3 py-2 text-gray-500 hover:text-gray-300 text-sm transition-colors"
           >
