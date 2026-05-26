@@ -7,14 +7,14 @@ import { SITES } from '@/lib/sites';
 import { getSocket } from '@/lib/socket';
 import type { SiteCategory } from '@/lib/types';
 
+import SiteCard from '@/components/SiteCard';
+
 const COLOR_BG: Record<string, string> = {
   '#3b82f6': 'bg-blue-500',
   '#ef4444': 'bg-red-500',
   '#22c55e': 'bg-green-500',
   '#f59e0b': 'bg-amber-500',
 };
-
-import SiteCard from '@/components/SiteCard';
 import Timer from '@/components/Timer';
 import Ranking from '@/components/Ranking';
 import PlayerStatus from '@/components/PlayerStatus';
