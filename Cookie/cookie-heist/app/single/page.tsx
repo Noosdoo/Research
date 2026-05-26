@@ -146,19 +146,19 @@ function SingleGameInner() {
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
       {/* Header */}
-      <header className="flex items-center justify-between px-3 py-2 bg-gray-900 border-b border-gray-800 gap-2">
-        <span className="text-white font-black text-base whitespace-nowrap">🍪 Cookie Heist</span>
+      <header className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
+        <span className="text-white font-black text-xl whitespace-nowrap">🍪 Cookie Heist</span>
         <Timer timeLeft={timeLeft} />
-        <span className="text-gray-400 text-sm whitespace-nowrap">{me ? `${me.score}pt` : ''}</span>
+        <span className="text-gray-400 text-sm">{me ? `${me.score}pt` : ''}</span>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Site map */}
-        <div className="flex-1 flex flex-col overflow-hidden p-2 gap-2">
+        <div className="flex-1 flex flex-col overflow-hidden p-3 gap-3">
           <CategoryFilter selected={category} onChange={setCategory} />
 
           <div className="flex-1 overflow-y-auto">
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-1.5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
               {filteredSites.map(site => {
                 const ss = sitesState.get(site.id)!;
                 return (
