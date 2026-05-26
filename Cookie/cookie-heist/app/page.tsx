@@ -7,11 +7,9 @@ import { QRCodeSVG } from 'qrcode.react';
 
 type View = 'top' | 'ai-select' | 'online' | 'qr';
 
-// ── QR コード画面（URL上書き入力付き） ──────────────────────────────
+// ── QR コード画面 ──────────────────────────────────────────────────
 function QrView({ autoUrl, onBack }: { autoUrl: string; onBack: () => void }) {
-  const [override, setOverride] = useState('');
-  const base = override.trim() || autoUrl;
-  const qrUrl = base ? base.replace(/\/$/, '') : '';
+  const qrUrl = autoUrl ? autoUrl.replace(/\/$/, '') : '';
 
   return (
     <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -29,24 +27,6 @@ function QrView({ autoUrl, onBack }: { autoUrl: string; onBack: () => void }) {
       <p className="text-gray-500 text-xs font-mono break-all max-w-[280px] text-center">
         {qrUrl || '取得中…'}
       </p>
-
-      {/* ngrok / cloudflare tunnel URL override */}
-      <div className="w-full">
-        <p className="text-gray-500 text-xs mb-1.5 text-center">
-          別のWi-Fiやモバイル通信の場合は ngrok URL を貼り付け
-        </p>
-        <input
-          value={override}
-          onChange={e => setOverride(e.target.value)}
-          placeholder="https://xxxx.ngrok-free.app"
-          className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-xs placeholder-gray-600 focus:outline-none focus:border-blue-500 font-mono"
-        />
-      </div>
-
-      <div className="text-xs text-gray-600 text-center leading-relaxed">
-        <p>ngrok の使い方: <code className="text-gray-400">ngrok http 3000</code></p>
-        <p>表示された <code className="text-gray-400">Forwarding</code> の URL を上に貼り付け</p>
-      </div>
 
       <button type="button" onClick={onBack} className="text-gray-500 hover:text-gray-300 text-sm">
         ← 戻る
@@ -77,7 +57,7 @@ export default function LobbyPage() {
         <div>
           <h1 className="text-6xl font-black text-white tracking-tight">🍪 Cookie Heist</h1>
           <p className="text-gray-400 mt-2 text-lg">
-            Webサイトを訪問してCookieを盗め。制限時間は3分。
+            Webサイトを訪問してCookieを盗め。<br />制限時間は3分。
           </p>
         </div>
 
@@ -161,7 +141,7 @@ export default function LobbyPage() {
         </AnimatePresence>
 
         <p className="text-gray-600 text-xs max-w-sm">
-          ゲーム中に本物のCookieがブラウザに保存されます。
+          ゲーム中に本物のCookieがブラウザに保存されます。<br />
           終了後はF12 → Application → Cookies で確認できます。
         </p>
       </motion.div>
