@@ -55,7 +55,7 @@ export default function LobbyPage() {
         className="text-center flex flex-col items-center gap-8 w-full max-w-sm"
       >
         <div>
-          <h1 className="text-6xl font-black text-white tracking-tight">🍪 Cookie Heist</h1>
+          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight whitespace-nowrap">🍪 Cookie Heist</h1>
           <p className="text-gray-400 mt-2 text-lg">
             Webサイトを訪問してCookieを盗め。<br />制限時間は3分。
           </p>
