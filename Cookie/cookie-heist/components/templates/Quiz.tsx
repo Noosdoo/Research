@@ -9,32 +9,30 @@ interface QuizQ {
   correct: number;
 }
 
-const POOL: QuizQ[] = [
-  {
-    q: 'HTTPレスポンスでブラウザにCookieを保存させるヘッダーは？',
-    options: ['Set-Cookie', 'Cookie', 'Cookie-Save', 'Store-Cookie'],
-    correct: 0,
-  },
-  {
-    q: 'Cookie属性 "HttpOnly" の主な役割は？',
-    options: ['JavaScriptからのアクセスを防ぐ', 'HTTPSのみで動作する', '永続的に保存される', 'クロスサイトを防ぐ'],
-    correct: 0,
-  },
-  {
-    q: '"SameSite=Strict" に設定したCookieはどんな時に送信される？',
-    options: ['同一サイトからのリクエストのみ', 'すべてのリクエストに送信', 'HTTPSのリクエストのみ', 'GETリクエストのみ'],
-    correct: 0,
-  },
-  {
-    q: 'セッションCookieとは？',
-    options: ['ブラウザを閉じると消えるCookie', '暗号化されたCookie', '永続的に保存されるCookie', 'サーバー側に保存される情報'],
-    correct: 0,
-  },
-  {
-    q: 'Cookie属性 "Secure" が付いているとどうなる？',
-    options: ['HTTPS接続のときのみ送信される', '暗号化して保存される', 'JavaScriptで読めなくなる', '有効期限が設定される'],
-    correct: 0,
-  },
+// サイトごとに固有の問題セット（重複なし）
+const QUIZ_BY_SITE: Record<string, QuizQ[]> = {
+  'ghost-site': [
+    { q: 'Max-Age=0 のCookieはどうなる？', options: ['即座に削除される', '永続的に保存される', '1時間有効になる', 'サーバーが管理する'], correct: 0 },
+    { q: 'Cookieの有効期限を設定しない場合は？', options: ['ブラウザを閉じると消える', '1年間保存される', '7日間保存される', 'サーバーが決める'], correct: 0 },
+  ],
+  'eternal-session': [
+    { q: 'Cookieのドメイン属性の役割は？', options: ['指定ドメインにのみ送信する', 'Cookieを暗号化する', '有効期限を設定する', 'セッションを管理する'], correct: 0 },
+    { q: 'サードパーティCookieとは？', options: ['現在表示中以外のドメインが設定するCookie', '暗号化されたCookie', '第三者が認証したCookie', 'セキュアなCookie'], correct: 0 },
+  ],
+  'mystery-omega': [
+    { q: 'HTTPレスポンスでCookieを保存させるヘッダーは？', options: ['Set-Cookie', 'Cookie', 'Cookie-Store', 'Save-Cookie'], correct: 0 },
+    { q: 'Cookie属性 "HttpOnly" の役割は？', options: ['JavaScriptからのアクセスを防ぐ', 'HTTPSのみで動作する', '永続化される', 'クロスサイトを防ぐ'], correct: 0 },
+  ],
+  'retro-arcade': [
+    { q: 'XSS攻撃でCookieが盗まれるのを防ぐ属性は？', options: ['HttpOnly', 'Secure', 'SameSite', 'Path'], correct: 0 },
+    { q: 'CSRF攻撃対策として有効なCookie属性は？', options: ['SameSite=Strict', 'HttpOnly', 'Secure', 'Max-Age'], correct: 0 },
+  ],
+};
+
+const FALLBACK_POOL: QuizQ[] = [
+  { q: '"SameSite=Strict" のCookieはいつ送信される？', options: ['同一サイトからのリクエストのみ', 'すべてのリクエスト', 'HTTPSのみ', 'GETのみ'], correct: 0 },
+  { q: 'Cookie属性 "Secure" の効果は？', options: ['HTTPS接続のみ送信される', '暗号化して保存される', 'JavaScriptで読めなくなる', '有効期限が設定される'], correct: 0 },
+  { q: 'セッションCookieとは？', options: ['ブラウザを閉じると消えるCookie', '暗号化されたCookie', '永続的なCookie', 'サーバー側の情報'], correct: 0 },
 ];
 
 interface Props {
@@ -53,10 +51,9 @@ function shuffleQuestion(q: QuizQ): QuizQ {
 }
 
 export default function Quiz({ site, onComplete, onCancel }: Props) {
-  // pick 2 questions by siteId, shuffle options on each visit
   const questions = useMemo(() => {
-    const seed = site.id.charCodeAt(0) % POOL.length;
-    return [POOL[seed % POOL.length], POOL[(seed + 2) % POOL.length]].map(shuffleQuestion);
+    const pool = QUIZ_BY_SITE[site.id] ?? FALLBACK_POOL.slice(0, 2);
+    return pool.map(shuffleQuestion);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
