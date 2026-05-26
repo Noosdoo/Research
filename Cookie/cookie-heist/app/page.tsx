@@ -11,7 +11,7 @@ type View = 'top' | 'ai-select' | 'online' | 'qr';
 function QrView({ autoUrl, onBack }: { autoUrl: string; onBack: () => void }) {
   const [override, setOverride] = useState('');
   const base = override.trim() || autoUrl;
-  const qrUrl = base ? `${base.replace(/\/$/, '')}/join-room` : '';
+  const qrUrl = base ? base.replace(/\/$/, '') : '';
 
   return (
     <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
