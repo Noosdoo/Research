@@ -20,7 +20,7 @@ export default function PlayerStatus({ player }: Props) {
         <span className="text-green-300 font-bold">{player.score}pt</span>
         <span>訪問回数</span>
         <span className="text-white">{player.stats.visitCount}</span>
-        <span>奪取 / 奪われ</span>
+        <span>奪取 / 喪失</span>
         <span className="text-white">
           {player.stats.stealCount} / {player.stats.stolenCount}
         </span>

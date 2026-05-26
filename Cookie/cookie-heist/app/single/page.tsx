@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback, Suspense } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useGameStore } from '@/store/gameStore';
 import { SITES } from '@/lib/sites';
@@ -25,6 +25,7 @@ function SingleGameInner() {
   } = useGameStore();
 
   const [category, setCategory] = useState<SiteCategory | 'all'>('all');
+  const [shuffleSeed, setShuffleSeed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const aiRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -54,10 +55,21 @@ function SingleGameInner() {
 
   // Navigate to visit page on card click
   const handleVisit = useCallback((siteId: string) => {
+    setShuffleSeed(s => s + 1);
     router.push(`/visit/${siteId}`);
   }, [router]);
 
-  const filteredSites = SITES.filter(s =>
+  const shuffledSites = useMemo(() => {
+    const arr = [...SITES];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shuffleSeed]);
+
+  const filteredSites = shuffledSites.filter(s =>
     category === 'all' || s.category === category
   );
 
@@ -98,7 +110,7 @@ function SingleGameInner() {
             <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-300">
               <p className="font-semibold text-white mb-2">📊 あなたの統計</p>
               <p>訪問回数: {me.stats.visitCount}</p>
-              <p>奪取: {me.stats.stealCount} / 奪われ: {me.stats.stolenCount}</p>
+              <p>奪取: {me.stats.stealCount} / 喪失: {me.stats.stolenCount}</p>
               <p className="mt-2 text-xs text-gray-500">
                 F12 → Application → Cookies でブラウザに保存されたCookieを確認できます
               </p>
@@ -128,7 +140,7 @@ function SingleGameInner() {
     <div className="min-h-screen bg-gray-950 flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
-        <span className="text-white font-black text-xl">🍪 Cookie Heist</span>
+        <span className="text-white font-black text-xl whitespace-nowrap">🍪 Cookie Heist</span>
         <Timer timeLeft={timeLeft} />
         <span className="text-gray-400 text-sm">{me ? `${me.score}pt` : ''}</span>
       </header>

@@ -77,16 +77,11 @@ export default function SiteCard({
       </div>
 
       {/* points */}
-      {site.isMystery || site.template === 'survey' ? (
+      {site.isMystery || site.template === 'survey' || site.cookie.points < 0 ? (
         <span className="text-lg font-black leading-none text-yellow-300">???pt</span>
       ) : (
-        <span
-          className={[
-            'text-lg font-black leading-none',
-            site.cookie.points < 0 ? 'text-red-400' : 'text-green-300',
-          ].join(' ')}
-        >
-          {site.cookie.points > 0 ? `+${site.cookie.points}` : site.cookie.points}pt
+        <span className="text-lg font-black leading-none text-green-300">
+          +{site.cookie.points}pt
         </span>
       )}
 

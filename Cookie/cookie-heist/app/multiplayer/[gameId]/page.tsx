@@ -100,7 +100,7 @@ export default function MultiplayerGamePage() {
             <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-300">
               <p className="font-semibold text-white mb-2">📊 あなたの統計</p>
               <p>訪問回数: {me.stats.visitCount}</p>
-              <p>奪取: {me.stats.stealCount} / 奪われ: {me.stats.stolenCount}</p>
+              <p>奪取: {me.stats.stealCount} / 喪失: {me.stats.stolenCount}</p>
             </div>
           )}
 
@@ -118,7 +118,7 @@ export default function MultiplayerGamePage() {
   return (
     <div className="min-h-screen bg-gray-950 flex flex-col">
       <header className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
-        <span className="text-white font-black text-xl">🍪 Cookie Heist</span>
+        <span className="text-white font-black text-xl whitespace-nowrap">🍪 Cookie Heist</span>
         <div className="flex items-center gap-2">
           <span className="text-xs text-purple-400 font-bold bg-purple-900/40 px-2 py-0.5 rounded">
             オンライン
