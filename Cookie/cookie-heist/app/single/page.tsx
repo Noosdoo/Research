@@ -34,7 +34,6 @@ function SingleGameInner() {
   } = useGameStore();
 
   const [category, setCategory] = useState<SiteCategory | 'all'>('all');
-  const [shuffleSeed, setShuffleSeed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const aiRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const shakeRef = useRef<HTMLDivElement>(null);
@@ -82,10 +81,10 @@ function SingleGameInner() {
 
   // Navigate to visit page on card click
   const handleVisit = useCallback((siteId: string) => {
-    setShuffleSeed(s => s + 1);
     router.push(`/visit/${siteId}`);
   }, [router]);
 
+  // Shuffle once on mount — component remounts on every return from /visit, giving a fresh order
   const shuffledSites = useMemo(() => {
     const arr = [...SITES];
     for (let i = arr.length - 1; i > 0; i--) {
@@ -94,7 +93,7 @@ function SingleGameInner() {
     }
     return arr;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shuffleSeed]);
+  }, []);
 
   const filteredSites = shuffledSites.filter(s =>
     category === 'all' || s.category === category
