@@ -154,8 +154,8 @@ function SingleGameInner() {
               <CookieInspector cookies={me.cookies} />
 
               <div>
-                <p className="text-xs text-gray-500">
-                  F12 → Application → Cookies でブラウザに保存されたCookieを確認できます
+                <p className="text-xs text-gray-500 text-center">
+                  F12 → Application → Cookies で<br />ブラウザに保存されたCookieを確認できます
                 </p>
                 <button
                   type="button"

@@ -31,7 +31,7 @@ export default function AdPopup({ site, onComplete, onCancel }: Props) {
 
             <div className="text-6xl mb-3 animate-bounce">🎉</div>
             <h2 className="text-2xl font-black text-red-500 mb-1">おめでとうございます！</h2>
-            <p className="text-yellow-600 font-bold text-sm mb-3">あなたは100万人に1人の当選者です！</p>
+            <p className="text-yellow-600 font-bold text-sm mb-3">あなたは1万人に1人の当選者です！</p>
             <p className="text-gray-600 text-sm mb-6">
               特別プレゼントを今すぐお受け取りください。<br />
               <span className="text-xs text-gray-400">※期限切れに注意</span>

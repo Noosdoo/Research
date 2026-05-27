@@ -183,7 +183,7 @@ export default function LobbyPage() {
 
         <p className="text-gray-600 text-xs max-w-sm">
           ゲーム中に本物のCookieがブラウザに保存されます。<br />
-          終了後はF12 → Application → Cookies で確認できます。
+          終了後はF12→Application→Cookiesで確認できます。
         </p>
       </motion.div>
     </main>

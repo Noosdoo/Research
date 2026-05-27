@@ -272,7 +272,7 @@ export default function Quiz({ site, onComplete, onCancel }: Props) {
           <h1 className="text-xl font-bold">{site.name}</h1>
           <p className="text-gray-400 text-sm mt-1">セキュリティ認証クイズ</p>
           <p className="text-xs text-gray-500 mt-0.5">
-            全問正解でCookieを取得 — 1問でも間違えると失敗！
+            全問正解でCookieを取得
           </p>
         </div>
 
