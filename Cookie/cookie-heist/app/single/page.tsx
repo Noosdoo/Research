@@ -174,7 +174,7 @@ function SingleGameInner() {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => { useGameStore.getState().resetToLobby(); router.push('/'); }}
+              onClick={() => initGame(aiCount, duration)}
               className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors"
             >
               もう一度
