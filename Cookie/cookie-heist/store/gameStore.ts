@@ -168,7 +168,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // ハニーポットを25%の確率で踏む
         if (s.isHoneypot && Math.random() > 0.25) return null;
         let score = s.cookie.points;
-        score -= RARITY_MS[s.rarity] / 100;
+        score -= RARITY_MS[s.rarity] / 1000;
         if (ai.cookies.has(s.id)) score *= 0.3;
         // 奪取インセンティブを弱める
         const othersOwn = sitesState.get(s.id)!.ownerIds.filter(id => id !== aiId).length;
