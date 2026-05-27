@@ -224,6 +224,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // 奪取インセンティブを弱める
         const othersOwn = sitesState.get(s.id)!.ownerIds.filter(id => id !== aiId).length;
         score += othersOwn * 8;
+        // 他のAIが訪問中のサイトを避ける
+        const visiting = sitesState.get(s.id)!.currentVisitorIds.filter(id => id !== aiId).length;
+        score -= visiting * 30;
         return { id: s.id, score, rarity: s.rarity };
       })
       .filter(Boolean)
