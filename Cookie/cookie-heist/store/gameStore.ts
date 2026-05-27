@@ -100,6 +100,7 @@ interface GameStore {
   }) => void;
   setTimeLeft: (t: number) => void;
   exitOnlineMode: () => void;
+  resetToLobby: () => void;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -309,6 +310,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   exitOnlineMode() {
     set({ mode: 'local', onlineGameId: null, phase: 'lobby' });
+  },
+
+  resetToLobby() {
+    set({ phase: 'lobby' });
   },
 }));
 
