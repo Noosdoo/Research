@@ -55,7 +55,7 @@ export const SITES: Site[] = [
     id: 'shop-mart',
     name: 'ShopMart',
     category: 'ecommerce',
-    description: 'なんでも売ってる世界最大のオンラインショッピングモール。',
+    description: 'なんでも売ってるショッピングモール。一度商品を見るとどこに行っても追ってくる。',
     cookie: {
       name: 'cart_id',
       valueGenerator: () => `cart_${rand(12)}`,
@@ -70,7 +70,7 @@ export const SITES: Site[] = [
     id: 'electro-store',
     name: 'ElectroStore',
     category: 'ecommerce',
-    description: '最新ガジェットが最安値で手に入る…とは限らない電子機器ショップ。',
+    description: '最新ガジェット専門店。カートに入れた瞬間に値上がりする。',
     cookie: {
       name: 'electro_uid',
       valueGenerator: () => `eu_${rand(10)}`,
@@ -134,7 +134,7 @@ export const SITES: Site[] = [
     id: 'news-portal',
     name: 'NewsPortal',
     category: 'media',
-    description: '速報30% 誤報70% のニュースサイト。登録メールは必須。',
+    description: '24時間速報を流し続けるニュースサイト。登録した覚えがないのにメルマガが届く。',
     cookie: {
       name: 'np_reader',
       valueGenerator: () => `np_${rand(10)}`,
@@ -149,7 +149,7 @@ export const SITES: Site[] = [
     id: 'video-stream',
     name: 'VideoStream',
     category: 'media',
-    description: 'バッファリングが十八番の動画ストリーミングサービス。',
+    description: '動画ストリーミングサービス。冒頭の広告が本編より長い。',
     cookie: {
       name: 'vs_auth',
       valueGenerator: () => `vs_${rand(16)}`,
@@ -341,7 +341,7 @@ export const SITES: Site[] = [
     id: 'stock-ticker',
     name: 'StockTicker',
     category: 'finance',
-    description: 'リアルタイム株価チャートとAI予測が溢れる投資プラットフォーム。予測の精度は秘密。',
+    description: 'AIによる相場予測を売りにした投資プラットフォーム。的中率は天気予報レベル。',
     cookie: {
       name: 'st_investor',
       valueGenerator: () => `sti_${rand(22)}`,
@@ -356,7 +356,7 @@ export const SITES: Site[] = [
     id: 'loan-easy',
     name: 'LoanEasy',
     category: 'finance',
-    description: '「審査なし・即日融資！」の謳い文句が気になるローンサービス。金利は小さく書いてある。',
+    description: '審査なし・即日融資。実質年利は注釈の注釈に小さく書いてある。',
     cookie: {
       name: 'loan_sess',
       valueGenerator: () => `le_${rand(18)}`,
@@ -388,7 +388,7 @@ export const SITES: Site[] = [
     id: 'retro-arcade',
     name: 'RetroArcade',
     category: 'gaming',
-    description: '80年代の名作ゲームが遊べるアーカイブ。セキュリティクイズに全問正解すると無料プレイ権限がもらえる。',
+    description: '80年代の名作ゲームが遊べるアーカイブ。会員登録時にセキュリティ知識を問われる。',
     cookie: {
       name: 'retro_pass',
       valueGenerator: () => `ra_${rand(20)}`,
@@ -403,7 +403,7 @@ export const SITES: Site[] = [
     id: 'esports-hub',
     name: 'EsportsHub',
     category: 'gaming',
-    description: 'プロゲーマーの試合結果・統計・コミュニティが集まるeスポーツポータル。',
+    description: 'プロゲーマーの試合結果が集まるeスポーツポータル。回線の良さが実力の半分。',
     cookie: {
       name: 'eh_profile',
       valueGenerator: () => `eh_${rand(14)}`,
@@ -452,7 +452,7 @@ export const SITES: Site[] = [
     id: 'dev-tools-lab',
     name: 'DevToolsLab',
     category: 'special',
-    description: '「F12 → Application → Cookies」で取得したCookieを今すぐ確認しよう！HttpOnlyなしの丸見えCookie。',
+    description: 'Cookieの中身を隠さない開発者向けサイト。HttpOnly属性なしの「丸見え」Cookieを発行する。',
     cookie: {
       name: 'devlab_visible',
       valueGenerator: () => `VISIBLE_${rand(16).toUpperCase()}`,
@@ -501,9 +501,9 @@ export const SITES: Site[] = [
   // ── mystery (shown as ??? until visited) ─────────────────────────
   {
     id: 'mystery-alpha',
-    name: '謎のサイト α',
+    name: 'MysteryBox',
     category: 'niche',
-    description: '訪問するまで何のサイトかわからない。同意するだけでCookieがもらえる。',
+    description: '中身がわからない箱を売っているらしいサイト。何が届くかは開けてからのお楽しみ。',
     cookie: {
       name: 'mystery_alpha',
       valueGenerator: () => `mx_${rand(12)}`,
@@ -517,9 +517,9 @@ export const SITES: Site[] = [
   },
   {
     id: 'mystery-beta',
-    name: '暗号サービス β',
+    name: 'CryptoMail',
     category: 'special',
-    description: '謎の暗号通信サービス。大学メールでログインすると Cookie がもらえる。',
+    description: 'エンドツーエンド暗号化を謳うメールサービス。大学のメールアドレスで登録するとCookieを取得する。',
     cookie: {
       name: 'mystery_beta',
       valueGenerator: () => `mb_${rand(16)}`,
@@ -533,9 +533,9 @@ export const SITES: Site[] = [
   },
   {
     id: 'mystery-gamma',
-    name: '危険なサイト γ',
+    name: 'PrizeWinner',
     category: 'honeypot',
-    description: '見た目は普通。でも「賞品を受け取る」ボタンを押すと罠にはまる。',
+    description: '派手なポップアップで「あなたが選ばれました」と表示するサイト。受け取るボタンが画面を埋め尽くす。',
     cookie: {
       name: 'mystery_gamma',
       valueGenerator: () => `mg_${rand(8)}`,
@@ -550,9 +550,9 @@ export const SITES: Site[] = [
   },
   {
     id: 'mystery-delta',
-    name: '研究機関 δ',
+    name: 'SecurityLab',
     category: 'special',
-    description: '何かを研究している機関。セキュリティ知識を問うアンケートに答えると Cookie がもらえる。',
+    description: '研究機関を名乗るサイト。セキュリティ意識調査に答えるとCookieを取得する。',
     cookie: {
       name: 'mystery_delta',
       valueGenerator: () => `md_${rand(14)}`,
@@ -566,9 +566,9 @@ export const SITES: Site[] = [
   },
   {
     id: 'mystery-omega',
-    name: '伝説のサイト Ω',
+    name: 'CyberLegend',
     category: 'special',
-    description: 'ネット上の都市伝説として語り継がれる謎のサービス。クイズに全問正解すると Cookie がもらえる。',
+    description: 'ネットの都市伝説サイト。難解なクイズに全問正解できた者だけCookieを取得する。',
     cookie: {
       name: 'mystery_omega',
       valueGenerator: () => `mo_${rand(20)}`,
@@ -586,7 +586,7 @@ export const SITES: Site[] = [
     id: 'ghost-site',
     name: 'GhostSite',
     category: 'special',
-    description: 'Max-Age=10のCookieを発行する謎のサイト。取得してもすぐ消える…？',
+    description: 'Max-Age=10秒のCookieを発行する。取得しても10秒で消える。ゲーム終盤に取れば実質持ち越せる。',
     cookie: {
       name: 'ghost_cookie',
       valueGenerator: () => `👻${rand(12)}`,
