@@ -84,6 +84,17 @@ function SingleGameInner() {
   const me = players.get(myPlayerId);
   const allPlayers = [...players.values()];
 
+  const [cookieCleared, setCookieCleared] = useState(false);
+  async function handleClearCookies() {
+    await fetch('/api/clear-cookies', { method: 'POST' });
+    // JS-accessible cookies も念のため消す
+    document.cookie.split(';').forEach(c => {
+      const name = c.split('=')[0].trim();
+      document.cookie = `${name}=; Max-Age=0; path=/`;
+    });
+    setCookieCleared(true);
+  }
+
   // Result screen
   if (phase === 'result') {
     const sorted = [...allPlayers].sort((a, b) => b.score - a.score);
@@ -122,6 +133,14 @@ function SingleGameInner() {
               <p className="mt-2 text-xs text-gray-500">
                 F12 → Application → Cookies でブラウザに保存されたCookieを確認できます
               </p>
+              <button
+                type="button"
+                onClick={handleClearCookies}
+                disabled={cookieCleared}
+                className="mt-3 w-full py-2 bg-red-700 hover:bg-red-600 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-lg transition-colors"
+              >
+                {cookieCleared ? '✅ Cookieをリセット済み' : '🗑️ ブラウザのCookieをリセット'}
+              </button>
             </div>
           )}
 
