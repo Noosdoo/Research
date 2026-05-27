@@ -160,13 +160,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const ai = players.get(aiId);
     if (!ai || ai.isVisiting) return;
 
-    // 40%の確率でサボる
-    if (Math.random() < 0.4) return;
+    // 60%の確率でサボる
+    if (Math.random() < 0.6) return;
 
     const candidates = SITES
       .map(s => {
-        // ハニーポットを10%の確率で踏む（プレイヤーと同じリスク）
-        if (s.isHoneypot && Math.random() > 0.1) return null;
+        // ハニーポットを25%の確率で踏む
+        if (s.isHoneypot && Math.random() > 0.25) return null;
         let score = s.cookie.points;
         score -= RARITY_MS[s.rarity] / 100;
         if (ai.cookies.has(s.id)) score *= 0.3;
