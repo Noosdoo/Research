@@ -55,12 +55,35 @@ export default function LobbyPage() {
       .catch(() => setAutoUrl(window.location.origin));
   }, []);
 
+  const floatingCookies = [
+    { emoji: '🍪', x: '8%',  delay: 0,   dur: 7 },
+    { emoji: '🍪', x: '22%', delay: 1.5, dur: 9 },
+    { emoji: '🔐', x: '38%', delay: 0.8, dur: 8 },
+    { emoji: '🍪', x: '55%', delay: 2.2, dur: 6 },
+    { emoji: '🛡️', x: '70%', delay: 0.4, dur: 10 },
+    { emoji: '🍪', x: '83%', delay: 1.8, dur: 7 },
+    { emoji: '🍪', x: '93%', delay: 3,   dur: 8 },
+  ];
+
   return (
-    <main className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gray-950 flex items-center justify-center p-4 overflow-hidden relative">
+      {/* floating background decorations */}
+      {floatingCookies.map((c, i) => (
+        <motion.span
+          key={i}
+          className="absolute text-2xl select-none pointer-events-none opacity-10"
+          style={{ left: c.x, bottom: '-10%' }}
+          animate={{ y: [0, -900], opacity: [0, 0.15, 0.15, 0] }}
+          transition={{ duration: c.dur, delay: c.delay, repeat: Infinity, ease: 'linear' }}
+        >
+          {c.emoji}
+        </motion.span>
+      ))}
+
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-center flex flex-col items-center gap-8 w-full max-w-sm"
+        className="text-center flex flex-col items-center gap-8 w-full max-w-sm relative z-10"
       >
         <div>
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight whitespace-nowrap">🍪 Cookie Heist</h1>

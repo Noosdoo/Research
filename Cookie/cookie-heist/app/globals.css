@@ -25,6 +25,15 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+@keyframes pulse-slow {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.75; }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2.5s ease-in-out infinite;
+}
+
 @keyframes shake {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
   15%       { transform: translate(-7px, 2px) rotate(-1.5deg); }
