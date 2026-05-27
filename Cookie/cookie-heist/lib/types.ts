@@ -86,4 +86,14 @@ export interface StealEvent {
   at: number;
 }
 
+export interface ExpireEvent {
+  id: string;
+  playerId: PlayerId;
+  siteId: SiteId;
+  siteName: string;
+  cookieName: string;
+  points: number;
+  at: number;
+}
+
 export type AIPersonality = 'collector' | 'thief' | 'balanced';

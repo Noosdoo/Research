@@ -29,8 +29,8 @@ function SingleGameInner() {
 
   const {
     phase, timeLeft, players, myPlayerId,
-    sitesState, stealEvents,
-    initGame, tickTimer, processAITick, clearStealEvent,
+    sitesState, stealEvents, expireEvents,
+    initGame, tickTimer, processAITick, clearStealEvent, clearExpireEvent,
   } = useGameStore();
 
   const [category, setCategory] = useState<SiteCategory | 'all'>('all');
@@ -244,9 +244,11 @@ function SingleGameInner() {
 
       <StealNotification
         events={stealEvents}
+        expireEvents={expireEvents}
         players={players}
         myPlayerId={myPlayerId}
         onDismiss={clearStealEvent}
+        onDismissExpire={clearExpireEvent}
       />
     </div>
   );

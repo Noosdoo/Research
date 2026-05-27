@@ -9,6 +9,7 @@ import type {
   SiteState,
   OwnedCookie,
   StealEvent,
+  ExpireEvent,
   Rarity,
 } from '@/lib/types';
 
@@ -74,6 +75,7 @@ interface GameStore {
 
   // notifications
   stealEvents: StealEvent[];
+  expireEvents: ExpireEvent[];
 
   // actions
   initGame: (aiCount: number, duration?: number) => void;
@@ -82,6 +84,7 @@ interface GameStore {
   processAITick: (aiId: PlayerId) => void;
   endGame: () => void;
   clearStealEvent: (id: string) => void;
+  clearExpireEvent: (id: string) => void;
 
   // online-mode actions
   initOnlineGame: (data: {
@@ -112,6 +115,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   myPlayerId: 'player-human',
   sitesState: initSiteStates(),
   stealEvents: [],
+  expireEvents: [],
 
   initGame(aiCount: number, duration?: number) {
     const dur = Math.min(180, Math.max(30, duration ?? GAME_DURATION));
@@ -133,6 +137,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       myPlayerId: 'player-human',
       sitesState: initSiteStates(),
       stealEvents: [],
+      expireEvents: [],
     });
   },
 
@@ -143,9 +148,55 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const timeLeft = Math.max(0, gameDuration - elapsed);
     if (timeLeft === 0) {
       get().endGame();
-    } else {
-      set({ timeLeft });
+      return;
     }
+
+    // Check cookie expiry for all players
+    const now = Date.now();
+    const { players, sitesState, expireEvents } = get();
+    const newPlayers = new Map(players);
+    const newSites = new Map(sitesState);
+    const newExpireEvents: ExpireEvent[] = [];
+    let changed = false;
+
+    for (const [pid, player] of players) {
+      for (const [sid, owned] of player.cookies) {
+        const site = SITES.find(s => s.id === sid);
+        const maxAge = site?.cookie.attributes.maxAge;
+        if (!maxAge) continue;
+        const acquiredAt = owned.acquiredAt instanceof Date
+          ? owned.acquiredAt.getTime()
+          : new Date(owned.acquiredAt as unknown as string).getTime();
+        if (now - acquiredAt < maxAge * 1000) continue;
+
+        const cur = newPlayers.get(pid)!;
+        const newCookies = new Map(cur.cookies);
+        newCookies.delete(sid);
+        newPlayers.set(pid, { ...cur, cookies: newCookies, score: cur.score - owned.points });
+
+        const ss = newSites.get(sid);
+        if (ss?.ownerIds.includes(pid)) {
+          newSites.set(sid, { ...ss, ownerIds: ss.ownerIds.filter(id => id !== pid) });
+        }
+
+        newExpireEvents.push({
+          id: `expire-${now}-${Math.random()}`,
+          playerId: pid, siteId: sid,
+          siteName: site!.name, cookieName: owned.cookieName,
+          points: owned.points, at: now,
+        });
+        changed = true;
+      }
+    }
+
+    set({
+      timeLeft,
+      ...(changed ? {
+        players: newPlayers,
+        sitesState: newSites,
+        expireEvents: [...expireEvents, ...newExpireEvents].slice(-10),
+      } : {}),
+    });
   },
 
   completeVisit(siteId: SiteId, pointOverride?: number) {
@@ -201,6 +252,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set(s => ({ stealEvents: s.stealEvents.filter(e => e.id !== id) }));
   },
 
+  clearExpireEvent(id: string) {
+    set(s => ({ expireEvents: s.expireEvents.filter(e => e.id !== id) }));
+  },
+
   // ── Online mode ───────────────────────────────────────────────────
   initOnlineGame({ gameId, myPlayerId, players: pObj, sitesState: ssObj }) {
     const players = new Map<PlayerId, Player>();
@@ -217,7 +272,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       mode: 'online', onlineGameId: gameId,
       gameId, myPlayerId, players, sitesState,
       phase: 'playing', timeLeft: GAME_DURATION,
-      stealEvents: [], startTime: Date.now(),
+      stealEvents: [], expireEvents: [], startTime: Date.now(),
     });
   },
 

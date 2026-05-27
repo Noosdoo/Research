@@ -179,9 +179,11 @@ export default function MultiplayerGamePage() {
 
       <StealNotification
         events={stealEvents}
+        expireEvents={[]}
         players={players}
         myPlayerId={myPlayerId}
         onDismiss={clearStealEvent}
+        onDismissExpire={() => {}}
       />
     </div>
   );
