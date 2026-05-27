@@ -55,7 +55,7 @@ function HoneypotPopup({ site, onComplete, onCancel }: Props) {
             onMouseEnter={shuffleClose}
             animate={{ top: `${closePos.top}%`, left: `${closePos.left}%` }}
             transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-            className="absolute text-gray-300 hover:text-gray-500 text-xs font-bold z-10 select-none"
+            className="absolute text-gray-500 hover:text-gray-700 text-sm font-bold z-10 select-none"
             title="閉じる"
           >
             ✕
