@@ -17,10 +17,10 @@ const GAME_DURATION = 3 * 60; // seconds
 const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b'];
 
 const RARITY_MS: Record<Rarity, number> = {
-  common: 1000,
-  uncommon: 2000,
-  rare: 3000,
-  legendary: 5000,
+  common: 8000,
+  uncommon: 12000,
+  rare: 18000,
+  legendary: 25000,
 };
 
 function makePlayer(id: PlayerId, name: string, isAI: boolean, colorIdx: number): Player {
@@ -372,7 +372,7 @@ function aiVisitSite(
   newSites.set(siteId, { ...ss, currentVisitorIds: [...ss.currentVisitorIds, aiId] });
   set({ players: newPlayers, sitesState: newSites });
 
-  const delay = RARITY_MS[site.rarity] + Math.random() * 500;
+  const delay = RARITY_MS[site.rarity] + Math.random() * 8000;
   setTimeout(() => {
     if (get().phase !== 'playing') {
       finishVisit(get, set, siteId, aiId, false);
