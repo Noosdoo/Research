@@ -19,6 +19,7 @@ import Ranking from '@/components/Ranking';
 import PlayerStatus from '@/components/PlayerStatus';
 import CategoryFilter from '@/components/CategoryFilter';
 import StealNotification from '@/components/StealNotification';
+import CookieInspector from '@/components/CookieInspector';
 
 function SingleGameInner() {
   const searchParams = useSearchParams();
@@ -36,6 +37,24 @@ function SingleGameInner() {
   const [shuffleSeed, setShuffleSeed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const aiRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const shakeRef = useRef<HTMLDivElement>(null);
+  const lastEventId = useRef('');
+
+  // 奪われたとき画面シェイク
+  useEffect(() => {
+    if (stealEvents.length === 0) return;
+    const last = stealEvents[stealEvents.length - 1];
+    if (last.id === lastEventId.current) return;
+    lastEventId.current = last.id;
+    if (last.from === myPlayerId) {
+      const el = shakeRef.current;
+      if (!el) return;
+      el.classList.remove('screen-shake');
+      void el.offsetWidth; // reflow でアニメーションをリセット
+      el.classList.add('screen-shake');
+      setTimeout(() => el.classList.remove('screen-shake'), 600);
+    }
+  }, [stealEvents, myPlayerId]);
 
   // /visit/[id] から戻ってきた場合はリセットしない
   useEffect(() => {
@@ -126,21 +145,28 @@ function SingleGameInner() {
           </div>
 
           {me && (
-            <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-300">
-              <p className="font-semibold text-white mb-2">📊 あなたの統計</p>
-              <p>訪問回数: {me.stats.visitCount}</p>
-              <p>奪取: {me.stats.stealCount} / 喪失: {me.stats.stolenCount}</p>
-              <p className="mt-2 text-xs text-gray-500">
-                F12 → Application → Cookies でブラウザに保存されたCookieを確認できます
-              </p>
-              <button
-                type="button"
-                onClick={handleClearCookies}
-                disabled={cookieCleared}
-                className="mt-3 w-full py-2 bg-red-700 hover:bg-red-600 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-lg transition-colors"
-              >
-                {cookieCleared ? '✅ Cookieをリセット済み' : '🗑️ ブラウザのCookieをリセット'}
-              </button>
+            <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-300 flex flex-col gap-3">
+              <div>
+                <p className="font-semibold text-white mb-1">📊 あなたの統計</p>
+                <p>訪問回数: {me.stats.visitCount}</p>
+                <p>奪取: {me.stats.stealCount} / 喪失: {me.stats.stolenCount}</p>
+              </div>
+
+              <CookieInspector cookies={me.cookies} />
+
+              <div>
+                <p className="text-xs text-gray-500">
+                  F12 → Application → Cookies でブラウザに保存されたCookieを確認できます
+                </p>
+                <button
+                  type="button"
+                  onClick={handleClearCookies}
+                  disabled={cookieCleared}
+                  className="mt-2 w-full py-2 bg-red-700 hover:bg-red-600 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-lg transition-colors"
+                >
+                  {cookieCleared ? '✅ Cookieをリセット済み' : '🗑️ ブラウザのCookieをリセット'}
+                </button>
+              </div>
             </div>
           )}
 
@@ -166,7 +192,7 @@ function SingleGameInner() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col">
+    <div ref={shakeRef} className="min-h-screen bg-gray-950 flex flex-col">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
         <span className="text-white font-black text-xl whitespace-nowrap">🍪 Cookie Heist</span>

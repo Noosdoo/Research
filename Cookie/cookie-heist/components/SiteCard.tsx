@@ -104,7 +104,7 @@ export default function SiteCard({
         </div>
       )}
 
-      {/* visiting indicators (AI) */}
+      {/* visiting indicators */}
       {visitors.length > 0 && (
         <div className="flex gap-0.5 flex-wrap items-center">
           <span className="text-[9px] text-yellow-400 animate-pulse">訪問中</span>
@@ -116,6 +116,17 @@ export default function SiteCard({
               style={{ background: p.color }}
             />
           ))}
+        </div>
+      )}
+
+      {/* loading bar while anyone is visiting */}
+      {visitors.length > 0 && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 overflow-hidden rounded-b-md">
+          <motion.div
+            className="absolute inset-y-0 w-1/2 bg-yellow-400 opacity-80"
+            animate={{ x: ['-100%', '200%'] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+          />
         </div>
       )}
     </motion.button>
