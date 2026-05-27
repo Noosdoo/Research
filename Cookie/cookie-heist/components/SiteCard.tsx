@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import type { Site, SiteState, Player } from '@/lib/types';
 
@@ -55,29 +56,42 @@ export default function SiteCard({ site, siteState, players, myPlayerId, onVisit
   const isHoneypot  = !!site.isHoneypot;
   const isLegendary = site.rarity === 'legendary' && !isHoneypot;
 
+  // Countdown for short-lived owned cookies (maxAge ≤ 120s)
+  const myOwnedCookie = isMine ? players.get(myPlayerId)?.cookies.get(site.id) : undefined;
+  const maxAge = site.cookie.attributes.maxAge;
+  const showCountdown = myOwnedCookie != null && maxAge != null && maxAge <= 120;
+  const acquiredAtMs = myOwnedCookie?.acquiredAt instanceof Date
+    ? myOwnedCookie.acquiredAt.getTime()
+    : myOwnedCookie?.acquiredAt != null
+    ? new Date(myOwnedCookie.acquiredAt as unknown as string).getTime()
+    : null;
+  const [remaining, setRemaining] = useState<number | null>(null);
+  useEffect(() => {
+    if (!showCountdown || acquiredAtMs == null) { setRemaining(null); return; }
+    const tick = () => setRemaining(Math.max(0, maxAge! - (Date.now() - acquiredAtMs) / 1000));
+    tick();
+    const id = setInterval(tick, 200);
+    return () => clearInterval(id);
+  }, [showCountdown, acquiredAtMs, maxAge]);
+
   const borderClass = isHoneypot ? 'border-red-700'  : RARITY_BORDER[site.rarity];
   const bgClass     = isHoneypot ? 'bg-red-950'      : RARITY_BG[site.rarity];
   const badgeClass  = isHoneypot ? 'bg-red-800 text-red-200' : RARITY_BADGE[site.rarity];
   const badgeLabel  = isHoneypot ? '⚠️ 危険' : RARITY_LABEL[site.rarity];
 
-  const glowStyle = isLegendary
-    ? { boxShadow: '0 0 14px rgba(234,179,8,0.45), 0 0 4px rgba(234,179,8,0.2)' }
-    : isMine
-    ? { boxShadow: '0 0 10px rgba(34,197,94,0.35)' }
-    : isHoneypot
-    ? { boxShadow: '0 0 8px rgba(239,68,68,0.25)' }
-    : {};
+  const glowClass = isLegendary ? 'glow-legendary'
+    : isMine      ? 'glow-mine'
+    : isHoneypot  ? 'glow-honeypot'
+    : '';
 
   return (
     <motion.button
       whileHover={{ scale: 1.04 }}
       whileTap={{ scale: 0.96 }}
       onClick={onVisit}
-      style={glowStyle}
       className={[
         'relative flex flex-col gap-1 p-2 rounded-lg border-2 text-left cursor-pointer transition-all min-h-[96px]',
-        borderClass,
-        bgClass,
+        borderClass, bgClass, glowClass,
         isLegendary ? 'animate-pulse-slow' : '',
       ].join(' ')}
     >
@@ -110,6 +124,13 @@ export default function SiteCard({ site, siteState, players, myPlayerId, onVisit
         </span>
       )}
 
+      {/* expiry countdown */}
+      {remaining !== null && (
+        <span className={`text-[10px] font-black tabular-nums ${remaining <= 3 ? 'text-red-400 animate-pulse' : 'text-amber-300'}`}>
+          ⏰ {Math.ceil(remaining)}秒
+        </span>
+      )}
+
       {/* template label */}
       <span className="text-[10px] text-gray-500 mt-auto">
         {TEMPLATE_LABEL[site.template]}
@@ -123,7 +144,7 @@ export default function SiteCard({ site, siteState, players, myPlayerId, onVisit
               key={p.id}
               title={p.name}
               className={`w-3 h-3 rounded-full border ${isMine && p.id === myPlayerId ? 'border-green-400' : 'border-white/60'}`}
-              style={{ background: p.color }}
+              style={{ '--dot-color': p.color, background: 'var(--dot-color)' } as React.CSSProperties}
             />
           ))}
         </div>
@@ -138,7 +159,7 @@ export default function SiteCard({ site, siteState, players, myPlayerId, onVisit
               key={p.id}
               title={p.name}
               className="w-2 h-2 rounded-full border border-yellow-400 animate-pulse"
-              style={{ background: p.color }}
+              style={{ '--dot-color': p.color, background: 'var(--dot-color)' } as React.CSSProperties}
             />
           ))}
         </div>

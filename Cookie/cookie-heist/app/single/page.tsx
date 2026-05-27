@@ -20,6 +20,7 @@ import PlayerStatus from '@/components/PlayerStatus';
 import CategoryFilter from '@/components/CategoryFilter';
 import StealNotification from '@/components/StealNotification';
 import CookieInspector from '@/components/CookieInspector';
+import Confetti from '@/components/Confetti';
 
 function SingleGameInner() {
   const searchParams = useSearchParams();
@@ -120,6 +121,7 @@ function SingleGameInner() {
 
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
+        <Confetti active={iWon} />
         <div className="max-w-lg w-full bg-gray-900 rounded-2xl p-8 flex flex-col gap-6">
           <h1 className="text-3xl font-black text-white text-center">
             {iWon ? '🎉 勝利！' : '😢 ゲーム終了'}
