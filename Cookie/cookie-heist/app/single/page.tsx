@@ -198,7 +198,16 @@ function SingleGameInner() {
       <header className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
         <span className="text-white font-black text-xl whitespace-nowrap">🍪 Cookie Heist</span>
         <Timer timeLeft={timeLeft} />
-        <span className="text-gray-400 text-sm">{me ? `${me.score}pt` : ''}</span>
+        <div className="flex items-center gap-3">
+          <span className="text-gray-400 text-sm">{me ? `${me.score}pt` : ''}</span>
+          <button
+            type="button"
+            onClick={() => { useGameStore.getState().resetToLobby(); router.push('/'); }}
+            className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+          >
+            退出
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
