@@ -80,7 +80,7 @@ interface GameStore {
   // actions
   initGame: (aiCount: number, duration?: number) => void;
   tickTimer: () => void;
-  completeVisit: (siteId: SiteId, pointOverride?: number) => void;
+  completeVisit: (siteId: SiteId, pointOverride?: number, cookieValue?: string) => void;
   processAITick: (aiId: PlayerId) => void;
   endGame: () => void;
   clearStealEvent: (id: string) => void;
@@ -200,10 +200,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     });
   },
 
-  completeVisit(siteId: SiteId, pointOverride?: number) {
+  completeVisit(siteId: SiteId, pointOverride?: number, cookieValue?: string) {
     const { phase, myPlayerId } = get();
     if (phase !== 'playing') return;
-    finishVisit(get, set, siteId, myPlayerId, true, pointOverride);
+    finishVisit(get, set, siteId, myPlayerId, true, pointOverride, cookieValue);
   },
 
   processAITick(aiId: PlayerId) {
@@ -326,6 +326,7 @@ function finishVisit(
   playerId: PlayerId,
   success: boolean,
   pointOverride?: number,
+  cookieValueOverride?: string,
 ) {
   const { players, sitesState } = get();
   const site = SITES.find(s => s.id === siteId)!;
@@ -386,7 +387,7 @@ function finishVisit(
 
   // add cookie to player
   const earnedPoints = pointOverride ?? site.cookie.points;
-  const cookieValue = site.cookie.valueGenerator();
+  const cookieValue = cookieValueOverride ?? site.cookie.valueGenerator();
   const owned: OwnedCookie = {
     siteId,
     cookieName: site.cookie.name,

@@ -61,9 +61,17 @@ export default function VisitPage() {
     if (phase === 'lobby') router.replace('/');
   }, [phase, router, returnUrl]);
 
-  const handleComplete = useCallback((points?: number) => {
+  const handleComplete = useCallback(async (points?: number) => {
     completed.current = true;
-    fetch(`/api/sites/${id}`, { credentials: 'include' }).catch(() => {});
+
+    let cookieValue: string | undefined;
+    try {
+      const res = await fetch(`/api/sites/${id}`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        cookieValue = data.value as string;
+      }
+    } catch {}
 
     if (isOnline) {
       getSocket().emit('game:visit-complete', {
@@ -72,7 +80,7 @@ export default function VisitPage() {
         earnedPoints: points ?? site?.cookie.points ?? 0,
       });
     } else {
-      completeVisit(id, points);
+      completeVisit(id, points, cookieValue);
     }
     router.push(returnUrl);
   }, [id, site, isOnline, completeVisit, returnUrl, router]);
