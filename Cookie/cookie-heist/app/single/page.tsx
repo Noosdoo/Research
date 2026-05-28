@@ -203,11 +203,11 @@ function SingleGameInner() {
         <span className="text-white font-black text-xl whitespace-nowrap">🍪 Cookie Heist</span>
         <Timer timeLeft={timeLeft} />
         <div className="flex items-center gap-3">
-          <span className="text-gray-400 text-sm">{me ? `${me.score}pt` : ''}</span>
+          <span className="text-white font-black text-base">{me ? `${me.score}pt` : ''}</span>
           <button
             type="button"
             onClick={() => { useGameStore.getState().resetToLobby(); router.push('/'); }}
-            className="text-xs text-gray-500 hover:text-red-400 transition-colors"
+            className="text-xs font-bold px-3 py-1 rounded-lg bg-gray-700 hover:bg-red-700 text-gray-200 hover:text-white transition-colors"
           >
             退出
           </button>

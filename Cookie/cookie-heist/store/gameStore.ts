@@ -222,16 +222,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
         let score = s.cookie.points;
         score -= RARITY_MS[s.rarity] / 1000;
         if (ai.cookies.has(s.id)) score *= 0.3;
-        // 他プレイヤー所有サイトを積極的に狙う
-        const othersOwn = sitesState.get(s.id)!.ownerIds.filter(id => id !== aiId).length;
-        score += othersOwn * 25;
+        const ss = sitesState.get(s.id)!;
+        const ownerIds = ss.ownerIds;
+        // 人間プレイヤーが所有している同意サイトを積極的に奪う
+        const humanOwns = ownerIds.filter(id => {
+          const p = players.get(id);
+          return p && !p.isAI && id !== aiId;
+        }).length;
+        if (s.template === 'consent-button' && humanOwns > 0) score += humanOwns * 50;
+        // 他プレイヤー所有サイトの一般奪取インセンティブ
+        const othersOwn = ownerIds.filter(id => id !== aiId).length;
+        score += othersOwn * 15;
         // 他のAIが訪問中のサイトを避ける
-        const visiting = sitesState.get(s.id)!.currentVisitorIds.filter(id => id !== aiId).length;
+        const visiting = ss.currentVisitorIds.filter(id => id !== aiId).length;
         score -= visiting * 20;
-        return { id: s.id, score, rarity: s.rarity };
+        return { id: s.id, score, rarity: s.rarity, template: s.template };
       })
       .filter(Boolean)
-      .sort((a, b) => b!.score - a!.score) as { id: string; score: number; rarity: Rarity }[];
+      .sort((a, b) => b!.score - a!.score) as { id: string; score: number; rarity: Rarity; template: string }[];
 
     // 40%でランダム選択（上位5件から）
     const pick = Math.random() < 0.4
@@ -436,7 +444,10 @@ function aiVisitSite(
   newSites.set(siteId, { ...ss, currentVisitorIds: [...ss.currentVisitorIds, aiId] });
   set({ players: newPlayers, sitesState: newSites });
 
-  const delay = RARITY_MS[site.rarity] * 0.6 + Math.random() * 3000;
+  const isConsent = site.template === 'consent-button';
+  const delay = isConsent
+    ? RARITY_MS[site.rarity] * 0.3 + Math.random() * 1500
+    : RARITY_MS[site.rarity] * 0.6 + Math.random() * 3000;
   setTimeout(() => {
     if (get().phase !== 'playing') {
       finishVisit(get, set, siteId, aiId, false);
