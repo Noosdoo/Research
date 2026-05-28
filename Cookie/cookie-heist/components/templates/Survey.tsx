@@ -6,7 +6,6 @@ import type { Site } from '@/lib/types';
 interface Question {
   q: string;
   options: string[];
-  correct?: number; // index of correct option; undefined = preference (always correct)
 }
 
 const QUESTIONS: Record<string, Question[]> = {
@@ -22,90 +21,42 @@ const QUESTIONS: Record<string, Question[]> = {
   ],
   'tax-agency': [
     {
-      q: 'フィッシング詐欺の説明として正しいものはどれか。',
-      options: [
-        '正規サービスに似せた偽サイトに誘導してIDやパスワードを詐取する手口',
-        'サーバに大量のリクエストを送りサービスを妨害する攻撃',
-        '通信を暗号化せず平文でやりとりする通信方式',
-        'ソフトウェアの脆弱性を突いてシステムに侵入する攻撃',
-      ],
-      correct: 0,
+      q: '確定申告をしたことはありますか？',
+      options: ['毎年している', '数回ある', 'まだしたことがない', 'わからない'],
     },
     {
-      q: '行政Webサービスがセッション管理にCookieを使う主な目的はどれか。',
-      options: [
-        'ログイン状態をサーバとブラウザ間で維持するため',
-        'ユーザのパスワードをブラウザに保存するため',
-        'ページのデザインをカスタマイズするため',
-        'サーバのIPアドレスをクライアントから隠すため',
-      ],
-      correct: 0,
+      q: '税金や行政手続きのオンライン化についてどう思いますか？',
+      options: ['便利で積極的に使いたい', '便利だが不安もある', 'あまり使いたくない', 'わからない'],
     },
   ],
   'secure-bank': [
     {
-      q: 'TLSハンドシェイクの目的として正しいものはどれか。',
-      options: [
-        '通信を暗号化するための共通鍵を安全に交換し、サーバ証明書を検証する',
-        'サーバのIPアドレスをDNSで解決する',
-        'パスワードをハッシュ化してサーバに送信する',
-        'CookieをHTTPS通信のみに制限する',
-      ],
-      correct: 0,
+      q: 'インターネットバンキングを利用していますか？',
+      options: ['毎日使う', '週に数回', '月に数回', '使ったことがない'],
     },
     {
-      q: 'WebサイトのHTTPS証明書の役割として正しいものはどれか。',
-      options: [
-        'サーバの正当性を証明し、なりすましを防ぐ',
-        'ページの表示速度を向上させる',
-        'CookieをHTTPS通信のみに自動的に制限する',
-        'XSS攻撃を自動的に検出・防止する',
-      ],
-      correct: 0,
+      q: 'ネットバンキングのセキュリティに不安を感じますか？',
+      options: ['全く感じない', '少し感じる', 'かなり感じる', '使わないようにしている'],
     },
   ],
   'crypto-exchange': [
     {
-      q: '公開鍵暗号方式でデータを暗号化・復号する組み合わせとして正しいものはどれか。',
-      options: [
-        '受信者の公開鍵で暗号化し、受信者の秘密鍵で復号する',
-        '送信者の秘密鍵で暗号化し、送信者の公開鍵で復号する',
-        '共通の秘密鍵で暗号化・復号する',
-        '受信者の秘密鍵で暗号化し、公開鍵で復号する',
-      ],
-      correct: 0,
+      q: '仮想通貨・暗号資産に興味はありますか？',
+      options: ['すでに投資している', '興味はある', 'あまり興味ない', '全く興味ない'],
     },
     {
-      q: 'ハッシュ関数の特性として正しいものはどれか。',
-      options: [
-        '同じ入力からは常に同じハッシュ値が得られ、ハッシュ値から元データを復元できない',
-        'ハッシュ値から元のデータを復元できる',
-        '入力の長さに比例した長さのハッシュ値が出力される',
-        '異なる入力から必ず異なるハッシュ値が出力される',
-      ],
-      correct: 0,
+      q: 'ブロックチェーン技術についてどれくらい知っていますか？',
+      options: ['よく知っている', '少し知っている', '聞いたことがある程度', '全く知らない'],
     },
   ],
   'gold-vault': [
     {
-      q: 'PKI（公開鍵基盤）における電子証明書の説明として正しいものはどれか。',
-      options: [
-        '認証局（CA）が公開鍵とその所有者の対応を保証する電子文書',
-        '送信データを暗号化するための共通鍵そのもの',
-        'パスワードを一方向に変換したハッシュ値',
-        'セッション管理に使われる乱数値',
-      ],
-      correct: 0,
+      q: '投資経験はありますか？',
+      options: ['株・投資信託をやっている', '少額だけやっている', '興味はあるが未経験', '全く興味ない'],
     },
     {
-      q: 'CookieのSecure属性が設定されていない場合のリスクとして最も適切なものはどれか。',
-      options: [
-        'HTTP（平文）通信でもCookieが送信されるため、通信路上での盗聴・窃取が可能になる',
-        'JavaScriptからCookieが読み取られる恐れがある',
-        'Cookieが意図より早く期限切れになる恐れがある',
-        'CSRF攻撃でCookieが悪用される恐れがある',
-      ],
-      correct: 0,
+      q: 'オンラインで金融商品を購入することに抵抗はありますか？',
+      options: ['全くない', '少しある', 'かなりある', 'したことがない'],
     },
   ],
   'online-casino': [
@@ -130,46 +81,22 @@ const QUESTIONS: Record<string, Question[]> = {
   ],
   'stock-ticker': [
     {
-      q: 'WebAPIの認証で使用されるBearerトークンの説明として正しいものはどれか。',
-      options: [
-        'HTTPリクエストのAuthorizationヘッダに付与されるアクセストークン',
-        'Cookieに保存されるセッションIDのこと',
-        'TLSで通信を暗号化するための証明書のこと',
-        'パスワードをBase64エンコードしたもの',
-      ],
-      correct: 0,
+      q: '株式投資に興味はありますか？',
+      options: ['すでにやっている', '興味がある', '少し気になる', '興味ない'],
     },
     {
-      q: 'CookieにSameSite属性を設定しない場合に生じる主なリスクはどれか。',
-      options: [
-        'CSRF（クロスサイトリクエストフォージェリ）攻撃に悪用される恐れがある',
-        'XSS（クロスサイトスクリプティング）攻撃に悪用される恐れがある',
-        'セッションが自動的に強制終了される恐れがある',
-        'Cookieが暗号化されず平文で保存される恐れがある',
-      ],
-      correct: 0,
+      q: 'AI投資予測ツールを使ってみたいですか？',
+      options: ['ぜひ使いたい', '参考程度なら', '信頼できないので使わない', 'わからない'],
     },
   ],
   'loan-easy': [
     {
-      q: 'URLの安全性を確認するうえで最も重要なことはどれか。',
-      options: [
-        'ドメイン名が正規サービスのものと完全に一致しているか確認する',
-        'URLが長いほど安全とみなしてよい',
-        'HTTPSであれば必ず正規のサイトである',
-        'URLにIPアドレスが含まれていなければ安全である',
-      ],
-      correct: 0,
+      q: 'ローン・クレジットを利用したことはありますか？',
+      options: ['定期的に使う', '数回使ったことがある', 'まだない', '使うつもりはない'],
     },
     {
-      q: 'Cookieの保存場所として正しいものはどれか。',
-      options: [
-        'ブラウザが管理するクライアント側のストレージに保存される',
-        'Webサーバのデータベースに保存される',
-        'OSのシステム領域に暗号化されて保存される',
-        'RAMにのみ一時的に保存され電源を切ると消える',
-      ],
-      correct: 0,
+      q: '「審査なし・即日融資」という広告を見たときどう思いますか？',
+      options: ['便利そうと思う', '怪しいと感じる', '詐欺だと思う', '気にしない'],
     },
   ],
   'esports-hub': [
@@ -182,62 +109,28 @@ const QUESTIONS: Record<string, Question[]> = {
       options: ['試合を観戦する', 'プレイして競う', 'コミュニティに参加', 'プロを目指したい'],
     },
   ],
+  'mystery-delta': [
+    {
+      q: 'セキュリティ研究に興味はありますか？',
+      options: ['非常に興味がある', '少し興味がある', 'あまり興味ない', '全く興味ない'],
+    },
+    {
+      q: 'ネットセキュリティの知識はどれくらいだと思いますか？',
+      options: ['詳しい方だと思う', '平均程度', 'あまり詳しくない', 'ほぼ知らない'],
+    },
+  ],
 };
 
-const FALLBACK_EASY: Question[] = [
+const FALLBACK: Question[] = [
   {
-    q: 'IPアドレスの説明として正しいものはどれか。',
-    options: [
-      'インターネット上の機器を識別するための数値アドレス',
-      'Webサイトのドメイン名の別称',
-      'ユーザのログインIDのこと',
-      'パケットの送信順序を管理する番号',
-    ],
-    correct: 0,
+    q: 'インターネットを1日に何時間使いますか？',
+    options: ['2時間未満', '2〜4時間', '4〜8時間', '8時間以上'],
+  },
+  {
+    q: 'スマートフォンでよく使うアプリの種類は？',
+    options: ['SNS・コミュニケーション', '動画・エンタメ', 'ニュース・情報収集', 'ゲーム・趣味'],
   },
 ];
-
-const FALLBACK_HARD: Question[] = [
-  {
-    q: '多要素認証（MFA）で「所持」に分類されるものはどれか。',
-    options: [
-      'スマートフォンの認証アプリが生成するワンタイムパスワード',
-      'ユーザが設定したパスワード',
-      '指紋や顔などの生体情報',
-      '秘密の質問に対する回答',
-    ],
-    correct: 0,
-  },
-  {
-    q: 'ポートスキャンの説明として正しいものはどれか。',
-    options: [
-      '対象サーバで稼働中のサービスを特定するために各ポートへの応答を確認する行為',
-      'サーバのWebページを検索エンジンが収集するクロール処理',
-      'ネットワーク上のIPアドレスを一覧化するスキャン',
-      'ドメイン名をIPアドレスに変換するDNS解決処理',
-    ],
-    correct: 0,
-  },
-];
-
-function shuffleQuestion(q: Question): Question {
-  const order = q.options.map((_, i) => i).sort(() => Math.random() - 0.5);
-  return {
-    ...q,
-    options: order.map(i => q.options[i]),
-    correct: q.correct !== undefined ? order.indexOf(q.correct) : undefined,
-  };
-}
-
-function calcPoints(base: number, questions: Question[], answers: string[]): number {
-  const scored = questions.filter(q => q.correct !== undefined);
-  if (scored.length === 0) return base;
-  const correctCount = questions.filter((q, i) =>
-    q.correct === undefined || answers[i] === q.options[q.correct]
-  ).length;
-  const ratio = correctCount / questions.length;
-  return Math.max(Math.floor(base * ratio), Math.floor(base * 0.2));
-}
 
 interface Props {
   site: Site;
@@ -246,24 +139,19 @@ interface Props {
 }
 
 export default function Survey({ site, onComplete, onCancel }: Props) {
-  const questions = useMemo(() => {
-    const base = QUESTIONS[site.id] ?? (site.rarity === 'rare' ? FALLBACK_HARD : FALLBACK_EASY);
-    return base.map(shuffleQuestion);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const questions = useMemo(() => QUESTIONS[site.id] ?? FALLBACK, []);
 
   const [answers, setAnswers] = useState<string[]>(Array(questions.length).fill(''));
   const [submitting, setSubmitting] = useState(false);
 
   const allAnswered = answers.every(a => a !== '');
-  const hasScored = questions.some(q => q.correct !== undefined);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!allAnswered) return;
     setSubmitting(true);
     await new Promise(r => setTimeout(r, 400));
-    onComplete(calcPoints(site.cookie.points, questions, answers));
+    onComplete(site.cookie.points);
   }
 
   return (
@@ -272,9 +160,7 @@ export default function Survey({ site, onComplete, onCancel }: Props) {
         <div className="text-center mb-6">
           <div className="text-4xl mb-2">{site.iconEmoji}</div>
           <h1 className="text-xl font-bold text-gray-900">{site.name}</h1>
-          <p className="text-gray-400 text-sm mt-1">
-            {hasScored ? '🔐 セキュリティ確認（正解率でポイントが変わります）' : '📋 ユーザーアンケート（回答するだけでOK）'}
-          </p>
+          <p className="text-gray-400 text-sm mt-1">📋 ユーザーアンケート</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
