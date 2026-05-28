@@ -48,7 +48,7 @@ export default function CookieInspector({ cookies }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <p className="font-semibold text-white text-sm">🍪 収集したCookie</p>
-      <div className="flex flex-col gap-1 max-h-[240px] overflow-y-auto pr-1">
+      <div className="flex flex-col gap-1">
         {[...cookies.entries()].map(([siteId, owned]) => {
           const site = getSiteById(siteId);
           const isOpen = selectedId === siteId;

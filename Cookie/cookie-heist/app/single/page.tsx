@@ -137,7 +137,7 @@ function SingleGameInner() {
                   p.id === myPlayerId ? 'bg-blue-900 border border-blue-500' : 'bg-gray-800',
                 ].join(' ')}
               >
-                <span className="text-xl w-7 text-center flex-shrink-0">{['🥇', '🥈', '🥉'][i] ?? `${i + 1}位`}</span>
+                <span className="text-xl w-8 text-center flex-shrink-0">{['🥇', '🥈', '🥉'][i] ?? `${i + 1}`}</span>
                 <span className={`w-3 h-3 rounded-full flex-shrink-0 ${COLOR_BG[p.color] ?? 'bg-gray-400'}`} />
                 <span className="text-white font-semibold flex-1">{p.name}</span>
                 <span className="text-green-300 font-bold">{p.score}pt</span>
