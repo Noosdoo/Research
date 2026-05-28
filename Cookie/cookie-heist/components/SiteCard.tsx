@@ -114,7 +114,7 @@ export default function SiteCard({ site, siteState, players, myPlayerId, onVisit
       </div>
 
       {/* points */}
-      {site.isMystery || site.template === 'survey' ? (
+      {site.isMystery || site.template === 'survey' || site.template === 'ad-popup' ? (
         <span className="text-base font-black leading-none text-yellow-300">???pt</span>
       ) : site.cookie.points < 0 ? (
         <span className="text-base font-black leading-none text-red-400">{site.cookie.points}pt</span>

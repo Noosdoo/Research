@@ -123,7 +123,7 @@ function SingleGameInner() {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
         <Confetti active={iWon} />
-        <div className="max-w-lg w-full bg-gray-900 rounded-2xl p-8 flex flex-col gap-6">
+        <div className="max-w-lg w-full bg-gray-900 rounded-2xl p-8 flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
           <h1 className="text-3xl font-black text-white text-center">
             {iWon ? '🎉 勝利！' : '😢 ゲーム終了'}
           </h1>
@@ -137,7 +137,7 @@ function SingleGameInner() {
                   p.id === myPlayerId ? 'bg-blue-900 border border-blue-500' : 'bg-gray-800',
                 ].join(' ')}
               >
-                <span className="text-xl">{['🥇', '🥈', '🥉'][i] ?? `${i + 1}`}</span>
+                <span className="text-xl w-7 text-center flex-shrink-0">{['🥇', '🥈', '🥉'][i] ?? `${i + 1}位`}</span>
                 <span className={`w-3 h-3 rounded-full flex-shrink-0 ${COLOR_BG[p.color] ?? 'bg-gray-400'}`} />
                 <span className="text-white font-semibold flex-1">{p.name}</span>
                 <span className="text-green-300 font-bold">{p.score}pt</span>
@@ -149,7 +149,7 @@ function SingleGameInner() {
           {me && (
             <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-300 flex flex-col gap-3">
               <div>
-                <p className="font-semibold text-white mb-1">📊 あなたの統計</p>
+                <p className="font-semibold text-white mb-1">📊 あなたの成績</p>
                 <p>訪問回数: {me.stats.visitCount}</p>
                 <p>奪取: {me.stats.stealCount} / 喪失: {me.stats.stolenCount}</p>
               </div>

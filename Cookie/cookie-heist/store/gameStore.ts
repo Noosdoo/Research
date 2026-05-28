@@ -212,30 +212,30 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const ai = players.get(aiId);
     if (!ai || ai.isVisiting) return;
 
-    // 60%の確率でサボる
-    if (Math.random() < 0.6) return;
+    // 30%の確率でサボる
+    if (Math.random() < 0.3) return;
 
     const candidates = SITES
       .map(s => {
-        // ハニーポットを25%の確率で踏む
-        if (s.isHoneypot && Math.random() > 0.25) return null;
+        // ハニーポットを40%の確率で踏む
+        if (s.isHoneypot && Math.random() > 0.4) return null;
         let score = s.cookie.points;
         score -= RARITY_MS[s.rarity] / 1000;
         if (ai.cookies.has(s.id)) score *= 0.3;
-        // 奪取インセンティブを弱める
+        // 他プレイヤー所有サイトを積極的に狙う
         const othersOwn = sitesState.get(s.id)!.ownerIds.filter(id => id !== aiId).length;
-        score += othersOwn * 8;
+        score += othersOwn * 25;
         // 他のAIが訪問中のサイトを避ける
         const visiting = sitesState.get(s.id)!.currentVisitorIds.filter(id => id !== aiId).length;
-        score -= visiting * 30;
+        score -= visiting * 20;
         return { id: s.id, score, rarity: s.rarity };
       })
       .filter(Boolean)
       .sort((a, b) => b!.score - a!.score) as { id: string; score: number; rarity: Rarity }[];
 
-    // 50%でランダム選択（上位8件から）
-    const pick = Math.random() < 0.5
-      ? candidates[Math.floor(Math.random() * Math.min(8, candidates.length))]
+    // 40%でランダム選択（上位5件から）
+    const pick = Math.random() < 0.4
+      ? candidates[Math.floor(Math.random() * Math.min(5, candidates.length))]
       : candidates[0];
 
     if (!pick) return;
@@ -436,7 +436,7 @@ function aiVisitSite(
   newSites.set(siteId, { ...ss, currentVisitorIds: [...ss.currentVisitorIds, aiId] });
   set({ players: newPlayers, sitesState: newSites });
 
-  const delay = RARITY_MS[site.rarity] + Math.random() * 8000;
+  const delay = RARITY_MS[site.rarity] * 0.6 + Math.random() * 3000;
   setTimeout(() => {
     if (get().phase !== 'playing') {
       finishVisit(get, set, siteId, aiId, false);

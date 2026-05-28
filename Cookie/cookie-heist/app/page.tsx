@@ -14,7 +14,7 @@ function QrView({ autoUrl, onBack }: { autoUrl: string; onBack: () => void }) {
   return (
     <motion.div key="qr" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
       className="flex flex-col items-center gap-4 w-full">
-      <p className="text-gray-300 text-sm font-semibold">📱 スマホでスキャンして参加！</p>
+      <p className="text-gray-300 text-sm font-semibold">🔗 友達を招待しよう！</p>
 
       {qrUrl ? (
         <div className="bg-white p-4 rounded-2xl">

@@ -117,7 +117,7 @@ export default function CreateRoomPage() {
           <div className="inline-flex flex-col items-center bg-gray-800 rounded-2xl px-8 py-4">
             <p className="text-gray-400 text-xs mb-1">ルームコード</p>
             <p className="text-5xl font-black text-white tracking-widest">{roomCode}</p>
-            <p className="text-gray-500 text-xs mt-1">/join-room で入力</p>
+            <p className="text-gray-500 text-xs mt-1">参加者はこのコードを入力</p>
           </div>
         </div>
 
