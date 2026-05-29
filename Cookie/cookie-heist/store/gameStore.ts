@@ -425,7 +425,7 @@ function finishVisit(
   set({
     players: newPlayers,
     sitesState: newSites,
-    stealEvents: [...get().stealEvents, ...newStealEvents],
+    stealEvents: [...get().stealEvents, ...newStealEvents].slice(-20),
   });
 }
 
