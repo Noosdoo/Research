@@ -464,6 +464,68 @@ export const SITES: Site[] = [
     iconEmoji: '🔧',
   },
 
+  // ── 追加サイト（第2弾） ───────────────────────────────────────────
+  {
+    id: 'map-navi',
+    name: 'MapNavi',
+    category: 'media',
+    description: '無料の地図ナビアプリ。「より良い案内のため」と称して現在地を常時記録している。',
+    cookie: {
+      name: 'navi_geo',
+      valueGenerator: () => `geo_${rand(14)}`,
+      attributes: { sameSite: 'Lax', maxAge: 86400 * 30 },
+      points: 44,
+    },
+    template: 'consent-button',
+    rarity: 'common',
+    iconEmoji: '🗺️',
+  },
+  {
+    id: 'cloud-drive',
+    name: 'CloudDrive',
+    category: 'ecommerce',
+    description: '容量無制限を謳うクラウドストレージ。一度ログインすると半年間ログイン状態が続く。',
+    cookie: {
+      name: 'cd_session',
+      valueGenerator: () => `cds_${rand(22)}`,
+      attributes: { secure: true, httpOnly: true, sameSite: 'Lax', maxAge: 86400 * 180 },
+      points: 95,
+    },
+    template: 'login-form',
+    rarity: 'uncommon',
+    iconEmoji: '☁️',
+  },
+  {
+    id: 'dating-match',
+    name: 'DatingMatch',
+    category: 'social',
+    description: '運命の相手をAIが探すマッチングアプリ。プロフィールより通信履歴の方が詳しく分析される。',
+    cookie: {
+      name: 'dm_token',
+      valueGenerator: () => `dm_${rand(18)}`,
+      attributes: { secure: true, sameSite: 'Lax', maxAge: 86400 * 14 },
+      points: 74,
+    },
+    template: 'survey',
+    rarity: 'uncommon',
+    iconEmoji: '💘',
+  },
+  {
+    id: 'whitehat-forum',
+    name: 'WhiteHatForum',
+    category: 'niche',
+    description: '善良なハッカーが脆弱性を議論する掲示板。入室にはセキュリティの知識が問われる。',
+    cookie: {
+      name: 'wh_member',
+      valueGenerator: () => `wh_${rand(20)}`,
+      attributes: { secure: true, httpOnly: true, sameSite: 'Strict', maxAge: 86400 * 7 },
+      points: 140,
+    },
+    template: 'quiz',
+    rarity: 'rare',
+    iconEmoji: '🛡️',
+  },
+
   // ── honeypot (ad-popup, negative points) ─────────────────────────
   {
     id: 'secuure-bank',
