@@ -36,6 +36,7 @@ function SingleGameInner() {
   } = useGameStore();
 
   const [category, setCategory] = useState<SiteCategory | 'all'>('all');
+  const [now, setNow] = useState(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const aiRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const shakeRef = useRef<HTMLDivElement>(null);
@@ -64,10 +65,10 @@ function SingleGameInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // timer tick
+  // timer tick + now update (single interval drives both)
   useEffect(() => {
     if (phase !== 'playing') return;
-    timerRef.current = setInterval(() => tickTimer(), 200);
+    timerRef.current = setInterval(() => { tickTimer(); setNow(Date.now()); }, 200);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [phase, tickTimer]);
 
@@ -231,6 +232,7 @@ function SingleGameInner() {
                     players={players}
                     myPlayerId={myPlayerId}
                     onVisit={() => handleVisit(site.id)}
+                    now={now}
                   />
                 );
               })}

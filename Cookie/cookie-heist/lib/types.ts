@@ -49,7 +49,7 @@ export interface OwnedCookie {
   siteId: SiteId;
   cookieName: string;
   cookieValue: string;
-  acquiredAt: Date;
+  acquiredAt: number; // ms since epoch (Date.now())
   points: number;
 }
 

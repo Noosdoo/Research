@@ -614,8 +614,10 @@ export const SITES: Site[] = [
   },
 ];
 
+export const SITES_MAP: ReadonlyMap<string, Site> = new Map(SITES.map(s => [s.id, s]));
+
 export function getSiteById(id: string): Site | undefined {
-  return SITES.find(s => s.id === id);
+  return SITES_MAP.get(id);
 }
 
 export const CATEGORY_LABELS: Record<string, string> = {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useGameStore } from '@/store/gameStore';
 import { SITES } from '@/lib/sites';
@@ -32,7 +32,15 @@ export default function MultiplayerGamePage() {
   } = useGameStore();
 
   const [category, setCategory] = useState<SiteCategory | 'all'>('all');
+  const [now, setNow] = useState(Date.now());
   const socket = getSocket();
+
+  // now tick for SiteCard countdown (single shared interval)
+  useEffect(() => {
+    if (phase !== 'playing') return;
+    const id = setInterval(() => setNow(Date.now()), 200);
+    return () => clearInterval(id);
+  }, [phase]);
 
   // Redirect if not in the right game
   useEffect(() => {
@@ -151,6 +159,7 @@ export default function MultiplayerGamePage() {
                     players={players}
                     myPlayerId={myPlayerId}
                     onVisit={() => handleVisit(site.id)}
+                    now={now}
                   />
                 );
               })}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import type { Site, SiteState, Player } from '@/lib/types';
 
@@ -46,9 +46,10 @@ interface Props {
   players: Map<string, Player>;
   myPlayerId: string;
   onVisit: () => void;
+  now?: number;
 }
 
-export default function SiteCard({ site, siteState, players, myPlayerId, onVisit }: Props) {
+export default function SiteCard({ site, siteState, players, myPlayerId, onVisit, now }: Props) {
   const owners   = siteState.ownerIds.map(id => players.get(id)).filter(Boolean) as Player[];
   const visitors = siteState.currentVisitorIds.map(id => players.get(id)).filter(Boolean) as Player[];
   const isMine   = siteState.ownerIds.includes(myPlayerId);
@@ -60,19 +61,9 @@ export default function SiteCard({ site, siteState, players, myPlayerId, onVisit
   const myOwnedCookie = isMine ? players.get(myPlayerId)?.cookies.get(site.id) : undefined;
   const maxAge = site.cookie.attributes.maxAge;
   const showCountdown = myOwnedCookie != null && maxAge != null && maxAge <= 120;
-  const acquiredAtMs = myOwnedCookie?.acquiredAt instanceof Date
-    ? myOwnedCookie.acquiredAt.getTime()
-    : myOwnedCookie?.acquiredAt != null
-    ? new Date(myOwnedCookie.acquiredAt as unknown as string).getTime()
+  const remaining = showCountdown && myOwnedCookie != null && now != null
+    ? Math.max(0, maxAge! - (now - myOwnedCookie.acquiredAt) / 1000)
     : null;
-  const [remaining, setRemaining] = useState<number | null>(null);
-  useEffect(() => {
-    if (!showCountdown || acquiredAtMs == null) { setRemaining(null); return; }
-    const tick = () => setRemaining(Math.max(0, maxAge! - (Date.now() - acquiredAtMs) / 1000));
-    tick();
-    const id = setInterval(tick, 200);
-    return () => clearInterval(id);
-  }, [showCountdown, acquiredAtMs, maxAge]);
 
   const borderClass = isHoneypot ? 'border-red-700'  : RARITY_BORDER[site.rarity];
   const bgClass     = isHoneypot ? 'bg-red-950'      : RARITY_BG[site.rarity];

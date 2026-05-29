@@ -1,7 +1,10 @@
 'use client';
 
 import { create } from 'zustand';
-import { SITES } from '@/lib/sites';
+import { SITES, SITES_MAP } from '@/lib/sites';
+
+// Module-level set to track and cancel pending AI visit timers
+const aiTimers = new Set<ReturnType<typeof setTimeout>>();
 import type {
   Player,
   PlayerId,
@@ -162,13 +165,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     for (const [pid, player] of players) {
       for (const [sid, owned] of player.cookies) {
-        const site = SITES.find(s => s.id === sid);
+        const site = SITES_MAP.get(sid);
         const maxAge = site?.cookie.attributes.maxAge;
         if (!maxAge) continue;
-        const acquiredAt = owned.acquiredAt instanceof Date
-          ? owned.acquiredAt.getTime()
-          : new Date(owned.acquiredAt as unknown as string).getTime();
-        if (now - acquiredAt < maxAge * 1000) continue;
+        if (now - owned.acquiredAt < maxAge * 1000) continue;
 
         const cur = newPlayers.get(pid)!;
         const newCookies = new Map(cur.cookies);
@@ -251,6 +251,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   endGame() {
+    // Cancel all pending AI visit timers
+    for (const id of aiTimers) clearTimeout(id);
+    aiTimers.clear();
     // Reset any AI isVisiting flags so result screen is clean
     const { players } = get();
     const newPlayers = new Map(players);
@@ -337,7 +340,7 @@ function finishVisit(
   cookieValueOverride?: string,
 ) {
   const { players, sitesState } = get();
-  const site = SITES.find(s => s.id === siteId)!;
+  const site = SITES_MAP.get(siteId)!;
 
   const newPlayers = new Map(players);
   const newSites = new Map(sitesState);
@@ -400,7 +403,7 @@ function finishVisit(
     siteId,
     cookieName: site.cookie.name,
     cookieValue,
-    acquiredAt: new Date(),
+    acquiredAt: Date.now(),
     points: earnedPoints,
   };
 
@@ -434,7 +437,7 @@ function aiVisitSite(
 ) {
   const { players, sitesState } = get();
   const ai = players.get(aiId);
-  const site = SITES.find(s => s.id === siteId);
+  const site = SITES_MAP.get(siteId);
   if (!ai || !site) return;
 
   const newPlayers = new Map(players);
@@ -448,11 +451,13 @@ function aiVisitSite(
   const delay = isConsent
     ? RARITY_MS[site.rarity] * 0.3 + Math.random() * 1500
     : RARITY_MS[site.rarity] * 0.6 + Math.random() * 3000;
-  setTimeout(() => {
+  const timerId = setTimeout(() => {
+    aiTimers.delete(timerId);
     if (get().phase !== 'playing') {
       finishVisit(get, set, siteId, aiId, false);
       return;
     }
     finishVisit(get, set, siteId, aiId, true);
   }, delay);
+  aiTimers.add(timerId);
 }
