@@ -36,7 +36,16 @@
       "WebFetch(domain:zenodo.org)",
       "WebFetch(domain:dcase-repo.github.io)",
       "PowerShell(Get-PSDrive C | Select-Object @{N='空き容量\\(GB\\)';E={[math]::Round\\($_.Free/1GB,1\\)}}, @{N='合計\\(GB\\)';E={[math]::Round\\($_.Used/1GB+$_.Free/1GB,1\\)}})",
-      "Bash(curl -L --progress-bar -o \"/c/Users/satos/research/TAU-NIGENS2020/metadata_dev.zip\" \"https://zenodo.org/api/records/4064792/files/metadata_dev.zip/content\")"
+      "Bash(curl -L --progress-bar -o \"/c/Users/satos/research/TAU-NIGENS2020/metadata_dev.zip\" \"https://zenodo.org/api/records/4064792/files/metadata_dev.zip/content\")",
+      "PowerShell(py *)",
+      "Bash(git check-ignore *)",
+      "PowerShell($env:Path -split ';' | Where-Object { $_ -match 'Python' })",
+      "Bash(python _build_nb.py)",
+      "Bash(python -c \"import json; nb=json.load\\(open\\('PSELDNets_Colab_v4.ipynb',encoding='utf-8'\\)\\); print\\('cells:',len\\(nb['cells']\\),'| nbformat:',nb['nbformat']\\); print\\('types:', ''.join\\('c' if c['cell_type']=='code' else 'm' for c in nb['cells']\\)\\)\")",
+      "Bash(cd *)",
+      "Bash(python -)",
+      "Bash(rm -f _build_nb.py)",
+      "Bash(awk '{print $NF, $5\"bytes\"}')"
     ]
   }
 }
