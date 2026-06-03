@@ -6,18 +6,20 @@ const { Server } = require('socket.io');
 const dev = process.env.NODE_ENV !== 'production';
 const port = parseInt(process.env.PORT || '3000', 10);
 
-// All site IDs used to initialise game state
+// All site IDs used to initialise game state.
+// ⚠️ lib/sites.ts の SITES と必ず同期させること。新規サイトを追加したらここにも ID を足す。
+// 抜けがあると、オンラインモードでそのサイトを訪問しても sitesState が無く無反応になる。
 const SITE_IDS = [
   'secure-bank', 'crypto-exchange', 'gold-vault',
-  'shop-mart', 'electro-store',
+  'shop-mart', 'electro-store', 'cloud-drive',
   'tweet-space', 'face-connect', 'photo-gram',
-  'video-tube', 'short-clip', 'pro-network',
-  'news-portal', 'video-stream',
+  'video-tube', 'short-clip', 'pro-network', 'dating-match',
+  'news-portal', 'video-stream', 'map-navi',
   'game-zone', 'online-casino', 'live-cast', 'retro-arcade', 'esports-hub',
   'ad-network', 'tracker-corp',
   'tax-agency',
   'pay-ez', 'stock-ticker', 'loan-easy',
-  'conspiracy-forum', 'ghost-hunter', 'astro-scope', 'recipe-share',
+  'conspiracy-forum', 'ghost-hunter', 'astro-scope', 'recipe-share', 'whitehat-forum',
   'secuure-bank', 'add-network',
   'dev-tools-lab',
   'ghost-site', 'eternal-session',

@@ -255,7 +255,7 @@ export default function Quiz({ site, onComplete, onCancel }: Props) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const [answers, setAnswers] = useState<number[]>([-1, -1]);
+  const [answers, setAnswers] = useState<number[]>(() => Array(questions.length).fill(-1));
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [allCorrect, setAllCorrect] = useState(false);

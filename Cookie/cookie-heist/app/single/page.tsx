@@ -72,15 +72,18 @@ function SingleGameInner() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [phase, tickTimer]);
 
-  // AI ticks
+  // AI ticks — read player ids fresh from the store so the interval is not
+  // torn down/recreated on every `players` change (which would starve AI turns)
   useEffect(() => {
     if (phase !== 'playing') return;
-    const aiIds = [...players.keys()].filter(id => id !== myPlayerId);
     aiRef.current = setInterval(() => {
-      aiIds.forEach(id => processAITick(id));
+      const { players: pl, myPlayerId: me } = useGameStore.getState();
+      for (const id of pl.keys()) {
+        if (id !== me) processAITick(id);
+      }
     }, 3000);
     return () => { if (aiRef.current) clearInterval(aiRef.current); };
-  }, [phase, players, myPlayerId, processAITick]);
+  }, [phase, processAITick]);
 
   // Navigate to visit page on card click
   const handleVisit = useCallback((siteId: string) => {
