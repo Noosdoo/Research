@@ -27,6 +27,17 @@ const RARITY_MS: Record<Rarity, number> = {
   legendary: 25000,
 };
 
+// 各AIの行動個性。aggression=人間所有サイトを奪う強さ / consentBias=同意サイトを巡回する強さ。
+// 複数AIにこれらを散らして割り当てることで「全員が同時に殺到」しないバランスを作る。
+interface AIProfile { aggression: number; consentBias: number }
+const AI_PROFILES: AIProfile[] = [
+  { aggression: 0.45, consentBias: 1.5 }, // 巡回型: 同意サイト中心、奪取は控えめ
+  { aggression: 0.8,  consentBias: 1.1 }, // バランス型
+  { aggression: 1.0,  consentBias: 0.9 }, // 奪取型: 人間のサイトを積極的に狙う
+];
+// 現在のローカルゲームの aiId → プロファイル（initGame で割り当て）
+const aiProfiles = new Map<PlayerId, AIProfile>();
+
 function makePlayer(id: PlayerId, name: string, isAI: boolean, colorIdx: number): Player {
   return {
     id,
@@ -126,9 +137,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const players = new Map<PlayerId, Player>();
     players.set('player-human', makePlayer('player-human', 'あなた', false, 0));
     const aiNames = ['AI Bot 1', 'AI Bot 2', 'AI Bot 3'];
+    aiProfiles.clear();
     for (let i = 0; i < aiCount; i++) {
       const id = `ai-${i}`;
       players.set(id, makePlayer(id, aiNames[i], true, i + 1));
+      // 1体ならバランス型、複数なら巡回型〜奪取型を割り当てて挙動を散らす
+      const profile = aiCount === 1 ? AI_PROFILES[1] : AI_PROFILES[i % AI_PROFILES.length];
+      aiProfiles.set(id, { ...profile });
     }
     set({
       gameId: `game-${Date.now()}`,
@@ -212,8 +227,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const ai = players.get(aiId);
     if (!ai || ai.isVisiting) return;
 
-    // 30%の確率でサボる
-    if (Math.random() < 0.3) return;
+    const profile = aiProfiles.get(aiId) ?? { aggression: 0.7, consentBias: 1.1 };
+
+    // サボり: アグレッシブなAIほどサボりにくい（約26%〜15%）
+    if (Math.random() < 0.35 - profile.aggression * 0.2) return;
 
     const candidates = SITES
       .map(s => {
@@ -221,27 +238,39 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (s.isHoneypot && Math.random() > 0.4) return null;
         let score = s.cookie.points;
         score -= RARITY_MS[s.rarity] / 1000;
-        if (ai.cookies.has(s.id)) score *= 0.3;
+        if (ai.cookies.has(s.id)) score *= 0.3; // 既に所持しているサイトは優先度を下げる
+
         const ss = sitesState.get(s.id)!;
         const ownerIds = ss.ownerIds;
-        // 人間プレイヤーが所有している同意サイトを積極的に奪う
-        const humanOwns = ownerIds.filter(id => {
+
+        // ① 同意サイトを巡回する基本バイアス（個性で強さが変わる）
+        if (s.template === 'consent-button') score += 30 * profile.consentBias;
+
+        // ② 人間が所有しているサイトを奪う（全テンプレート、aggressionでスケール）
+        const humanOwns = ownerIds.some(id => {
           const p = players.get(id);
-          return p && !p.isAI && id !== aiId;
-        }).length;
-        if (s.template === 'consent-button' && humanOwns > 0) score += humanOwns * 50;
-        // 他プレイヤー所有サイトの一般奪取インセンティブ
+          return p != null && !p.isAI && id !== aiId;
+        });
+        if (humanOwns) {
+          score += 45 * profile.aggression;
+          // 人間が持つ同意サイトは特に狙う
+          if (s.template === 'consent-button') score += 25 * profile.aggression;
+        }
+
+        // ③ その他プレイヤー所有の一般奪取インセンティブ（弱め）
         const othersOwn = ownerIds.filter(id => id !== aiId).length;
-        score += othersOwn * 15;
-        // 他のAIが訪問中のサイトを避ける
+        score += othersOwn * 10;
+
+        // ④ 既に他AIが訪問中のサイトは強く避ける → 全員が同じ標的に殺到しない
         const visiting = ss.currentVisitorIds.filter(id => id !== aiId).length;
-        score -= visiting * 20;
+        score -= visiting * 35;
+
         return { id: s.id, score, rarity: s.rarity, template: s.template };
       })
       .filter(Boolean)
       .sort((a, b) => b!.score - a!.score) as { id: string; score: number; rarity: Rarity; template: string }[];
 
-    // 40%でランダム選択（上位5件から）
+    // 40%でランダム選択（上位5件から）— 行動を完全に一極化させない
     const pick = Math.random() < 0.4
       ? candidates[Math.floor(Math.random() * Math.min(5, candidates.length))]
       : candidates[0];
