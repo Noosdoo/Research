@@ -149,8 +149,8 @@ export default function MultiplayerGamePage() {
           <div className="flex-1 overflow-y-auto">
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
               {filteredSites.map(site => {
-                const ss = sitesState.get(site.id);
-                if (!ss) return null;
+                // サーバーはサイト状態を訪問時に遅延生成するため、未訪問サイトは空状態で描画する
+                const ss = sitesState.get(site.id) ?? { siteId: site.id, ownerIds: [], currentVisitorIds: [] };
                 return (
                   <SiteCard
                     key={site.id}
@@ -160,6 +160,7 @@ export default function MultiplayerGamePage() {
                     myPlayerId={myPlayerId}
                     onVisit={() => handleVisit(site.id)}
                     now={now}
+                    showExpiryCountdown={false}
                   />
                 );
               })}

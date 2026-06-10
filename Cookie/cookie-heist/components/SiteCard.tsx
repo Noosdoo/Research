@@ -47,28 +47,32 @@ interface Props {
   myPlayerId: string;
   onVisit: () => void;
   now?: number;
+  // オンラインモードはサーバーに失効処理がないため false にしてカウントダウンを隠す
+  showExpiryCountdown?: boolean;
 }
 
-export default function SiteCard({ site, siteState, players, myPlayerId, onVisit, now }: Props) {
+export default function SiteCard({ site, siteState, players, myPlayerId, onVisit, now, showExpiryCountdown = true }: Props) {
   const owners   = siteState.ownerIds.map(id => players.get(id)).filter(Boolean) as Player[];
   const visitors = siteState.currentVisitorIds.map(id => players.get(id)).filter(Boolean) as Player[];
   const isMine   = siteState.ownerIds.includes(myPlayerId);
 
-  const isHoneypot  = !!site.isHoneypot;
-  const isLegendary = site.rarity === 'legendary' && !isHoneypot;
+  // ミステリーサイトは訪問前に正体（罠・レア度）を見た目で明かさない
+  const isMystery   = !!site.isMystery;
+  const isHoneypot  = !!site.isHoneypot && !isMystery;
+  const isLegendary = site.rarity === 'legendary' && !isHoneypot && !isMystery;
 
   // Countdown for short-lived owned cookies (maxAge ≤ 120s)
   const myOwnedCookie = isMine ? players.get(myPlayerId)?.cookies.get(site.id) : undefined;
   const maxAge = site.cookie.attributes.maxAge;
-  const showCountdown = myOwnedCookie != null && maxAge != null && maxAge <= 120;
+  const showCountdown = showExpiryCountdown && myOwnedCookie != null && maxAge != null && maxAge <= 120;
   const remaining = showCountdown && myOwnedCookie != null && now != null
     ? Math.max(0, maxAge! - (now - myOwnedCookie.acquiredAt) / 1000)
     : null;
 
-  const borderClass = isHoneypot ? 'border-red-700'  : RARITY_BORDER[site.rarity];
-  const bgClass     = isHoneypot ? 'bg-red-950'      : RARITY_BG[site.rarity];
-  const badgeClass  = isHoneypot ? 'bg-red-800 text-red-200' : RARITY_BADGE[site.rarity];
-  const badgeLabel  = isHoneypot ? '⚠️ 危険' : RARITY_LABEL[site.rarity];
+  const borderClass = isMystery ? 'border-gray-500' : isHoneypot ? 'border-red-700'  : RARITY_BORDER[site.rarity];
+  const bgClass     = isMystery ? 'bg-gray-800'     : isHoneypot ? 'bg-red-950'      : RARITY_BG[site.rarity];
+  const badgeClass  = isMystery ? 'bg-gray-700 text-gray-300' : isHoneypot ? 'bg-red-800 text-red-200' : RARITY_BADGE[site.rarity];
+  const badgeLabel  = isMystery ? '???' : isHoneypot ? '⚠️ 危険' : RARITY_LABEL[site.rarity];
 
   const glowClass = isLegendary ? 'glow-legendary'
     : isMine      ? 'glow-mine'

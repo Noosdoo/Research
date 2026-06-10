@@ -152,6 +152,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       timeLeft: dur,
       gameDuration: dur,
       aiCount,
+      // オンライン対戦の残留状態を確実にクリアしてローカルモードで開始する
+      mode: 'local',
+      onlineGameId: null,
       players,
       myPlayerId: 'player-human',
       sitesState: initSiteStates(),

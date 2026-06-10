@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
+import { useGameStore } from '@/store/gameStore';
 
 type View = 'top' | 'ai-select' | 'online' | 'qr';
 
@@ -47,6 +48,14 @@ export default function LobbyPage() {
   const [autoUrl, setAutoUrl] = useState('');
   const [aiCount, setAiCount] = useState(1);
   const [duration, setDuration] = useState(180);
+
+  // どの経路（メニューへボタン・ブラウザ戻る等）でメニューに戻っても、
+  // 終了済み/進行中のゲーム状態を破棄して次のプレイが正しく初期化されるようにする
+  useEffect(() => {
+    if (useGameStore.getState().phase !== 'lobby') {
+      useGameStore.getState().exitOnlineMode();
+    }
+  }, []);
 
   useEffect(() => {
     fetch('/api/local-ip')

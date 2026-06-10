@@ -189,7 +189,7 @@ function SingleGameInner() {
             </button>
             <button
               type="button"
-              onClick={() => router.push('/')}
+              onClick={() => { useGameStore.getState().resetToLobby(); router.push('/'); }}
               className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-xl transition-colors"
             >
               メニューへ

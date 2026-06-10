@@ -6,26 +6,6 @@ const { Server } = require('socket.io');
 const dev = process.env.NODE_ENV !== 'production';
 const port = parseInt(process.env.PORT || '3000', 10);
 
-// All site IDs used to initialise game state.
-// ⚠️ lib/sites.ts の SITES と必ず同期させること。新規サイトを追加したらここにも ID を足す。
-// 抜けがあると、オンラインモードでそのサイトを訪問しても sitesState が無く無反応になる。
-const SITE_IDS = [
-  'secure-bank', 'crypto-exchange', 'gold-vault',
-  'shop-mart', 'electro-store', 'cloud-drive',
-  'tweet-space', 'face-connect', 'photo-gram',
-  'video-tube', 'short-clip', 'pro-network', 'dating-match',
-  'news-portal', 'video-stream', 'map-navi',
-  'game-zone', 'online-casino', 'live-cast', 'retro-arcade', 'esports-hub',
-  'ad-network', 'tracker-corp',
-  'tax-agency',
-  'pay-ez', 'stock-ticker', 'loan-easy',
-  'conspiracy-forum', 'ghost-hunter', 'astro-scope', 'recipe-share', 'whitehat-forum',
-  'secuure-bank', 'add-network',
-  'dev-tools-lab',
-  'ghost-site', 'eternal-session',
-  'mystery-alpha', 'mystery-beta', 'mystery-gamma', 'mystery-delta', 'mystery-omega',
-];
-
 const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b'];
 const GAME_DURATION = 180;
 const MAX_PLAYERS = 4;
@@ -79,7 +59,7 @@ function serializeSites(sitesState) {
 // ── Lobby ──────────────────────────────────────────────────────────
 function createLobby(type, code = null) {
   const id = uid('lobby');
-  const lobby = { id, type, code, players: new Map(), colorIdx: 0, status: 'waiting', countdownEnd: null };
+  const lobby = { id, type, code, players: new Map(), colorIdx: 0, status: 'waiting', countdownEnd: null, ticking: false };
   lobbies.set(id, lobby);
   if (code) roomCodes.set(code, id);
   return lobby;
@@ -109,14 +89,18 @@ function startCountdown(lobbyId, seconds, io) {
   const lobby = lobbies.get(lobbyId);
   if (!lobby) return;
   lobby.countdownEnd = Date.now() + seconds * 1000;
+  // 既存の tick ループがあれば countdownEnd の更新だけで延長される（多重起動防止）
+  if (lobby.ticking) return;
+  lobby.ticking = true;
 
   function tick() {
     const l = lobbies.get(lobbyId);
-    if (!l || l.status !== 'waiting') return;
+    if (!l || l.status !== 'waiting') { if (l) l.ticking = false; return; }
     const secondsLeft = Math.max(0, Math.ceil((l.countdownEnd - Date.now()) / 1000));
     io.to(lobbyId).emit('lobby:countdown', { secondsLeft });
     if (secondsLeft > 0) { setTimeout(tick, 1000); return; }
 
+    l.ticking = false;
     if (l.players.size >= 2) {
       startGameFromLobby(lobbyId, io);
     } else if (l.players.size === 1) {
@@ -159,8 +143,8 @@ function startGameFromLobby(lobbyId, io) {
     socketToGame.set(socketId, gameId);
   }
 
+  // サイト状態は訪問時に遅延生成する（getSiteState）。lib/sites.ts との手動同期は不要。
   const sitesState = new Map();
-  for (const id of SITE_IDS) sitesState.set(id, { siteId: id, ownerIds: [], currentVisitorIds: [] });
 
   const game = { id: gameId, lobbyId, players, sitesState, startTime: null, phase: 'starting', ticker: null };
   games.set(gameId, game);
@@ -195,6 +179,17 @@ function startGameFromLobby(lobbyId, io) {
   }, 3000);
 }
 
+// サイト状態の遅延生成。siteId はクライアント申告なので形式だけ検証する。
+function getSiteState(game, siteId) {
+  if (typeof siteId !== 'string' || siteId.length === 0 || siteId.length > 64) return null;
+  let ss = game.sitesState.get(siteId);
+  if (!ss) {
+    ss = { siteId, ownerIds: [], currentVisitorIds: [] };
+    game.sitesState.set(siteId, ss);
+  }
+  return ss;
+}
+
 function handleVisitComplete(socket, { siteId, siteName, earnedPoints }, io) {
   const gameId = socketToGame.get(socket.id);
   if (!gameId) return;
@@ -203,7 +198,7 @@ function handleVisitComplete(socket, { siteId, siteName, earnedPoints }, io) {
 
   const playerId = socketToPlayer.get(socket.id);
   const player = game.players.get(playerId);
-  const ss = game.sitesState.get(siteId);
+  const ss = getSiteState(game, siteId);
   if (!player || !ss) return;
 
   ss.currentVisitorIds = ss.currentVisitorIds.filter(id => id !== playerId);
@@ -249,7 +244,7 @@ function handleVisitChange(socket, { siteId }, starting, io) {
 
   const playerId = socketToPlayer.get(socket.id);
   const player = game.players.get(playerId);
-  const ss = game.sitesState.get(siteId);
+  const ss = getSiteState(game, siteId);
   if (!player || !ss) return;
 
   player.isVisiting = starting;
@@ -325,8 +320,14 @@ app.prepare().then(() => {
       });
       socket.to(lobby.id).emit('lobby:player-joined', info);
 
-      if (lobby.players.size === 1) startCountdown(lobby.id, 60, io);
-      if (lobby.players.size >= MAX_PLAYERS) startGameFromLobby(lobby.id, io);
+      if (lobby.players.size >= MAX_PLAYERS) {
+        startGameFromLobby(lobby.id, io);
+      } else if (lobby.players.size === 1) {
+        startCountdown(lobby.id, 60, io);
+      } else if (!lobby.ticking) {
+        // カウントダウンが既に終了している（lonely 状態）ロビーに合流した場合は短い再カウントで自動開始
+        startCountdown(lobby.id, 10, io);
+      }
     });
 
     // Create room
