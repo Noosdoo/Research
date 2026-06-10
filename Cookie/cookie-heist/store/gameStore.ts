@@ -27,6 +27,14 @@ const RARITY_MS: Record<Rarity, number> = {
   legendary: 25000,
 };
 
+// AIの訪問所要時間。安サイトは即取り、高ptサイトほど時間がかかり妨害の隙ができる。
+const AI_VISIT_MS: Record<Rarity, number> = {
+  common: 1000,
+  uncommon: 2000,
+  rare: 3500,
+  legendary: 5000,
+};
+
 // 各AIの行動個性。aggression=人間所有サイトを奪う強さ / consentBias=同意サイトを巡回する強さ。
 // 複数AIにこれらを散らして割り当てることで「全員が同時に殺到」しないバランスを作る。
 interface AIProfile { aggression: number; consentBias: number }
@@ -475,8 +483,7 @@ function aiVisitSite(
   newSites.set(siteId, { ...ss, currentVisitorIds: [...ss.currentVisitorIds, aiId] });
   set({ players: newPlayers, sitesState: newSites });
 
-  // 訪問時間はテンプレート・レア度によらず一律約1秒（クイズ系の長い滞在を撤廃）
-  const delay = 1000 + Math.random() * 300;
+  const delay = AI_VISIT_MS[site.rarity] + Math.random() * 500;
   const timerId = setTimeout(() => {
     aiTimers.delete(timerId);
     if (get().phase !== 'playing') {
