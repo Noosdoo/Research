@@ -232,8 +232,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const profile = aiProfiles.get(aiId) ?? { aggression: 0.7, consentBias: 1.1 };
 
-    // サボり: アグレッシブなAIほどサボりにくい（約26%〜15%）
-    if (Math.random() < 0.35 - profile.aggression * 0.2) return;
+    // サボり: アグレッシブなAIほどサボりにくい（約11%〜5%）
+    if (Math.random() < 0.15 - profile.aggression * 0.1) return;
 
     const candidates = SITES
       .map(s => {
@@ -249,16 +249,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // ① 同意サイトを巡回する基本バイアス（個性で強さが変わる）
         if (s.template === 'consent-button') score += 30 * profile.consentBias;
 
-        // ② 人間が所有しているサイトを奪う（全テンプレート、aggressionでスケール）
+        // ② 人間が所有しているサイトを最優先で奪う（ポイント差を上回る支配的な重み）
         const humanOwns = ownerIds.some(id => {
           const p = players.get(id);
           return p != null && !p.isAI && id !== aiId;
         });
-        if (humanOwns) {
-          score += 45 * profile.aggression;
-          // 人間が持つ同意サイトは特に狙う
-          if (s.template === 'consent-button') score += 25 * profile.aggression;
-        }
+        if (humanOwns) score += 200 * profile.aggression;
 
         // ③ その他プレイヤー所有の一般奪取インセンティブ（弱め）
         const othersOwn = ownerIds.filter(id => id !== aiId).length;
@@ -479,10 +475,8 @@ function aiVisitSite(
   newSites.set(siteId, { ...ss, currentVisitorIds: [...ss.currentVisitorIds, aiId] });
   set({ players: newPlayers, sitesState: newSites });
 
-  const isConsent = site.template === 'consent-button';
-  const delay = isConsent
-    ? RARITY_MS[site.rarity] * 0.3 + Math.random() * 1500
-    : RARITY_MS[site.rarity] * 0.6 + Math.random() * 3000;
+  // 訪問時間はテンプレート・レア度によらず一律約1秒（クイズ系の長い滞在を撤廃）
+  const delay = 1000 + Math.random() * 300;
   const timerId = setTimeout(() => {
     aiTimers.delete(timerId);
     if (get().phase !== 'playing') {

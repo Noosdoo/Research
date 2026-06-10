@@ -41,7 +41,7 @@ export default function VisitPage() {
       for (const pid of players.keys()) {
         if (pid !== myPlayerId) useGameStore.getState().processAITick(pid);
       }
-    }, 3000);
+    }, 1500);
     return () => clearInterval(interval);
   }, [phase, isOnline]);
 
