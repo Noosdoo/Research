@@ -29,10 +29,10 @@ const RARITY_MS: Record<Rarity, number> = {
 
 // AIの訪問所要時間。安サイトは即取り、高ptサイトほど時間がかかり妨害の隙ができる。
 const AI_VISIT_MS: Record<Rarity, number> = {
-  common: 1000,
-  uncommon: 2000,
-  rare: 3500,
-  legendary: 5000,
+  common: 3000,
+  uncommon: 6000,
+  rare: 8000,
+  legendary: 20000,
 };
 
 // 各AIの行動個性。aggression=人間所有サイトを奪う強さ / consentBias=同意サイトを巡回する強さ。
