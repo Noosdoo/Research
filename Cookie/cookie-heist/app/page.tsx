@@ -97,7 +97,7 @@ export default function LobbyPage() {
         <div>
           <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight whitespace-nowrap">🍪 Cookie Heist</h1>
           <p className="text-gray-400 mt-2 text-lg">
-            Webサイトを訪問してCookieを盗め。
+            Webサイトを訪問してCookieを盗め
           </p>
         </div>
 

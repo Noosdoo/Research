@@ -8,7 +8,7 @@ export const SITES: Site[] = [
     id: 'secure-bank',
     name: 'SecureBank',
     category: 'finance',
-    description: '世界一安全な銀行（自称）。ログアウトしても Cookie は残る。',
+    description: '世界一安全な銀行（自称）。',
     cookie: {
       name: 'bank_auth',
       valueGenerator: () => `bank_${rand(16)}`,
@@ -23,7 +23,7 @@ export const SITES: Site[] = [
     id: 'crypto-exchange',
     name: 'CryptoExchange',
     category: 'finance',
-    description: '24時間無休の仮想通貨取引所。秘密鍵は絶対に教えないでください。',
+    description: '24時間無休の仮想通貨取引所。',
     cookie: {
       name: 'crypto_session',
       valueGenerator: () => `0x${rand(32)}`,
@@ -55,7 +55,7 @@ export const SITES: Site[] = [
     id: 'shop-mart',
     name: 'ShopMart',
     category: 'ecommerce',
-    description: 'なんでも売ってるショッピングモール。一度商品を見るとどこに行っても追ってくる。',
+    description: 'なんでも売ってるショッピングモール。',
     cookie: {
       name: 'cart_id',
       valueGenerator: () => `cart_${rand(12)}`,
@@ -70,7 +70,7 @@ export const SITES: Site[] = [
     id: 'electro-store',
     name: 'ElectroStore',
     category: 'ecommerce',
-    description: '最新ガジェット専門店。カートに入れた瞬間に値上がりする。',
+    description: '最新ガジェット専門店。',
     cookie: {
       name: 'electro_uid',
       valueGenerator: () => `eu_${rand(10)}`,
@@ -134,7 +134,7 @@ export const SITES: Site[] = [
     id: 'news-portal',
     name: 'NewsPortal',
     category: 'media',
-    description: '24時間速報を流し続けるニュースサイト。登録した覚えがないのにメルマガが届く。',
+    description: '24時間速報を流し続けるニュースサイト。',
     cookie: {
       name: 'np_reader',
       valueGenerator: () => `np_${rand(10)}`,
@@ -149,7 +149,7 @@ export const SITES: Site[] = [
     id: 'video-stream',
     name: 'VideoStream',
     category: 'media',
-    description: '動画ストリーミングサービス。冒頭の広告が本編より長い。',
+    description: '動画ストリーミングサービス。',
     cookie: {
       name: 'vs_auth',
       valueGenerator: () => `vs_${rand(16)}`,
@@ -230,7 +230,7 @@ export const SITES: Site[] = [
     id: 'tax-agency',
     name: 'TaxAgency',
     category: 'government',
-    description: '確定申告ポータル。UIは2003年から更新されていない。',
+    description: '確定申告ポータル。',
     cookie: {
       name: 'tax_session',
       valueGenerator: () => `tax_${rand(20)}`,
@@ -247,7 +247,7 @@ export const SITES: Site[] = [
     id: 'conspiracy-forum',
     name: 'ConspiracyForum',
     category: 'niche',
-    description: 'あらゆる陰謀論を真剣に議論する掲示板。月面着陸は演出。',
+    description: 'あらゆる陰謀論を真剣に議論する掲示板。',
     cookie: {
       name: 'cf_anon',
       valueGenerator: () => `cf_${rand(8)}`,
@@ -262,7 +262,7 @@ export const SITES: Site[] = [
     id: 'ghost-hunter',
     name: 'GhostHunter',
     category: 'niche',
-    description: '全国の心霊スポット情報を集めたサイト。管理人は連絡不通。',
+    description: '全国の心霊スポット情報を集めたサイト。',
     cookie: {
       name: 'ghost_trace',
       valueGenerator: () => `gh_${rand(10)}`,
@@ -294,7 +294,7 @@ export const SITES: Site[] = [
     id: 'short-clip',
     name: 'ShortClip',
     category: 'social',
-    description: '15秒で世界が変わるショート動画アプリ。踊れる人が有利。',
+    description: '15秒で世界が変わるショート動画アプリ。',
     cookie: {
       name: 'sc_uid',
       valueGenerator: () => `sc_${rand(14)}`,
@@ -309,7 +309,7 @@ export const SITES: Site[] = [
     id: 'pro-network',
     name: 'ProNetwork',
     category: 'social',
-    description: 'ビジネス人脈を「つながり」で広げるSNS。上司の投稿にいいねするのが暗黙のルール。',
+    description: 'ビジネス人脈を「つながり」で広げるSNS。',
     cookie: {
       name: 'pn_auth',
       valueGenerator: () => `pn_${rand(20)}`,
@@ -326,7 +326,7 @@ export const SITES: Site[] = [
     id: 'pay-ez',
     name: 'PayEZ',
     category: 'finance',
-    description: 'QRコードをかざすだけで決済完了。残高が気づかず減る魔法のアプリ。',
+    description: 'QRコードをかざすだけで決済完了。',
     cookie: {
       name: 'pez_token',
       valueGenerator: () => `pez_${rand(16)}`,
@@ -341,7 +341,7 @@ export const SITES: Site[] = [
     id: 'stock-ticker',
     name: 'StockTicker',
     category: 'finance',
-    description: 'AIによる相場予測を売りにした投資プラットフォーム。的中率は天気予報レベル。',
+    description: 'AIによる相場予測を売りにした投資プラットフォーム。',
     cookie: {
       name: 'st_investor',
       valueGenerator: () => `sti_${rand(22)}`,
@@ -356,7 +356,7 @@ export const SITES: Site[] = [
     id: 'loan-easy',
     name: 'LoanEasy',
     category: 'finance',
-    description: '審査なし・即日融資。実質年利は注釈の注釈に小さく書いてある。',
+    description: '審査なし・即日融資。',
     cookie: {
       name: 'loan_sess',
       valueGenerator: () => `le_${rand(18)}`,
@@ -373,7 +373,7 @@ export const SITES: Site[] = [
     id: 'live-cast',
     name: 'LiveCast',
     category: 'gaming',
-    description: 'ゲーム配信者と視聴者が盛り上がるライブ配信プラットフォーム。投げ銭が止まらない。',
+    description: 'ゲーム配信者と視聴者が盛り上がるライブ配信プラットフォーム。',
     cookie: {
       name: 'lc_viewer',
       valueGenerator: () => `lc_${rand(16)}`,
@@ -388,7 +388,7 @@ export const SITES: Site[] = [
     id: 'retro-arcade',
     name: 'RetroArcade',
     category: 'gaming',
-    description: '80年代の名作ゲームが遊べるアーカイブ。会員登録時にセキュリティ知識を問われる。',
+    description: '80年代の名作ゲームが遊べるアーカイブ。',
     cookie: {
       name: 'retro_pass',
       valueGenerator: () => `ra_${rand(20)}`,
@@ -403,7 +403,7 @@ export const SITES: Site[] = [
     id: 'esports-hub',
     name: 'EsportsHub',
     category: 'gaming',
-    description: 'プロゲーマーの試合結果が集まるeスポーツポータル。回線の良さが実力の半分。',
+    description: 'プロゲーマーの試合結果が集まるeスポーツポータル。',
     cookie: {
       name: 'eh_profile',
       valueGenerator: () => `eh_${rand(14)}`,
@@ -420,7 +420,7 @@ export const SITES: Site[] = [
     id: 'astro-scope',
     name: 'AstroScope',
     category: 'niche',
-    description: '今日の運勢を星の配置で導く占いサイト。当たる確率は理論上50%。',
+    description: '今日の運勢を星の配置で導く占いサイト。',
     cookie: {
       name: 'astro_sign',
       valueGenerator: () => `as_${rand(10)}`,
@@ -435,7 +435,7 @@ export const SITES: Site[] = [
     id: 'recipe-share',
     name: 'RecipeShare',
     category: 'niche',
-    description: '主婦（主夫）が集うレシピ共有サイト。コメント欄は予想外の激戦区。',
+    description: '主婦（主夫）が集うレシピ共有サイト。',
     cookie: {
       name: 'rs_user',
       valueGenerator: () => `rs_${rand(10)}`,
@@ -452,7 +452,7 @@ export const SITES: Site[] = [
     id: 'dev-tools-lab',
     name: 'DevToolsLab',
     category: 'special',
-    description: 'Cookieの中身を隠さない開発者向けサイト。HttpOnly属性なしの「丸見え」Cookieを発行する。',
+    description: 'Cookieの中身を隠さない開発者向けサイト。',
     cookie: {
       name: 'devlab_visible',
       valueGenerator: () => `VISIBLE_${rand(16).toUpperCase()}`,
@@ -469,7 +469,7 @@ export const SITES: Site[] = [
     id: 'map-navi',
     name: 'MapNavi',
     category: 'media',
-    description: '無料の地図ナビアプリ。「より良い案内のため」と称して現在地を常時記録している。',
+    description: '無料の地図ナビアプリ。',
     cookie: {
       name: 'navi_geo',
       valueGenerator: () => `geo_${rand(14)}`,
@@ -484,7 +484,7 @@ export const SITES: Site[] = [
     id: 'cloud-drive',
     name: 'CloudDrive',
     category: 'ecommerce',
-    description: '容量無制限を謳うクラウドストレージ。一度ログインすると半年間ログイン状態が続く。',
+    description: '容量無制限を謳うクラウドストレージ。',
     cookie: {
       name: 'cd_session',
       valueGenerator: () => `cds_${rand(22)}`,
@@ -499,7 +499,7 @@ export const SITES: Site[] = [
     id: 'dating-match',
     name: 'DatingMatch',
     category: 'social',
-    description: '運命の相手をAIが探すマッチングアプリ。プロフィールより通信履歴の方が詳しく分析される。',
+    description: '運命の相手をAIが探すマッチングアプリ。',
     cookie: {
       name: 'dm_token',
       valueGenerator: () => `dm_${rand(18)}`,
@@ -514,7 +514,7 @@ export const SITES: Site[] = [
     id: 'whitehat-forum',
     name: 'WhiteHatForum',
     category: 'niche',
-    description: '善良なハッカーが脆弱性を議論する掲示板。入室にはセキュリティの知識が問われる。',
+    description: '善良なハッカーが脆弱性を議論する掲示板。',
     cookie: {
       name: 'wh_member',
       valueGenerator: () => `wh_${rand(20)}`,
@@ -531,7 +531,7 @@ export const SITES: Site[] = [
     id: 'secuure-bank',
     name: 'SecuureBank',
     category: 'honeypot',
-    description: '銀行っぽいサイト。よく見ると "u" が2つある…',
+    description: '銀行っぽいサイト。',
     cookie: {
       name: 'phish_trap',
       valueGenerator: () => `trap_${rand(8)}`,
@@ -547,7 +547,7 @@ export const SITES: Site[] = [
     id: 'add-network',
     name: 'AddNetwork',
     category: 'honeypot',
-    description: 'AdNetworkに似た名前の怪しいサイト。d が2つある。',
+    description: 'AdNetworkに似た名前の怪しいサイト。',
     cookie: {
       name: 'malware_id',
       valueGenerator: () => `mal_${rand(6)}`,
@@ -565,7 +565,7 @@ export const SITES: Site[] = [
     id: 'mystery-alpha',
     name: 'MysteryBox',
     category: 'niche',
-    description: '中身がわからない箱を売っているらしいサイト。何が届くかは開けてからのお楽しみ。',
+    description: '中身がわからない箱を売っているらしいサイト。',
     cookie: {
       name: 'mystery_alpha',
       valueGenerator: () => `mx_${rand(12)}`,
@@ -581,7 +581,7 @@ export const SITES: Site[] = [
     id: 'mystery-beta',
     name: 'CryptoMail',
     category: 'special',
-    description: 'エンドツーエンド暗号化を謳うメールサービス。大学のメールアドレスで登録するとCookieを取得する。',
+    description: 'エンドツーエンド暗号化を謳うメールサービス。',
     cookie: {
       name: 'mystery_beta',
       valueGenerator: () => `mb_${rand(16)}`,
@@ -597,7 +597,7 @@ export const SITES: Site[] = [
     id: 'mystery-gamma',
     name: 'PrizeWinner',
     category: 'honeypot',
-    description: '派手なポップアップで「あなたが選ばれました」と表示するサイト。受け取るボタンが画面を埋め尽くす。',
+    description: '派手なポップアップで「あなたが選ばれました」と表示するサイト。',
     cookie: {
       name: 'mystery_gamma',
       valueGenerator: () => `mg_${rand(8)}`,
@@ -614,7 +614,7 @@ export const SITES: Site[] = [
     id: 'mystery-delta',
     name: 'SecurityLab',
     category: 'special',
-    description: '研究機関を名乗るサイト。セキュリティ意識調査に答えるとCookieを取得する。',
+    description: '研究機関を名乗るサイト。',
     cookie: {
       name: 'mystery_delta',
       valueGenerator: () => `md_${rand(14)}`,
@@ -630,7 +630,7 @@ export const SITES: Site[] = [
     id: 'mystery-omega',
     name: 'CyberLegend',
     category: 'special',
-    description: 'ネットの都市伝説サイト。難解なクイズに全問正解できた者だけCookieを取得する。',
+    description: 'ネットの都市伝説サイト。',
     cookie: {
       name: 'mystery_omega',
       valueGenerator: () => `mo_${rand(20)}`,
@@ -648,7 +648,7 @@ export const SITES: Site[] = [
     id: 'ghost-site',
     name: 'GhostSite',
     category: 'special',
-    description: 'Max-Age=10秒のCookieを発行する。取得しても10秒で消える。ゲーム終盤に取れば実質持ち越せる。',
+    description: 'Max-Age=10秒のCookieを発行する。',
     cookie: {
       name: 'ghost_cookie',
       valueGenerator: () => `👻${rand(12)}`,
@@ -663,7 +663,7 @@ export const SITES: Site[] = [
     id: 'eternal-session',
     name: 'EternalSession',
     category: 'special',
-    description: '100年有効なCookieを発行するサービス。孫の代まで追跡される。',
+    description: '100年有効なCookieを発行するサービス。',
     cookie: {
       name: 'eternal_id',
       valueGenerator: () => `eternity_${rand(20)}`,
