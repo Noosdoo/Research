@@ -31,9 +31,9 @@ function AttributeBadge({ name, desc, color }: BadgeProps) {
 }
 
 function sameSiteDesc(v: string) {
-  if (v === 'Strict') return '同一サイトからのリクエストのみ送信。';
-  if (v === 'Lax') return '通常のナビゲーションでは送信するが、クロスサイトPOSTでは送らない。';
-  return 'クロスサイトでも送信される。サードパーティCookieに使われるが、Secureが必須。';
+  if (v === 'Strict') return '同じサイト内のリクエストにだけ送信。外部サイトのリンクから来た場合は送信されない。';
+  if (v === 'Lax') return '画像やiframeなどの裏で飛ぶクロスサイトリクエストでは送信しないが、リンクをクリックして移動してきたときは送信する。';
+  return 'どんなリクエストでも常に送信。ただしSecure属性（HTTPS）が必須。';
 }
 
 // Max-Age（秒）を読みやすい単位に変換する（例: 31536000 → "365日"、315360000 → "10年"）
@@ -101,14 +101,14 @@ export default function CookieInspector({ cookies, variant = 'collected' }: Prop
                     {attrs.httpOnly && (
                       <AttributeBadge
                         name="HttpOnly"
-                        desc="JavaScriptからは読み取れない。XSS攻撃によるCookie窃取を防ぐ重要な属性。"
+                        desc="JavaScriptからのアクセスを防ぐ。XSS攻撃によるCookieの盗難を防止。"
                         color="bg-red-900 text-red-300"
                       />
                     )}
                     {attrs.secure && (
                       <AttributeBadge
                         name="Secure"
-                        desc="HTTPS接続のときのみサーバーに送信される。通信の盗聴（MITM）を防ぐ。"
+                        desc="HTTPS接続のときのみCookieが送信される。通信の盗聴を防ぐ。"
                         color="bg-blue-900 text-blue-300"
                       />
                     )}
