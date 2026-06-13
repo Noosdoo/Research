@@ -209,7 +209,7 @@ export const SITES: Site[] = [
     cookie: {
       name: 'ad_uid',
       valueGenerator: () => `adn_${rand(8)}`,
-      attributes: { sameSite: 'None', maxAge: 86400 * 365 },
+      attributes: { secure: true, sameSite: 'None', maxAge: 86400 * 365 },
       points: 20,
     },
     template: 'ad-popup',
@@ -224,7 +224,7 @@ export const SITES: Site[] = [
     cookie: {
       name: 'tc_track',
       valueGenerator: () => `tc_${rand(10)}`,
-      attributes: { sameSite: 'None', maxAge: 86400 * 365 * 2 },
+      attributes: { secure: true, sameSite: 'None', maxAge: 86400 * 365 * 2 },
       points: 20,
     },
     template: 'consent-button',

@@ -29,7 +29,8 @@ function buildCookieString(name: string, value: string, attrs: CookieAttributes)
   if (attrs.maxAge != null) parts.push(`Max-Age=${attrs.maxAge}`);
   const sameSite = attrs.sameSite === 'None' && isDev ? 'Lax' : attrs.sameSite;
   if (sameSite) parts.push(`SameSite=${sameSite}`);
-  if (attrs.secure && !isDev) parts.push('Secure');
+  // SameSite=None は Secure 必須（無いとブラウザに破棄される）。本番では強制的に付ける。
+  if (!isDev && (attrs.secure || sameSite === 'None')) parts.push('Secure');
   if (attrs.httpOnly) parts.push('HttpOnly');
   return parts.join('; ');
 }
