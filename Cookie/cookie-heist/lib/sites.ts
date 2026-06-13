@@ -542,7 +542,8 @@ export const SITES: Site[] = [
     cookie: {
       name: 'phish_trap',
       valueGenerator: () => `trap_${rand(8)}`,
-      attributes: { sameSite: 'Lax', maxAge: 60 },
+      // 罠サイトは保護属性なし＝無防備なCookie（正規サイトとの対比用）
+      attributes: { maxAge: 60 },
       points: -50,
     },
     template: 'ad-popup',
