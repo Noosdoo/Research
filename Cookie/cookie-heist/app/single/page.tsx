@@ -50,11 +50,13 @@ function SingleGameInner() {
     lastEventId.current = last.id;
     if (last.from === myPlayerId) {
       const el = shakeRef.current;
-      if (!el) return;
-      el.classList.remove('screen-shake');
-      void el.offsetWidth; // reflow でアニメーションをリセット
-      el.classList.add('screen-shake');
-      setTimeout(() => el.classList.remove('screen-shake'), 600);
+      if (el) {
+        el.classList.remove('screen-shake');
+        void el.offsetWidth; // reflow でアニメーションをリセット
+        el.classList.add('screen-shake');
+        setTimeout(() => el.classList.remove('screen-shake'), 600);
+      }
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(120);
     }
   }, [stealEvents, myPlayerId]);
 

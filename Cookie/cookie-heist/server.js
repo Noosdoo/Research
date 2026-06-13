@@ -41,6 +41,7 @@ function serializePlayer(p) {
     color: p.color,
     score: p.score,
     cookies: Object.fromEntries(p.cookies),
+    lostCookies: Object.fromEntries(p.lostCookies),
     stats: p.stats,
     isVisiting: p.isVisiting,
   };
@@ -137,6 +138,7 @@ function startGameFromLobby(lobbyId, io) {
       color: PLAYER_COLORS[ci++ % PLAYER_COLORS.length],
       score: 0,
       cookies: new Map(),
+      lostCookies: new Map(),
       stats: { visitCount: 0, stealCount: 0, stolenCount: 0 },
       isVisiting: false,
     });
@@ -190,7 +192,7 @@ function getSiteState(game, siteId) {
   return ss;
 }
 
-function handleVisitComplete(socket, { siteId, siteName, earnedPoints }, io) {
+function handleVisitComplete(socket, { siteId, siteName, cookieName, cookieValue, earnedPoints }, io) {
   const gameId = socketToGame.get(socket.id);
   if (!gameId) return;
   const game = games.get(gameId);
@@ -213,6 +215,8 @@ function handleVisitComplete(socket, { siteId, siteName, earnedPoints }, io) {
     if (!owner || !owner.cookies.has(siteId)) continue;
     const stolen = owner.cookies.get(siteId);
     owner.cookies.delete(siteId);
+    // 奪われたCookieを完全な状態で退避（結果画面の「奪われたCookie」用）
+    owner.lostCookies.set(siteId, stolen);
     owner.score -= stolen.points;
     owner.stats.stolenCount++;
     player.stats.stealCount++;
@@ -224,7 +228,15 @@ function handleVisitComplete(socket, { siteId, siteName, earnedPoints }, io) {
     });
   }
 
-  player.cookies.set(siteId, { siteId, cookieName: siteName || siteId, points: pts });
+  // OwnedCookie はシングルと同形（値・属性参照用siteId込み）にして、結果画面で同じインスペクタを使えるようにする
+  player.cookies.set(siteId, {
+    siteId,
+    cookieName: cookieName || siteName || siteId,
+    cookieValue: cookieValue || '',
+    acquiredAt: Date.now(),
+    points: pts,
+  });
+  player.lostCookies.delete(siteId); // 取り返したら奪われた一覧から外す
   player.score += pts;
   player.stats.visitCount++;
   ss.ownerIds = [playerId];

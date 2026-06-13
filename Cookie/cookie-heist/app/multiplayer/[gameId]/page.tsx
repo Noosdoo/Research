@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useGameStore } from '@/store/gameStore';
 import { SITES } from '@/lib/sites';
@@ -20,6 +20,8 @@ import Ranking from '@/components/Ranking';
 import PlayerStatus from '@/components/PlayerStatus';
 import CategoryFilter from '@/components/CategoryFilter';
 import StealNotification from '@/components/StealNotification';
+import CookieInspector from '@/components/CookieInspector';
+import Confetti from '@/components/Confetti';
 
 export default function MultiplayerGamePage() {
   const { gameId } = useParams<{ gameId: string }>();
@@ -33,7 +35,37 @@ export default function MultiplayerGamePage() {
 
   const [category, setCategory] = useState<SiteCategory | 'all'>('all');
   const [now, setNow] = useState(Date.now());
+  const [cookieCleared, setCookieCleared] = useState(false);
   const socket = getSocket();
+  const shakeRef = useRef<HTMLDivElement>(null);
+  const lastEventId = useRef('');
+
+  // 奪われたとき画面シェイク（スマホは端末も振動）
+  useEffect(() => {
+    if (stealEvents.length === 0) return;
+    const last = stealEvents[stealEvents.length - 1];
+    if (last.id === lastEventId.current) return;
+    lastEventId.current = last.id;
+    if (last.from === myPlayerId) {
+      const el = shakeRef.current;
+      if (el) {
+        el.classList.remove('screen-shake');
+        void el.offsetWidth; // reflow でアニメーションをリセット
+        el.classList.add('screen-shake');
+        setTimeout(() => el.classList.remove('screen-shake'), 600);
+      }
+      if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(120);
+    }
+  }, [stealEvents, myPlayerId]);
+
+  async function handleClearCookies() {
+    await fetch('/api/clear-cookies', { method: 'POST' });
+    document.cookie.split(';').forEach(c => {
+      const name = c.split('=')[0].trim();
+      document.cookie = `${name}=; Max-Age=0; path=/`;
+    });
+    setCookieCleared(true);
+  }
 
   // now tick for SiteCard countdown (single shared interval)
   useEffect(() => {
@@ -88,7 +120,8 @@ export default function MultiplayerGamePage() {
 
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center p-4">
-        <div className="max-w-lg w-full bg-gray-900 rounded-2xl p-8 flex flex-col gap-6">
+        <Confetti active={iWon} />
+        <div className="max-w-lg w-full bg-gray-900 rounded-2xl p-8 flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
           <h1 className="text-3xl font-black text-white text-center">
             {iWon ? '🎉 勝利！' : '😢 ゲーム終了'}
           </h1>
@@ -102,8 +135,8 @@ export default function MultiplayerGamePage() {
                   p.id === myPlayerId ? 'bg-blue-900 border border-blue-500' : 'bg-gray-800',
                 ].join(' ')}
               >
-                <span className="text-xl">{['🥇', '🥈', '🥉'][i] ?? `${i + 1}`}</span>
-                <span className="w-3 h-3 rounded-full flex-shrink-0" style={{ background: p.color }} />
+                <span className="text-xl w-8 text-center flex-shrink-0">{['🥇', '🥈', '🥉'][i] ?? `${i + 1}`}</span>
+                <span className={`w-3 h-3 rounded-full flex-shrink-0 ${COLOR_BG[p.color] ?? 'bg-gray-400'}`} />
                 <span className="text-white font-semibold flex-1">{p.name}</span>
                 <span className="text-green-300 font-bold">{p.score}pt</span>
                 <span className="text-gray-400 text-sm">{p.cookies.size}種</span>
@@ -112,10 +145,29 @@ export default function MultiplayerGamePage() {
           </div>
 
           {me && (
-            <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-300">
-              <p className="font-semibold text-white mb-2">📊 あなたの統計</p>
-              <p>訪問回数: {me.stats.visitCount}</p>
-              <p>奪取: {me.stats.stealCount} / 喪失: {me.stats.stolenCount}</p>
+            <div className="bg-gray-800 rounded-lg p-4 text-sm text-gray-300 flex flex-col gap-3">
+              <div>
+                <p className="font-semibold text-white mb-1">📊 あなたの成績</p>
+                <p>訪問回数: {me.stats.visitCount}</p>
+                <p>奪取: {me.stats.stealCount} / 喪失: {me.stats.stolenCount}</p>
+              </div>
+
+              <CookieInspector cookies={me.cookies} />
+              <CookieInspector cookies={me.lostCookies} variant="lost" />
+
+              <div>
+                <p className="text-xs text-gray-500 text-center">
+                  F12 → Application → Cookies で<br />ブラウザに保存されたCookieを確認できます
+                </p>
+                <button
+                  type="button"
+                  onClick={handleClearCookies}
+                  disabled={cookieCleared}
+                  className="mt-2 w-full py-2 bg-red-700 hover:bg-red-600 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-lg transition-colors"
+                >
+                  {cookieCleared ? '✅ Cookieをリセット済み' : '🗑️ ブラウザのCookieをリセット'}
+                </button>
+              </div>
             </div>
           )}
 
@@ -131,16 +183,23 @@ export default function MultiplayerGamePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-950 flex flex-col">
+    <div ref={shakeRef} className="min-h-screen bg-gray-950 flex flex-col">
       <header className="flex items-center justify-between px-4 py-2 bg-gray-900 border-b border-gray-800">
         <span className="text-white font-black text-xl whitespace-nowrap">🍪 Cookie Heist</span>
-        <div className="flex items-center gap-2">
+        <Timer timeLeft={timeLeft} />
+        <div className="flex items-center gap-3">
           <span className="text-xs text-purple-400 font-bold bg-purple-900/40 px-2 py-0.5 rounded">
             オンライン
           </span>
-          <Timer timeLeft={timeLeft} />
+          <span className="text-white font-black text-base">{me ? `${me.score}pt` : ''}</span>
+          <button
+            type="button"
+            onClick={() => { exitOnlineMode(); router.push('/'); }}
+            className="text-xs font-bold px-3 py-1 rounded-lg bg-gray-700 hover:bg-red-700 text-gray-200 hover:text-white transition-colors"
+          >
+            退出
+          </button>
         </div>
-        <span className="text-gray-400 text-sm">{me ? `${me.score}pt` : ''}</span>
       </header>
 
       <div className="flex flex-1 overflow-hidden">

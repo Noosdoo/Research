@@ -73,6 +73,7 @@ export interface ServerPlayer {
   id: string; name: string; color: string;
   score: number; isVisiting: boolean;
   cookies: Record<string, OwnedCookie>;
+  lostCookies: Record<string, OwnedCookie>;
   stats: { visitCount: number; stealCount: number; stolenCount: number };
 }
 
@@ -317,7 +318,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       players.set(id, {
         ...p, isAI: false,
         cookies: new Map(Object.entries(p.cookies || {})) as Map<SiteId, OwnedCookie>,
-        lostCookies: new Map(),
+        lostCookies: new Map(Object.entries(p.lostCookies || {})) as Map<SiteId, OwnedCookie>,
       });
     }
     const sitesState = new Map<SiteId, SiteState>();
@@ -337,7 +338,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       players.set(id, {
         ...p, isAI: false,
         cookies: new Map(Object.entries(p.cookies || {})) as Map<SiteId, OwnedCookie>,
-        lostCookies: new Map(),
+        lostCookies: new Map(Object.entries(p.lostCookies || {})) as Map<SiteId, OwnedCookie>,
       });
     }
     const prev = get().sitesState;

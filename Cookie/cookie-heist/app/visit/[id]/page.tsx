@@ -77,6 +77,8 @@ export default function VisitPage() {
       getSocket().emit('game:visit-complete', {
         siteId: id,
         siteName: site?.name ?? id,
+        cookieName: site?.cookie.name ?? id,
+        cookieValue: cookieValue ?? '',
         earnedPoints: points ?? site?.cookie.points ?? 0,
       });
     } else {
