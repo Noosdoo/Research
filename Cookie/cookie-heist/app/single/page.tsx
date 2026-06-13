@@ -159,6 +159,7 @@ function SingleGameInner() {
               </div>
 
               <CookieInspector cookies={me.cookies} />
+              <CookieInspector cookies={me.lostCookies} variant="lost" />
 
               <div>
                 <p className="text-xs text-gray-500 text-center">

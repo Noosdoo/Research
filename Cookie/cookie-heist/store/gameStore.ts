@@ -53,6 +53,7 @@ function makePlayer(id: PlayerId, name: string, isAI: boolean, colorIdx: number)
     isAI,
     color: PLAYER_COLORS[colorIdx % PLAYER_COLORS.length],
     cookies: new Map(),
+    lostCookies: new Map(),
     score: 0,
     stats: { visitCount: 0, stealCount: 0, stolenCount: 0 },
     isVisiting: false,
@@ -316,6 +317,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       players.set(id, {
         ...p, isAI: false,
         cookies: new Map(Object.entries(p.cookies || {})) as Map<SiteId, OwnedCookie>,
+        lostCookies: new Map(),
       });
     }
     const sitesState = new Map<SiteId, SiteState>();
@@ -335,6 +337,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       players.set(id, {
         ...p, isAI: false,
         cookies: new Map(Object.entries(p.cookies || {})) as Map<SiteId, OwnedCookie>,
+        lostCookies: new Map(),
       });
     }
     const prev = get().sitesState;
@@ -410,9 +413,14 @@ function finishVisit(
     const stolenCookie = owner.cookies.get(siteId)!;
     const newCookies = new Map(owner.cookies);
     newCookies.delete(siteId);
+    // 奪われたCookieは完全な状態（値・属性込み）で退避し、結果画面で見せる。
+    // 実ブラウザのCookieは奪取では消えないので「F12にはまだ残っている」布石になる。
+    const newLost = new Map(owner.lostCookies);
+    newLost.set(siteId, stolenCookie);
     newPlayers.set(ownerId, {
       ...owner,
       cookies: newCookies,
+      lostCookies: newLost,
       score: owner.score - stolenCookie.points,
       stats: { ...owner.stats, stolenCount: owner.stats.stolenCount + 1 },
     });
@@ -448,11 +456,15 @@ function finishVisit(
   const freshPlayer = newPlayers.get(playerId)!;
   const newCookies = new Map(freshPlayer.cookies);
   newCookies.set(siteId, owned);
+  // 取り返した（再取得した）Cookieは「奪われた一覧」から外す
+  const newLost = new Map(freshPlayer.lostCookies);
+  newLost.delete(siteId);
 
   newPlayers.set(playerId, {
     ...freshPlayer,
     isVisiting: false,
     cookies: newCookies,
+    lostCookies: newLost,
     score: freshPlayer.score + earnedPoints,
     stats: { ...freshPlayer.stats, visitCount: freshPlayer.stats.visitCount + 1 },
   });

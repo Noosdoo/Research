@@ -65,6 +65,8 @@ export interface Player {
   isAI: boolean;
   color: string;
   cookies: Map<SiteId, OwnedCookie>;
+  // 奪取されたが取り返せていないCookie（結果画面で表示／実ブラウザにはまだ残っている）
+  lostCookies: Map<SiteId, OwnedCookie>;
   score: number;
   stats: PlayerStats;
   isVisiting: boolean;
