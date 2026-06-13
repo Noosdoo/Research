@@ -31,9 +31,21 @@ function AttributeBadge({ name, desc, color }: BadgeProps) {
 }
 
 function sameSiteDesc(v: string) {
-  if (v === 'Strict') return '同一サイトからのリクエストのみ送信。CSRF攻撃を防ぐ。';
+  if (v === 'Strict') return '同一サイトからのリクエストのみ送信。';
   if (v === 'Lax') return '通常のナビゲーションでは送信するが、クロスサイトPOSTでは送らない。';
   return 'クロスサイトでも送信される。サードパーティCookieに使われるが、Secureが必須。';
+}
+
+// Max-Age（秒）を読みやすい単位に変換する（例: 31536000 → "365日"、315360000 → "10年"）
+function formatMaxAge(sec: number): string {
+  if (sec < 60) return `${sec}秒`;
+  if (sec < 3600) return `${Math.round(sec / 60)}分`;
+  if (sec < 86400) return `${Math.round(sec / 3600)}時間`;
+  const days = Math.round(sec / 86400);
+  if (days <= 365) return `${days}日`;
+  const years = Math.floor(days / 365);
+  const rem = days % 365;
+  return rem === 0 ? `${years}年` : `${years}年${rem}日`;
 }
 
 interface Props {
@@ -109,8 +121,8 @@ export default function CookieInspector({ cookies, variant = 'collected' }: Prop
                     )}
                     {attrs.maxAge != null && (
                       <AttributeBadge
-                        name={`Max-Age ${Math.round(attrs.maxAge / 60)}分`}
-                        desc={`${attrs.maxAge}秒（約${Math.round(attrs.maxAge / 60)}分）後に自動削除される。設定がなければブラウザを閉じると消えるセッションCookie。`}
+                        name={`Max-Age ${formatMaxAge(attrs.maxAge)}`}
+                        desc={`${formatMaxAge(attrs.maxAge)}（${attrs.maxAge.toLocaleString()}秒）後に自動削除される。設定がなければブラウザを閉じると消えるセッションCookie。`}
                         color="bg-amber-900 text-amber-300"
                       />
                     )}
