@@ -48,19 +48,13 @@ export default function CookieInspector({ cookies, variant = 'collected' }: Prop
   if (cookies.size === 0) return null;
 
   const isLost = variant === 'lost';
-  const title = isLost ? '💀 ゲーム中に奪われたCookie' : '🍪 収集したCookie';
+  const title = isLost ? '💀 奪われたCookie' : '🍪 収集したCookie';
   const nameColor = isLost ? 'text-rose-300' : 'text-green-300';
   const pointColor = isLost ? 'text-rose-400' : 'text-green-400';
 
   return (
     <div className="flex flex-col gap-2">
       <p className="font-semibold text-white text-sm">{title}</p>
-      {isLost && (
-        <p className="text-[11px] text-rose-200/80 bg-rose-950/40 border border-rose-900/60 rounded px-2.5 py-1.5 leading-relaxed">
-          ゲーム上は奪われたが、<strong className="text-rose-100">実際のCookieはまだあなたのブラウザに残っている</strong>。
-          F12 → Application → Cookies で確認できる。Cookieは「盗まれても自分の手元から消えない」——だから一度漏れると危険。
-        </p>
-      )}
       <div className="flex flex-col gap-1">
         {[...cookies.entries()].map(([siteId, owned]) => {
           const site = getSiteById(siteId);
