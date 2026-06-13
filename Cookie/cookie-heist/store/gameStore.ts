@@ -240,8 +240,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const profile = aiProfiles.get(aiId) ?? { aggression: 0.7, consentBias: 1.1 };
 
-    // サボり: アグレッシブなAIほどサボりにくい（約11%〜5%）
-    if (Math.random() < 0.15 - profile.aggression * 0.1) return;
+    // サボり: アグレッシブなAIほどサボりにくい（約18%〜12%）。人間に無干渉な時間を作る。
+    if (Math.random() < 0.22 - profile.aggression * 0.1) return;
 
     const candidates = SITES
       .map(s => {
@@ -257,12 +257,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // ① 同意サイトを巡回する基本バイアス（個性で強さが変わる）
         if (s.template === 'consent-button') score += 30 * profile.consentBias;
 
-        // ② 人間が所有しているサイトを最優先で奪う（ポイント差を上回る支配的な重み）
+        // ② 人間が所有しているサイトを奪うインセンティブ。ポイントに上乗せするが
+        //    新鮮な高級サイト（〜200pt）を常に上回らない重みにして、AIが人間に
+        //    張り付いて奪い続けないようにする（奪取の緊張感は残す）。
         const humanOwns = ownerIds.some(id => {
           const p = players.get(id);
           return p != null && !p.isAI && id !== aiId;
         });
-        if (humanOwns) score += 200 * profile.aggression;
+        if (humanOwns) score += 100 * profile.aggression;
 
         // ③ その他プレイヤー所有の一般奪取インセンティブ（弱め）
         const othersOwn = ownerIds.filter(id => id !== aiId).length;

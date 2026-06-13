@@ -81,7 +81,7 @@ function SingleGameInner() {
       for (const id of pl.keys()) {
         if (id !== me) processAITick(id);
       }
-    }, 1500);
+    }, 1800);
     return () => { if (aiRef.current) clearInterval(aiRef.current); };
   }, [phase, processAITick]);
 
