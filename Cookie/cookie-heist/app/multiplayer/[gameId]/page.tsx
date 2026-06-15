@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useGameStore } from '@/store/gameStore';
 import { SITES } from '@/lib/sites';
@@ -97,6 +97,10 @@ export default function MultiplayerGamePage() {
     socket.on('game:state-update', onStateUpdate);
     socket.on('game:tick', onTick);
     socket.on('game:ended', onEnded);
+    // マウント時（/visit から戻った直後を含む）に最新状態を要求する。
+    // 訪問中はこのページがアンマウントされ state-update を取りこぼすため、
+    // 戻った直後に所持Cookie等の表示が古いままになるのを防ぐ。
+    socket.emit('game:request-sync');
 
     return () => {
       socket.off('game:state-update', onStateUpdate);
@@ -109,7 +113,18 @@ export default function MultiplayerGamePage() {
     router.push(`/visit/${siteId}`);
   }, [router]);
 
-  const filteredSites = SITES.filter(s => category === 'all' || s.category === category);
+  // 訪問から戻るたびに再マウントされるので、シングル（AI対戦）と同様にマップ順をシャッフルする
+  const shuffledSites = useMemo(() => {
+    const arr = [...SITES];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const filteredSites = shuffledSites.filter(s => category === 'all' || s.category === category);
   const me = players.get(myPlayerId);
   const allPlayers = [...players.values()];
 

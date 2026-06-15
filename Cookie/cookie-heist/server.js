@@ -248,6 +248,19 @@ function handleVisitComplete(socket, { siteId, siteName, cookieName, cookieValue
   });
 }
 
+// クライアントが（再）マウント時に最新状態を要求する。要求元のソケットにだけ返す。
+function handleRequestSync(socket) {
+  const gameId = socketToGame.get(socket.id);
+  if (!gameId) return;
+  const game = games.get(gameId);
+  if (!game) return;
+  socket.emit('game:state-update', {
+    players: serializePlayers(game.players),
+    sitesState: serializeSites(game.sitesState),
+    stealEvents: [],
+  });
+}
+
 function handleVisitChange(socket, { siteId }, starting, io) {
   const gameId = socketToGame.get(socket.id);
   if (!gameId) return;
@@ -406,6 +419,7 @@ app.prepare().then(() => {
     socket.on('game:visit-start',    (data) => handleVisitChange(socket, data, true, io));
     socket.on('game:visit-cancel',   (data) => handleVisitChange(socket, data, false, io));
     socket.on('game:visit-complete', (data) => handleVisitComplete(socket, data, io));
+    socket.on('game:request-sync',   () => handleRequestSync(socket));
 
     socket.on('disconnect', () => handleSocketDisconnect(socket.id, io));
   });
