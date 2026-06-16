@@ -8,7 +8,8 @@ const rand = (len = 12) => Math.random().toString(36).slice(2, 2 + len);
 //   rare      : 120–160 （訪問8秒）
 //   legendary : 180–200 （訪問20秒）
 //   honeypot  : -30 / -40 / -50（マイナス）
-// レア度 → 訪問時間 / Max-Age の対応は gameStore.ts の RARITY_MS / AI_VISIT_MS が担当。
+// 括弧内はAIの訪問所要時間（gameStore.ts の AI_VISIT_MS）。評価のレア度コストは RARITY_COST が担当。
+// Max-Age は各サイトの cookie.attributes で個別に定義し、tickTimer の失効処理で使う。
 export const SITES: Site[] = [
   // ── finance (rare → survey hard) ─────────────────────────────────
   {
@@ -542,8 +543,9 @@ export const SITES: Site[] = [
     cookie: {
       name: 'phish_trap',
       valueGenerator: () => `trap_${rand(8)}`,
-      // 罠サイトは保護属性なし＝無防備なCookie（正規サイトとの対比用）
-      attributes: { maxAge: 60 },
+      // 罠サイトは保護属性なし＝無防備なCookie（正規サイトとの対比用）。
+      // マイナス点は失効で戻ると罠の意味が薄れるため、ゲーム中は失効しない長寿命にする。
+      attributes: { maxAge: 86400 * 365 },
       points: -50,
     },
     template: 'ad-popup',
@@ -609,7 +611,8 @@ export const SITES: Site[] = [
     cookie: {
       name: 'mystery_gamma',
       valueGenerator: () => `mg_${rand(8)}`,
-      attributes: { maxAge: 60 },
+      // マイナス点の罠は失効で戻さない（長寿命）。secuure-bank と挙動を揃える。
+      attributes: { maxAge: 86400 * 365 },
       points: -40,
     },
     template: 'ad-popup',

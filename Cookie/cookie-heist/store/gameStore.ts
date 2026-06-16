@@ -20,11 +20,13 @@ const GAME_DURATION = 3 * 60; // seconds
 
 const PLAYER_COLORS = ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b'];
 
-const RARITY_MS: Record<Rarity, number> = {
-  common: 8000,
-  uncommon: 12000,
-  rare: 18000,
-  legendary: 25000,
+// AIの評価関数でレア度を割り引くコスト（pt換算）。高レアほど手間がかかる分を相殺し、
+// 高pt帯に一極集中しないようにする。※訪問の所要時間は AI_VISIT_MS が別に担当。
+const RARITY_COST: Record<Rarity, number> = {
+  common: 8,
+  uncommon: 12,
+  rare: 18,
+  legendary: 25,
 };
 
 // AIの訪問所要時間。安サイトは即取り、高ptサイトほど時間がかかり妨害の隙ができる。
@@ -235,7 +237,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   processAITick(aiId: PlayerId) {
-    const { players, sitesState, phase } = get();
+    const { players, sitesState, phase, timeLeft } = get();
     if (phase !== 'playing') return;
     const ai = players.get(aiId);
     if (!ai || ai.isVisiting) return;
@@ -250,8 +252,15 @@ export const useGameStore = create<GameStore>((set, get) => ({
         // ハニーポットを40%の確率で踏む
         if (s.isHoneypot && Math.random() > 0.4) return null;
         let score = s.cookie.points;
-        score -= RARITY_MS[s.rarity] / 1000;
+        score -= RARITY_COST[s.rarity];
         if (ai.cookies.has(s.id)) score *= 0.3; // 既に所持しているサイトは優先度を下げる
+
+        // 短命Cookie（例: GhostSite=10秒）は取ってもすぐ失効する。終盤以外では価値を
+        // 大きく割り引き、AIが高pt短命サイトに序盤から飛びついて失点する不自然さを防ぐ。
+        const maxAge = s.cookie.attributes.maxAge;
+        if (maxAge != null && maxAge <= 120 && s.cookie.points > 0 && timeLeft > maxAge + 20) {
+          score -= s.cookie.points * 0.6;
+        }
 
         const ss = sitesState.get(s.id)!;
         const ownerIds = ss.ownerIds;
@@ -272,9 +281,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         const othersOwn = ownerIds.filter(id => id !== aiId).length;
         score += othersOwn * 10;
 
-        // ④ 既に他AIが訪問中のサイトは強く避ける → 全員が同じ標的に殺到しない
+        // ④ 既に他プレイヤーが訪問中のサイトは強く避ける → 全員が同じ標的に殺到しない
         const visiting = ss.currentVisitorIds.filter(id => id !== aiId).length;
-        score -= visiting * 35;
+        score -= visiting * 45;
 
         return { id: s.id, score, rarity: s.rarity, template: s.template };
       })
