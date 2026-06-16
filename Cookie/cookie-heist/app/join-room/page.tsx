@@ -10,8 +10,6 @@ import type { SiteState } from '@/lib/types';
 type Stage = 'form' | 'waiting' | 'starting';
 type PlayerInfo = { id: string; name: string; color: string };
 
-const DOT_COLORS = ['bg-blue-500', 'bg-red-500', 'bg-green-500', 'bg-yellow-500'];
-
 export default function JoinRoomPage() {
   const router = useRouter();
   const { initOnlineGame } = useGameStore();
@@ -112,7 +110,7 @@ export default function JoinRoomPage() {
                 ].join(' ')}>
                   {p ? (
                     <>
-                      <span className={`w-4 h-4 rounded-full flex-shrink-0 ${DOT_COLORS[i] ?? 'bg-gray-500'}`} />
+                      <span className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: p.color }} />
                       <span className="text-white font-semibold">{p.name}</span>
                       {p.id === myIdRef.current && <span className="text-xs text-blue-400 ml-auto">あなた</span>}
                     </>
