@@ -36,18 +36,6 @@ function sameSiteDesc(v: string) {
   return 'どんなリクエストでも常に送信。ただしSecure属性（HTTPS）が必須。';
 }
 
-// Max-Age（秒）を読みやすい単位に変換する（例: 31536000 → "365日"、315360000 → "10年"）
-function formatMaxAge(sec: number): string {
-  if (sec < 60) return `${sec}秒`;
-  if (sec < 3600) return `${Math.round(sec / 60)}分`;
-  if (sec < 86400) return `${Math.round(sec / 3600)}時間`;
-  const days = Math.round(sec / 86400);
-  if (days <= 365) return `${days}日`;
-  const years = Math.floor(days / 365);
-  const rem = days % 365;
-  return rem === 0 ? `${years}年` : `${years}年${rem}日`;
-}
-
 interface Props {
   cookies: Map<string, OwnedCookie>;
   // 'collected' = 手元に残ったCookie（既定） / 'lost' = ゲーム中に奪われたCookie
@@ -121,8 +109,8 @@ export default function CookieInspector({ cookies, variant = 'collected' }: Prop
                     )}
                     {attrs.maxAge != null && (
                       <AttributeBadge
-                        name={`Max-Age ${formatMaxAge(attrs.maxAge)}`}
-                        desc={`${formatMaxAge(attrs.maxAge)}（${attrs.maxAge.toLocaleString()}秒）後に自動削除される。設定がなければブラウザを閉じると消えるセッションCookie。`}
+                        name={`Max-Age ${Math.round(attrs.maxAge / 60).toLocaleString()}分`}
+                        desc={`${Math.round(attrs.maxAge / 60).toLocaleString()}分（${attrs.maxAge.toLocaleString()}秒）後に自動削除される。設定がなければブラウザを閉じると消えるセッションCookie。`}
                         color="bg-amber-900 text-amber-300"
                       />
                     )}
