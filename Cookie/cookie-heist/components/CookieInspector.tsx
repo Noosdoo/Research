@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import type { OwnedCookie } from '@/lib/types';
-import { getSiteById } from '@/lib/sites';
+import { getSiteById, formatMaxAge } from '@/lib/sites';
 
 interface BadgeProps {
   name: string;
@@ -109,8 +109,8 @@ export default function CookieInspector({ cookies, variant = 'collected' }: Prop
                     )}
                     {attrs.maxAge != null && (
                       <AttributeBadge
-                        name={`Max-Age ${Math.round(attrs.maxAge / 60).toLocaleString()}分`}
-                        desc={`${Math.round(attrs.maxAge / 60).toLocaleString()}分（${attrs.maxAge.toLocaleString()}秒）後に自動削除される。設定がなければブラウザを閉じると消えるセッションCookie。`}
+                        name={`Max-Age ${formatMaxAge(attrs.maxAge)}`}
+                        desc={`${formatMaxAge(attrs.maxAge)}（${attrs.maxAge.toLocaleString()}秒）後に自動削除される。設定がなければブラウザを閉じると消えるセッションCookie。`}
                         color="bg-amber-900 text-amber-300"
                       />
                     )}

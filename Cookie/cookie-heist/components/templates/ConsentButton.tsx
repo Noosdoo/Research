@@ -1,6 +1,7 @@
 'use client';
 
 import type { Site } from '@/lib/types';
+import { formatMaxAge } from '@/lib/sites';
 
 interface Props {
   site: Site;
@@ -36,7 +37,7 @@ export default function ConsentButton({ site, onComplete, onCancel }: Props) {
             <br />
             <span className="text-xs text-gray-500">
               Cookie 名: <code className="bg-gray-700 px-1 rounded">{site.cookie.name}</code>
-              &nbsp;|&nbsp;保存期間: {site.cookie.attributes.maxAge ? `${Math.round(site.cookie.attributes.maxAge / 86400)}日` : 'セッション'}
+              &nbsp;|&nbsp;保存期間: {site.cookie.attributes.maxAge ? formatMaxAge(site.cookie.attributes.maxAge) : 'セッション'}
             </span>
           </p>
           <div className="flex gap-3 items-center">

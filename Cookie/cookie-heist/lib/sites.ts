@@ -690,6 +690,20 @@ export function getSiteById(id: string): Site | undefined {
   return SITES_MAP.get(id);
 }
 
+// Max-Age（秒）を読みやすい単位に整形する。値の大きさで秒/分/時間/日/年を自動選択。
+// 例: 10→「10秒」, 1800→「30分」, 3600→「1時間」, 86400*30→「30日」, 86400*365*100→「約100年」。
+// 正確な秒数が要る箇所（CookieInspector の説明文など）では呼び出し側で別途併記する。
+export function formatMaxAge(seconds: number): string {
+  if (seconds < 60) return `${seconds}秒`;
+  const minutes = seconds / 60;
+  if (minutes < 60) return `${Math.round(minutes)}分`;
+  const hours = minutes / 60;
+  if (hours < 24) return `${Math.round(hours)}時間`;
+  const days = hours / 24;
+  if (days < 365) return `${Math.round(days)}日`;
+  return `約${Math.round(days / 365).toLocaleString()}年`;
+}
+
 export const CATEGORY_LABELS: Record<string, string> = {
   finance: '金融',
   ecommerce: 'EC',
