@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { useGameStore } from '@/store/gameStore';
 import { getSiteById } from '@/lib/sites';
 import { getSocket } from '@/lib/socket';
@@ -19,9 +20,20 @@ export default function VisitPage() {
   const site = getSiteById(id);
   const completed = useRef(false);
 
+  // 取得演出（Cookie獲得 / 罠だった）。表示中はマップへ戻るのを少し待つ。
+  const [acquired, setAcquired] = useState<{ points: number } | null>(null);
+  const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const { phase, timeLeft, completeVisit, mode, onlineGameId } = useGameStore();
   const isOnline = mode === 'online';
   const returnUrl = isOnline ? `/multiplayer/${onlineGameId}` : '/single';
+
+  const goBack = useCallback(() => {
+    if (navTimer.current) { clearTimeout(navTimer.current); navTimer.current = null; }
+    router.push(returnUrl);
+  }, [router, returnUrl]);
+
+  useEffect(() => () => { if (navTimer.current) clearTimeout(navTimer.current); }, []);
 
   // Local timer tick (local mode only)
   useEffect(() => {
@@ -73,19 +85,22 @@ export default function VisitPage() {
       }
     } catch {}
 
+    const earned = points ?? site?.cookie.points ?? 0;
     if (isOnline) {
       getSocket().emit('game:visit-complete', {
         siteId: id,
         siteName: site?.name ?? id,
         cookieName: site?.cookie.name ?? id,
         cookieValue: cookieValue ?? '',
-        earnedPoints: points ?? site?.cookie.points ?? 0,
+        earnedPoints: earned,
       });
     } else {
       completeVisit(id, points, cookieValue);
     }
-    router.push(returnUrl);
-  }, [id, site, isOnline, completeVisit, returnUrl, router]);
+    // 取得演出を出してから少し遅れてマップへ戻る（タップで即スキップ可）
+    setAcquired({ points: earned });
+    navTimer.current = setTimeout(goBack, 800);
+  }, [id, site, isOnline, completeVisit, goBack]);
 
   const handleCancel = useCallback(() => {
     completed.current = true;
@@ -134,6 +149,38 @@ export default function VisitPage() {
           <Quiz site={site} onComplete={handleComplete} onCancel={handleCancel} />
         )}
       </div>
+
+      {/* 取得演出オーバーレイ（タップで即スキップ） */}
+      {acquired && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={goBack}
+          className="fixed inset-0 z-[300] flex items-center justify-center bg-black/80 cursor-pointer"
+        >
+          <motion.div
+            initial={{ scale: 0.6, y: 16 }}
+            animate={{ scale: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 18 }}
+            className="text-center select-none"
+          >
+            {acquired.points >= 0 ? (
+              <>
+                <div className="text-7xl mb-3">🍪</div>
+                <p className="text-3xl font-black text-green-400">Cookie獲得！</p>
+                <p className="text-2xl font-black text-green-300 mt-1">+{acquired.points}pt</p>
+              </>
+            ) : (
+              <>
+                <div className="text-7xl mb-3">💀</div>
+                <p className="text-3xl font-black text-red-400">罠だった…</p>
+                <p className="text-2xl font-black text-red-300 mt-1">{acquired.points}pt</p>
+              </>
+            )}
+            <p className="text-xs text-gray-400 mt-4">タップでマップへ</p>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 }

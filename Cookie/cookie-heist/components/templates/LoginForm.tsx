@@ -90,10 +90,11 @@ export default function LoginForm({ site, onComplete, onCancel }: Props) {
         </p>
 
         <button
+          type="button"
           onClick={onCancel}
           className="w-full mt-3 py-2 text-gray-400 hover:text-gray-600 text-sm transition-colors"
         >
-          ← 戻る
+          ← 戻る（Cookie取得なし）
         </button>
       </div>
     </div>

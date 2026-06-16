@@ -42,12 +42,14 @@ export default function ConsentButton({ site, onComplete, onCancel }: Props) {
           </p>
           <div className="flex gap-3 items-center">
             <button
+              type="button"
               onClick={onComplete}
               className="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg transition-colors text-sm"
             >
               すべて受け入れる
             </button>
             <button
+              type="button"
               onClick={onCancel}
               className="px-4 py-2 bg-transparent border border-gray-500 hover:border-gray-300 text-gray-300 hover:text-white rounded-lg transition-colors text-sm"
             >

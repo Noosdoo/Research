@@ -149,7 +149,7 @@ interface Props {
 }
 
 export default function Survey({ site, onComplete, onCancel }: Props) {
-  const questions = useMemo(() => QUESTIONS[site.id] ?? FALLBACK, []);
+  const questions = useMemo(() => QUESTIONS[site.id] ?? FALLBACK, [site.id]);
 
   const [answers, setAnswers] = useState<string[]>(Array(questions.length).fill(''));
   const [submitting, setSubmitting] = useState(false);
