@@ -575,7 +575,7 @@ export const SITES: Site[] = [
     id: 'mystery-alpha',
     name: 'MysteryBox',
     category: 'niche',
-    description: '中身がわからない箱を売っているらしいサイト。',
+    description: '中身がわからない箱を売っているサイト。',
     cookie: {
       name: 'mystery_alpha',
       valueGenerator: () => `mx_${rand(12)}`,
