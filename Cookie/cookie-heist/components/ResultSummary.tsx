@@ -24,33 +24,17 @@ export default function ResultSummary({ me, onClearCookies, cookieCleared }: Pro
       <CookieInspector cookies={me.cookies} />
       <CookieInspector cookies={me.lostCookies} variant="lost" />
 
-      {/* ── F12 のオチ（発表のクライマックス） ───────────────────────── */}
-      <div className="rounded-xl border border-amber-500/60 bg-gradient-to-b from-amber-950/60 to-gray-900 p-4 flex flex-col gap-2">
-        <p className="text-amber-300 font-black text-base">🔍 ここからが本番です</p>
-        <p className="text-gray-200 text-xs leading-relaxed">
-          キーボードの <kbd className="px-1.5 py-0.5 bg-gray-700 rounded text-[10px] font-mono">F12</kbd>
-          を押し、<span className="text-amber-200 font-semibold">Application → Cookies</span> を開いてみてください。
-        </p>
-        <p className="text-gray-200 text-xs leading-relaxed">
-          あなたはこのゲームで <span className="text-amber-300 font-bold">{visitCount}回</span> サイトを訪問し、
-          そのたびに <span className="text-amber-200 font-semibold">本物のCookie</span> がブラウザに保存されました。
-        </p>
-        <p className="text-gray-300 text-xs leading-relaxed">
-          ゲーム中に<span className="text-rose-300 font-semibold">奪われた</span>Cookieも、
-          <span className="text-rose-300 font-semibold">期限切れ</span>になったCookieも、
-          ブラウザにはまだ残っています。
-          <span className="text-amber-200">他人やサーバーは、あなたのブラウザのCookieを勝手に消せない</span>からです。
-        </p>
-        <p className="text-gray-400 text-[11px] leading-relaxed border-t border-gray-700 pt-2 mt-1">
-          普段のWebブラウジングでも、これと同じことが毎日あなたのブラウザで起きています。
+      <div>
+        <p className="text-xs text-gray-500 text-center">
+          F12 → Application → Cookies で<br />ブラウザに保存されたCookieを確認できます
         </p>
         <button
           type="button"
           onClick={onClearCookies}
           disabled={cookieCleared}
-          className="mt-1 w-full py-2 bg-red-700 hover:bg-red-600 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-lg transition-colors"
+          className="mt-2 w-full py-2 bg-red-700 hover:bg-red-600 disabled:bg-gray-700 disabled:text-gray-500 text-white text-xs font-bold rounded-lg transition-colors"
         >
-          {cookieCleared ? '✅ Cookieをリセット済み' : '🗑️ 確認できたらブラウザのCookieをリセット'}
+          {cookieCleared ? '✅ Cookieをリセット済み' : '🗑️ ブラウザのCookieをリセット'}
         </button>
       </div>
     </div>
