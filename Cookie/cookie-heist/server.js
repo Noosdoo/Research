@@ -3,6 +3,11 @@ const { parse } = require('url');
 const next = require('next');
 const { Server } = require('socket.io');
 
+// サイトの正規ポイント（id → points）。server.js はプレーンJSで lib/sites.ts(TS)を
+// 直接 require できないため、両者が読める JSON を正本にする。sites.ts 側はこの値との
+// 一致を起動時(dev)に検証してドリフトを防ぐ。点数の権威はサーバが持つ（クライアント申告を信用しない）。
+const SITE_SCORES = require('./lib/siteScores.json');
+
 const dev = process.env.NODE_ENV !== 'production';
 const port = parseInt(process.env.PORT || '3000', 10);
 
@@ -181,9 +186,10 @@ function startGameFromLobby(lobbyId, io) {
   }, 3000);
 }
 
-// サイト状態の遅延生成。siteId はクライアント申告なので形式だけ検証する。
+// サイト状態の遅延生成。siteId はクライアント申告なので、正規の42サイトに実在するIDだけ受理する
+// （存在しないIDを送って勝手にサイト状態を作らせる不正を防ぐ）。
 function getSiteState(game, siteId) {
-  if (typeof siteId !== 'string' || siteId.length === 0 || siteId.length > 64) return null;
+  if (typeof siteId !== 'string' || !Object.prototype.hasOwnProperty.call(SITE_SCORES, siteId)) return null;
   let ss = game.sitesState.get(siteId);
   if (!ss) {
     ss = { siteId, ownerIds: [], currentVisitorIds: [] };
@@ -192,7 +198,8 @@ function getSiteState(game, siteId) {
   return ss;
 }
 
-function handleVisitComplete(socket, { siteId, siteName, cookieName, cookieValue, earnedPoints }, io) {
+// earnedPoints はクライアント申告だが信用しない（後述）。点数はサーバが正規値を引く。
+function handleVisitComplete(socket, { siteId, siteName, cookieName, cookieValue }, io) {
   const gameId = socketToGame.get(socket.id);
   if (!gameId) return;
   const game = games.get(gameId);
@@ -206,7 +213,9 @@ function handleVisitComplete(socket, { siteId, siteName, cookieName, cookieValue
   ss.currentVisitorIds = ss.currentVisitorIds.filter(id => id !== playerId);
   player.isVisiting = false;
 
-  const pts = Math.max(-500, Math.min(500, Number(earnedPoints) || 0));
+  // 点数の権威はサーバ。クライアントが送ってくる earnedPoints は使わず、siteId に対応する
+  // 正規ポイントを引く。getSiteState で実在IDを保証済みなので必ず数値が取れる。
+  const pts = SITE_SCORES[siteId];
   const stealEvents = [];
 
   for (const ownerId of [...ss.ownerIds]) {

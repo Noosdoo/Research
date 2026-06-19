@@ -1,4 +1,5 @@
 import type { Site } from './types';
+import SITE_SCORES from './siteScores.json';
 
 const rand = (len = 12) => Math.random().toString(36).slice(2, 2 + len);
 
@@ -688,6 +689,23 @@ export const SITES: Site[] = [
 ];
 
 export const SITES_MAP: ReadonlyMap<string, Site> = new Map(SITES.map(s => [s.id, s]));
+
+// 開発時のみ: server.js が点数の正本として参照する siteScores.json と、各サイトの
+// 正規 points が一致するか検証する。片方だけ変更したら起動時に即気づけるようにする
+// （本番ビルドでは実行せず、万一のドリフトでデモが落ちるのを避ける）。
+if (process.env.NODE_ENV !== 'production') {
+  const scores = SITE_SCORES as Record<string, number>;
+  for (const s of SITES) {
+    if (scores[s.id] !== s.cookie.points) {
+      throw new Error(
+        `[siteScores] ${s.id} の点数不一致: sites.ts=${s.cookie.points} / siteScores.json=${scores[s.id]}。両方を揃えてください。`,
+      );
+    }
+  }
+  for (const id of Object.keys(scores)) {
+    if (!SITES_MAP.has(id)) throw new Error(`[siteScores] siteScores.json に余分なID: ${id}`);
+  }
+}
 
 export function getSiteById(id: string): Site | undefined {
   return SITES_MAP.get(id);
