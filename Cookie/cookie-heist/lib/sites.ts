@@ -644,9 +644,10 @@ export const SITES: Site[] = [
     category: 'ecommerce',
     description: 'Amazon を装ったフィッシング詐欺サイト（"Arnazon" と綴りが違う）。',
     cookie: {
-      name: 'amazon_session',
-      valueGenerator: () => `amzn_${rand(20)}`,
-      attributes: { secure: true, sameSite: 'Lax', maxAge: 86400 * 30 },
+      // 本物のAmazonの持続ログインCookie(at-main)に合わせる：HttpOnly+Secure+Lax+長寿命
+      name: 'at-main',
+      valueGenerator: () => `Atza|${rand(28)}`,
+      attributes: { secure: true, httpOnly: true, sameSite: 'Lax', maxAge: 86400 * 365 },
       points: -60,
       displayPoints: 130,
     },
@@ -660,9 +661,10 @@ export const SITES: Site[] = [
     category: 'media',
     description: 'YouTube を装ったフィッシング詐欺サイト（"YuoTube" と綴りが違う）。',
     cookie: {
-      name: 'yt_login',
-      valueGenerator: () => `yt_${rand(18)}`,
-      attributes: { secure: true, sameSite: 'Lax', maxAge: 86400 * 30 },
+      // 本物のYouTubeのログインCookie(LOGIN_INFO)に合わせる：HttpOnly+Secure+SameSite=None+長寿命
+      name: 'LOGIN_INFO',
+      valueGenerator: () => `AFmmF2s${rand(40)}`,
+      attributes: { secure: true, httpOnly: true, sameSite: 'None', maxAge: 86400 * 365 * 2 },
       points: -50,
       displayPoints: 90,
     },
@@ -676,9 +678,10 @@ export const SITES: Site[] = [
     category: 'special',
     description: 'Google ログインを装ったフィッシング詐欺サイト（"Gooogle" と綴りが違う）。',
     cookie: {
-      name: 'google_sso',
-      valueGenerator: () => `g_${rand(22)}`,
-      attributes: { secure: true, httpOnly: true, sameSite: 'Strict', maxAge: 3600 },
+      // 本物のGoogleのセッションCookie(SID)に合わせる：HttpOnly+Secure+Lax+長寿命（約2年）
+      name: 'SID',
+      valueGenerator: () => `g.a000${rand(30)}`,
+      attributes: { secure: true, httpOnly: true, sameSite: 'Lax', maxAge: 86400 * 365 * 2 },
       points: -50,
       displayPoints: 120,
     },
