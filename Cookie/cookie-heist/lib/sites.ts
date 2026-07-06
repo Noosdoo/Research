@@ -636,7 +636,6 @@ export const SITES: Site[] = [
     template: 'survey',
     rarity: 'rare',
     iconEmoji: '🔬',
-    isMystery: true,
   },
   {
     id: 'mystery-omega',
