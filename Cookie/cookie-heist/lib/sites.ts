@@ -586,7 +586,6 @@ export const SITES: Site[] = [
     template: 'consent-button',
     rarity: 'common',
     iconEmoji: '❓',
-    isMystery: true,
   },
   {
     id: 'mystery-beta',
@@ -602,7 +601,6 @@ export const SITES: Site[] = [
     template: 'login-form',
     rarity: 'uncommon',
     iconEmoji: '🔐',
-    isMystery: true,
   },
   {
     id: 'mystery-gamma',
@@ -651,7 +649,6 @@ export const SITES: Site[] = [
     template: 'quiz',
     rarity: 'legendary',
     iconEmoji: '🌀',
-    isMystery: true,
   },
 
   // ── special (legendary → quiz) ────────────────────────────────────
