@@ -4,13 +4,11 @@ import { useEffect, useRef, useState, useCallback, useMemo, Suspense } from 'rea
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useGameStore } from '@/store/gameStore';
 import { SITES } from '@/lib/sites';
-import type { SiteCategory } from '@/lib/types';
 
 import SiteCard from '@/components/SiteCard';
 import Timer from '@/components/Timer';
 import GameSidebar from '@/components/GameSidebar';
 import MobileStatusBar from '@/components/MobileStatusBar';
-import CategoryFilter from '@/components/CategoryFilter';
 import StealNotification from '@/components/StealNotification';
 import ResultSummary from '@/components/ResultSummary';
 import Confetti from '@/components/Confetti';
@@ -27,7 +25,6 @@ function SingleGameInner() {
     initGame, tickTimer, processAITick, clearStealEvent, clearExpireEvent,
   } = useGameStore();
 
-  const [category, setCategory] = useState<SiteCategory | 'all'>('all');
   const [now, setNow] = useState(Date.now());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const aiRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -94,10 +91,6 @@ function SingleGameInner() {
     return arr;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const filteredSites = shuffledSites.filter(s =>
-    category === 'all' || s.category === category
-  );
 
   const me = players.get(myPlayerId);
   const allPlayers = [...players.values()];
@@ -193,11 +186,9 @@ function SingleGameInner() {
       <div className="flex flex-1 overflow-hidden">
         {/* Site map */}
         <div className="flex-1 flex flex-col overflow-hidden p-3 gap-3">
-          <CategoryFilter selected={category} onChange={setCategory} />
-
           <div className="flex-1 overflow-y-auto">
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-              {filteredSites.map(site => {
+              {shuffledSites.map(site => {
                 const ss = sitesState.get(site.id)!;
                 return (
                   <SiteCard

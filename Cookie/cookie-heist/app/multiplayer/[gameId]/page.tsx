@@ -5,13 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { useGameStore } from '@/store/gameStore';
 import { SITES } from '@/lib/sites';
 import { getSocket } from '@/lib/socket';
-import type { SiteCategory } from '@/lib/types';
 
 import SiteCard from '@/components/SiteCard';
 import Timer from '@/components/Timer';
 import GameSidebar from '@/components/GameSidebar';
 import MobileStatusBar from '@/components/MobileStatusBar';
-import CategoryFilter from '@/components/CategoryFilter';
 import StealNotification from '@/components/StealNotification';
 import ResultSummary from '@/components/ResultSummary';
 import Confetti from '@/components/Confetti';
@@ -26,7 +24,6 @@ export default function MultiplayerGamePage() {
     applyServerUpdate, setTimeLeft, exitOnlineMode, clearStealEvent,
   } = useGameStore();
 
-  const [category, setCategory] = useState<SiteCategory | 'all'>('all');
   const [now, setNow] = useState(Date.now());
   const [cookieCleared, setCookieCleared] = useState(false);
   const socket = getSocket();
@@ -117,7 +114,6 @@ export default function MultiplayerGamePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filteredSites = shuffledSites.filter(s => category === 'all' || s.category === category);
   const me = players.get(myPlayerId);
   const allPlayers = [...players.values()];
 
@@ -190,10 +186,9 @@ export default function MultiplayerGamePage() {
 
       <div className="flex flex-1 overflow-hidden">
         <div className="flex-1 flex flex-col overflow-hidden p-3 gap-3">
-          <CategoryFilter selected={category} onChange={setCategory} />
           <div className="flex-1 overflow-y-auto">
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
-              {filteredSites.map(site => {
+              {shuffledSites.map(site => {
                 // サーバーはサイト状態を訪問時に遅延生成するため、未訪問サイトは空状態で描画する
                 const ss = sitesState.get(site.id) ?? { siteId: site.id, ownerIds: [], currentVisitorIds: [] };
                 return (

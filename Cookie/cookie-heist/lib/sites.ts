@@ -727,16 +727,3 @@ export function formatMaxAge(seconds: number): string {
   if (days < 365) return `${Math.round(days)}日`;
   return `約${Math.round(days / 365).toLocaleString()}年`;
 }
-
-export const CATEGORY_LABELS: Record<string, string> = {
-  finance: '金融',
-  ecommerce: 'EC',
-  social: 'SNS',
-  media: 'メディア',
-  gaming: 'ゲーム',
-  advertising: '広告',
-  government: '政府',
-  niche: 'ニッチ',
-  honeypot: '罠',
-  special: '特殊',
-};
