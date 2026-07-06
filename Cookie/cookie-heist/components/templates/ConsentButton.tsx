@@ -33,6 +33,7 @@ export default function ConsentButton({ site, onComplete, onCancel }: Props) {
         <div className="max-w-2xl mx-auto">
           <p className="text-sm text-gray-300 mb-3">
             <strong>{site.name}</strong> はより良いユーザー体験のために Cookie を使用しています。
+            <br />
             「すべて受け入れる」を押すことで、Cookie の利用に同意したことになります。
             <br />
             <span className="text-xs text-gray-500">
