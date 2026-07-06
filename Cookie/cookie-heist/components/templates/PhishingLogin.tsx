@@ -86,7 +86,7 @@ export default function PhishingLogin({ site, onComplete, onCancel }: Props) {
               autoFocus
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder="1234567@ed.tus.ac.jp"
               className="border border-gray-300 rounded-lg px-3 py-2.5 text-gray-900 text-sm focus:outline-none focus:ring-2"
               style={{ ['--tw-ring-color' as string]: brand.color }}
             />
