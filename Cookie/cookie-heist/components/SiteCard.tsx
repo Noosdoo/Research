@@ -38,6 +38,8 @@ const TEMPLATE_LABEL: Record<string, string> = {
   'login-form':     'ログイン',
   'survey':         'アンケート',
   'quiz':           'クイズ',
+  // フィッシングもログインページなので表示は「ログイン」。見破りポイントは“名前の綴り”（例: Arnazon）
+  'phishing':       'ログイン',
 };
 
 interface Props {
@@ -60,6 +62,9 @@ export default function SiteCard({ site, siteState, players, myPlayerId, onVisit
   const isMystery   = !!site.isMystery;
   const isHoneypot  = !!site.isHoneypot && !isMystery;
   const isLegendary = site.rarity === 'legendary' && !isHoneypot && !isMystery;
+
+  // カードに表示する得点。フィッシングは displayPoints で高得点に見せる（実際の加点は負）
+  const shownPoints = site.cookie.displayPoints ?? site.cookie.points;
 
   // Countdown for short-lived owned cookies (maxAge ≤ 120s)
   const myOwnedCookie = isMine ? players.get(myPlayerId)?.cookies.get(site.id) : undefined;
@@ -108,14 +113,14 @@ export default function SiteCard({ site, siteState, players, myPlayerId, onVisit
         </span>
       </div>
 
-      {/* points */}
+      {/* points（フィッシングは displayPoints で高得点に“見せる”。実際の加点は別） */}
       {site.isMystery || site.template === 'ad-popup' ? (
         <span className="text-base font-black leading-none text-yellow-300">???pt</span>
-      ) : site.cookie.points < 0 ? (
-        <span className="text-base font-black leading-none text-red-400">{site.cookie.points}pt</span>
+      ) : shownPoints < 0 ? (
+        <span className="text-base font-black leading-none text-red-400">{shownPoints}pt</span>
       ) : (
         <span className={`text-base font-black leading-none ${isLegendary ? 'text-yellow-300' : 'text-green-300'}`}>
-          +{site.cookie.points}pt
+          +{shownPoints}pt
         </span>
       )}
 

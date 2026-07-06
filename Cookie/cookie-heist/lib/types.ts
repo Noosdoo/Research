@@ -15,7 +15,7 @@ export type SiteCategory =
 
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'legendary';
 
-export type SiteTemplate = 'consent-button' | 'ad-popup' | 'login-form' | 'survey' | 'quiz';
+export type SiteTemplate = 'consent-button' | 'ad-popup' | 'login-form' | 'survey' | 'quiz' | 'phishing';
 
 export interface CookieAttributes {
   secure?: boolean;
@@ -30,6 +30,9 @@ export interface SiteCookie {
   valueGenerator: () => string;
   attributes: CookieAttributes;
   points: number;
+  // カードに“見せる”得点（誘い）。実際に入る points と分離できる。
+  // フィッシング詐欺サイトで「高得点に見せて実はマイナス」を作るために使う。
+  displayPoints?: number;
 }
 
 export interface Site {

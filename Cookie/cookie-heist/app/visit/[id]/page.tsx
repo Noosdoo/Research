@@ -10,6 +10,7 @@ import { getSocket } from '@/lib/socket';
 import ConsentButton from '@/components/templates/ConsentButton';
 import AdPopup from '@/components/templates/AdPopup';
 import LoginForm from '@/components/templates/LoginForm';
+import PhishingLogin from '@/components/templates/PhishingLogin';
 import Survey from '@/components/templates/Survey';
 import Quiz from '@/components/templates/Quiz';
 import Timer from '@/components/Timer';
@@ -141,6 +142,9 @@ export default function VisitPage() {
         )}
         {site.template === 'login-form' && (
           <LoginForm site={site} onComplete={handleComplete} onCancel={handleCancel} />
+        )}
+        {site.template === 'phishing' && (
+          <PhishingLogin site={site} onComplete={() => handleComplete()} onCancel={handleCancel} />
         )}
         {site.template === 'survey' && (
           <Survey site={site} onComplete={(pts) => handleComplete(pts)} onCancel={handleCancel} />

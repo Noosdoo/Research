@@ -59,38 +59,6 @@ export const SITES: Site[] = [
     iconEmoji: '🪙',
   },
 
-  // ── ecommerce (uncommon → login-form) ────────────────────────────
-  {
-    id: 'shop-mart',
-    name: 'ShopMart',
-    category: 'ecommerce',
-    description: 'なんでも売ってるショッピングモール。',
-    cookie: {
-      name: 'cart_id',
-      valueGenerator: () => `cart_${rand(12)}`,
-      attributes: { sameSite: 'Lax', maxAge: 86400 * 30 },
-      points: 60,
-    },
-    template: 'login-form',
-    rarity: 'uncommon',
-    iconEmoji: '🛒',
-  },
-  {
-    id: 'electro-store',
-    name: 'ElectroStore',
-    category: 'ecommerce',
-    description: '最新ガジェット専門店。',
-    cookie: {
-      name: 'electro_uid',
-      valueGenerator: () => `eu_${rand(10)}`,
-      attributes: { sameSite: 'Lax', maxAge: 86400 * 7 },
-      points: 60,
-    },
-    template: 'login-form',
-    rarity: 'uncommon',
-    iconEmoji: '💻',
-  },
-
   // ── social (uncommon → login-form) ───────────────────────────────
   {
     id: 'tweet-space',
@@ -153,21 +121,6 @@ export const SITES: Site[] = [
     template: 'consent-button',
     rarity: 'common',
     iconEmoji: '📰',
-  },
-  {
-    id: 'video-stream',
-    name: 'VideoStream',
-    category: 'media',
-    description: '動画ストリーミングサービス。',
-    cookie: {
-      name: 'vs_auth',
-      valueGenerator: () => `vs_${rand(16)}`,
-      attributes: { secure: true, sameSite: 'Lax', maxAge: 86400 * 30 },
-      points: 80,
-    },
-    template: 'login-form',
-    rarity: 'uncommon',
-    iconEmoji: '🎬',
   },
 
   // ── gaming ────────────────────────────────────────────────────────
@@ -681,6 +634,57 @@ export const SITES: Site[] = [
     template: 'quiz',
     rarity: 'legendary',
     iconEmoji: '♾️',
+  },
+
+  // ── phishing (本物を装う偽サイト。カードは通常表示だが名前の綴りが微妙に違う＝よく見れば見破れる) ──
+  // 表示は高得点で誘い(displayPoints)、実際の加点はマイナス(points)。訪問して偽ログインすると詐欺。
+  {
+    id: 'phish-amazon',
+    name: 'Arnazon',
+    category: 'ecommerce',
+    description: 'Amazon を装ったフィッシング詐欺サイト（"Arnazon" と綴りが違う）。',
+    cookie: {
+      name: 'amazon_session',
+      valueGenerator: () => `amzn_${rand(20)}`,
+      attributes: { secure: true, sameSite: 'Lax', maxAge: 86400 * 30 },
+      points: -60,
+      displayPoints: 130,
+    },
+    template: 'phishing',
+    rarity: 'rare',
+    iconEmoji: '📦',
+  },
+  {
+    id: 'phish-youtube',
+    name: 'YuoTube',
+    category: 'media',
+    description: 'YouTube を装ったフィッシング詐欺サイト（"YuoTube" と綴りが違う）。',
+    cookie: {
+      name: 'yt_login',
+      valueGenerator: () => `yt_${rand(18)}`,
+      attributes: { secure: true, sameSite: 'Lax', maxAge: 86400 * 30 },
+      points: -50,
+      displayPoints: 90,
+    },
+    template: 'phishing',
+    rarity: 'uncommon',
+    iconEmoji: '▶️',
+  },
+  {
+    id: 'phish-google',
+    name: 'Gooogle',
+    category: 'special',
+    description: 'Google ログインを装ったフィッシング詐欺サイト（"Gooogle" と綴りが違う）。',
+    cookie: {
+      name: 'google_sso',
+      valueGenerator: () => `g_${rand(22)}`,
+      attributes: { secure: true, httpOnly: true, sameSite: 'Strict', maxAge: 3600 },
+      points: -50,
+      displayPoints: 120,
+    },
+    template: 'phishing',
+    rarity: 'rare',
+    iconEmoji: '🔍',
   },
 ];
 
