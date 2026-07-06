@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import type { Site } from '@/lib/types';
 
@@ -14,6 +14,11 @@ interface Props {
 function HoneypotPopup({ site, onComplete, onCancel }: Props) {
   const [closePos, setClosePos] = useState({ top: 6, left: 88 });
   const [countdown, setCountdown] = useState(8);
+  // onComplete は親(訪問ページ)の毎フレーム再描画で識別子が変わる。ref 経由で最新を読み、
+  // カウントダウンは countdown だけに依存させる（[onComplete] 依存だとタイマーが毎回作り直され
+  // 1秒経つ前にリセットされ続けて進まない＝自動受け取りも発火しないバグになる）。
+  const onCompleteRef = useRef(onComplete);
+  useEffect(() => { onCompleteRef.current = onComplete; });
 
   const shuffleClose = useCallback(() => {
     setClosePos({
@@ -23,14 +28,10 @@ function HoneypotPopup({ site, onComplete, onCancel }: Props) {
   }, []);
 
   useEffect(() => {
-    const t = setInterval(() => {
-      setCountdown(c => {
-        if (c <= 1) { onComplete(); return 0; }
-        return c - 1;
-      });
-    }, 1000);
-    return () => clearInterval(t);
-  }, [onComplete]);
+    if (countdown <= 0) { onCompleteRef.current(); return; }
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [countdown]);
 
   return (
     <div className="min-h-screen bg-gray-100">
