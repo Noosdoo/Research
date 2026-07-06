@@ -75,6 +75,10 @@ export default function VisitPage() {
   }, [phase, router, returnUrl]);
 
   const handleComplete = useCallback(async (points?: number) => {
+    // 二重取得ガード: 完了ボタンの連打や、罠ポップアップの複数トリガー
+    //（ボタン・背景クリック・自動カウントダウン）で handleComplete が複数回走ると
+    // fetch 待ちの間にスコアや visitCount が多重加算されてしまうため、最初の1回だけ通す。
+    if (completed.current) return;
     completed.current = true;
 
     let cookieValue: string | undefined;
@@ -104,6 +108,7 @@ export default function VisitPage() {
   }, [id, site, isOnline, completeVisit, goBack]);
 
   const handleCancel = useCallback(() => {
+    if (completed.current) return;
     completed.current = true;
     if (isOnline) getSocket().emit('game:visit-cancel', { siteId: id });
     router.push(returnUrl);
