@@ -263,6 +263,16 @@ function handleRequestSync(socket) {
   if (!gameId) return;
   const game = games.get(gameId);
   if (!game) return;
+  // サイト訪問中はマルチプレイ画面がアンマウントされ game:ended を取りこぼす。
+  // その間にゲームが終了していると、訪問から戻っても結果画面へ遷移できないため、
+  // sync 要求時に終了済みなら game:ended で応答して結果画面に載せる。
+  if (game.phase === 'result') {
+    socket.emit('game:ended', {
+      players: serializePlayers(game.players),
+      sitesState: serializeSites(game.sitesState),
+    });
+    return;
+  }
   socket.emit('game:state-update', {
     players: serializePlayers(game.players),
     sitesState: serializeSites(game.sitesState),

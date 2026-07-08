@@ -145,6 +145,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
   expireEvents: [],
 
   initGame(aiCount: number, duration?: number) {
+    // 前ゲームの保留中AIタイマーが残っていると、新ゲーム開始後に発火して
+    // 誤って点数・所有権が加算されうる。開始前に必ずクリアする。
+    for (const id of aiTimers) clearTimeout(id);
+    aiTimers.clear();
     const dur = Math.min(180, Math.max(30, duration ?? GAME_DURATION));
     const players = new Map<PlayerId, Player>();
     players.set('player-human', makePlayer('player-human', 'あなた', false, 0));
