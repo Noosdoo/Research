@@ -612,7 +612,8 @@ export const SITES: Site[] = [
     description: 'Max-Age=10秒のCookieを発行する。',
     cookie: {
       name: 'ghost_cookie',
-      valueGenerator: () => `👻${rand(12)}`,
+      // Cookie値はSet-Cookieヘッダ(ByteString)に載るため非ASCII(絵文字等)不可。ASCIIで生成する。
+      valueGenerator: () => `ghost_${rand(12)}`,
       attributes: { sameSite: 'Lax', maxAge: 10 },
       points: 200,
     },
