@@ -342,6 +342,12 @@ function handleSocketDisconnect(socketId, io) {
   }
 }
 
+// ── デモ用の安全網 ──────────────────────────────────────────────────
+// 想定外の例外1件でプロセス（＝全ルーム）が落ちるのを防ぐ。状態はインメモリなので
+// 落ちると全ゲームが消える。発表中は可用性を優先し、クラッシュさせずログだけ残す。
+process.on('uncaughtException',  (err) => console.error('[uncaughtException]', err));
+process.on('unhandledRejection', (err) => console.error('[unhandledRejection]', err));
+
 // ── Bootstrap ──────────────────────────────────────────────────────
 const app = next({ dev });
 const handle = app.getRequestHandler();
