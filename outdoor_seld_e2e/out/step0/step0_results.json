@@ -1,0 +1,110 @@
+{
+  "a_static_sine": {
+    "fs": 48000,
+    "distance_m": 343.2,
+    "delay_physical_theory_s": 1.0,
+    "fir_group_delay_s": 0.005333333333333333,
+    "delay_expected_total_s": 1.0053333333333334,
+    "delay_measured_s": 1.0045,
+    "delay_error_ms": -0.8333333333334636,
+    "peak_freq_hz": 2000.0,
+    "peak_freq_error_hz": 0.0,
+    "rms_steady": 0.0013938783095591336,
+    "rms_theory_1_over_r": 0.002060334444016747
+  },
+  "b_white_noise": {
+    "fs": 48000,
+    "distance_m": 343.2,
+    "normalized_at_hz": 1000,
+    "attenuation_rel_1khz": {
+      "2000": {
+        "measured_rel_db": -2.4148880722091235,
+        "iso_theory_rel_db": -1.8065518455830947,
+        "diff_db": -0.6083362266260288
+      },
+      "4000": {
+        "measured_rel_db": -9.22677286880132,
+        "iso_theory_rel_db": -8.568053699621537,
+        "diff_db": -0.6587191691797827
+      },
+      "8000": {
+        "measured_rel_db": -35.57642020184355,
+        "iso_theory_rel_db": -34.572854939024765,
+        "diff_db": -1.003565262818782
+      },
+      "12000": {
+        "measured_rel_db": -74.71859879249783,
+        "iso_theory_rel_db": -74.2316057027667,
+        "diff_db": -0.4869930897311292
+      },
+      "16000": {
+        "measured_rel_db": -123.56971897177749,
+        "iso_theory_rel_db": -123.46336710609289,
+        "diff_db": -0.10635186568460142
+      },
+      "20000": {
+        "measured_rel_db": -139.59028818563672,
+        "iso_theory_rel_db": -178.34965572441283,
+        "diff_db": 38.759367538776104
+      }
+    }
+  },
+  "d_vehicle_tracking": {
+    "fs": 8192,
+    "n_frames": 161,
+    "median_abs_err_vs_retarded_deg": 0.3096744639431108,
+    "median_abs_err_vs_geometric_deg": 0.40448611929025446,
+    "max_abs_err_vs_retarded_deg_mid": 5.155235872007012
+  },
+  "c_causality": {
+    "fs": 48000,
+    "first_arrival_theory_s": 0.5041550396430436,
+    "freq_seg1_measured_hz": 2003.159417010625,
+    "freq_seg1_theory_hz": 2002.9175605973392,
+    "freq_seg2_measured_hz": 2332.6380453091638,
+    "freq_seg2_theory_hz": 2332.834561116215,
+    "freq_seg3_measured_hz": 1749.612183669616,
+    "freq_seg3_theory_hz": 1750.206700670276,
+    "speed_change_arrival_measured_s": 3.509333333333333,
+    "speed_change_arrival_theory_s": 3.5051184063522927,
+    "speed_change_error_ms": 4.214926981040534
+  },
+  "e_doppler": {
+    "fs": 24000,
+    "speed_mps": 20.0,
+    "eq4_approach_max_hz": 2123.762376237624,
+    "eq4_recede_min_hz": 1889.8678414096917,
+    "points": {
+      "t=1s": {
+        "measured_hz": 2123.5672394879093,
+        "theory_hz": 2123.7259218653826,
+        "rel_error_pct": -0.007471885888829291
+      },
+      "t=2s": {
+        "measured_hz": 2123.527901796526,
+        "theory_hz": 2123.6976771521477,
+        "rel_error_pct": -0.007994327886137248
+      },
+      "t=3s": {
+        "measured_hz": 2123.4193395928146,
+        "theory_hz": 2123.6173394179045,
+        "rel_error_pct": -0.009323705425395045
+      },
+      "t=7s": {
+        "measured_hz": 1890.201395872612,
+        "theory_hz": 1890.0136362276498,
+        "rel_error_pct": 0.009934301073982047
+      },
+      "t=8s": {
+        "measured_hz": 1890.0865557126087,
+        "theory_hz": 1889.9325352883523,
+        "rel_error_pct": 0.00814951969875409
+      },
+      "t=9s": {
+        "measured_hz": 1890.045479083948,
+        "theory_hz": 1889.9041980802167,
+        "rel_error_pct": 0.0074755643103433175
+      }
+    }
+  }
+}
