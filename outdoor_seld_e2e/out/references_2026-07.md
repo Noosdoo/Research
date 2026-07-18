@@ -84,3 +84,11 @@
 | DAFX02 Karjalainen "Bell-Like Sounds" / CCRMA Risset's bell | ベル加算合成（部分音・warble） | alert_sounds.py |
 | ResearchGate "Physically informed car engine sound synthesis" | エンジン音合成の手法根拠 | engine.py |
 | soundcy.com / bosshorn.com（ホーン音色解説） | ホーンの2音・リード的音色 | alert_sounds.py |
+
+## 9. シナリオ設計・音源改修の根拠（2026-07-18追記）
+
+| 文献 | 使いどころ | 詳細 |
+| --- | --- | --- |
+| [警察庁 自転車追い越し規定 (2026/4施行)](https://www.npa.go.jp/bureau/traffic/bicycle/202603.pdf) / [解説(1m目安)](https://agoora.co.jp/jiko/knowledge/car-passing-bicycle2026.html) | S2背後ベルの側方間隔0.8-1.5mのアンカー | scenario_design |
+| 道路交通法 第33条（踏切の一時停止） | S1で車が減速接近する想定の根拠 | scenario_design |
+| [DOVA-SYNDROME 踏切生録音 (SE#769)](https://dova-s.jp/se/detail/769) | 本人の試聴比較→make_crossing_v2をゲート方式から打撃・余韻方式へ改修した判断材料 | source_audit |
