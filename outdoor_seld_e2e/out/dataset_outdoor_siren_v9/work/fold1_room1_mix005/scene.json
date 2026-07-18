@@ -1,0 +1,112 @@
+{
+  "row": {
+    "clip_id": "fold1_room1_mix005",
+    "split": "fold1",
+    "motion": "static",
+    "n_warnings": 1,
+    "w1_class": "siren",
+    "w1_side": "R",
+    "w2_class": "",
+    "w2_side": "",
+    "danger_tier": "caution",
+    "car_side": "R",
+    "scenario": "normal",
+    "seed": 12419819525
+  },
+  "mic": {
+    "motion": "static"
+  },
+  "sources": [
+    {
+      "class": "car_drive",
+      "kind": "vehicle",
+      "wp": [
+        [
+          0.0,
+          -38.83974632853276,
+          -2.366770282117488,
+          0.9303221462018252
+        ],
+        [
+          10.0,
+          24.637216079409377,
+          -2.366770282117488,
+          0.9303221462018252
+        ]
+      ],
+      "t_on": 0.0,
+      "t_off": 10.0,
+      "speed_mps": 6.347696240794214,
+      "dir_x": 1.0,
+      "cpa_rel_target_m": 2.4343653023781346,
+      "t_cpa_rel_s": 6.1187153346949055,
+      "law_db": 62.22396295725215,
+      "l1m_db": 82.22396295725216,
+      "params": {
+        "f0": 41.514207178943394,
+        "audio_seed": 86938736680
+      },
+      "dry_gain": 0.004495018768946677,
+      "min_dist_m": 2.434,
+      "t_min_dist_s": 6.12,
+      "recv_pred_db": 65.08,
+      "recv_meas_db": 64.94,
+      "recv_withrefl_db": 67.13,
+      "audible_frac": 0.82,
+      "t_first_audible_s": 1.7,
+      "n_label_frames": 83
+    },
+    {
+      "class": "siren",
+      "kind": "vehicle",
+      "wp": [
+        [
+          0.0,
+          -37.318028466157116,
+          -4.117797948365541,
+          1.074974401635216
+        ],
+        [
+          10.0,
+          46.79516859724215,
+          -4.117797948365541,
+          1.074974401635216
+        ]
+      ],
+      "t_on": 2.448,
+      "t_off": 6.221,
+      "speed_mps": 8.411319706339928,
+      "dir_x": 1.0,
+      "t_cpa_s": 4.436643686011497,
+      "law_db": 105.77842716495897,
+      "l1m_db": 131.7990270782386,
+      "params": {
+        "siren_type": "wail",
+        "f_lo": 659.7995016653598,
+        "f_hi": 1468.1904734306634,
+        "sweep_period_sec": 4.997290877578612
+      },
+      "dry_gain": 0.3677030373631475,
+      "min_dist_m": 4.14,
+      "t_min_dist_s": 4.44,
+      "recv_pred_db": 114.81,
+      "recv_meas_db": 114.44,
+      "recv_withrefl_db": 116.15,
+      "audible_frac": 0.974,
+      "n_label_frames": 38
+    }
+  ],
+  "noise": {
+    "dba": 53.4161409425235,
+    "seed": 98352550818488,
+    "gain": 3.201307143400841e-05
+  },
+  "cpa_rel_dist_m": 2.434,
+  "cpa_rel_time_s": 6.12,
+  "stats": {
+    "peak": 0.1097,
+    "mix_spl_a": 111.93,
+    "n_label_rows": 121,
+    "gen_seconds": 6.7
+  }
+}
