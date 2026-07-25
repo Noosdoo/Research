@@ -1,0 +1,173 @@
+{
+  "row": {
+    "clip_id": "fold1_room2_mix111",
+    "split": "fold1",
+    "motion": "walk",
+    "n_warnings": 1,
+    "w1_class": "siren",
+    "w1_side": "L",
+    "w2_class": "",
+    "w2_side": "",
+    "danger_tier": "safe",
+    "car_side": "L",
+    "scenario": "traffic2",
+    "seed": 12419872696
+  },
+  "sources": [
+    {
+      "class": "car_drive",
+      "kind": "vehicle",
+      "track": 0,
+      "wp": [
+        [
+          0.0,
+          55.534579602578674,
+          9.761307557198544,
+          1.0244366364336464
+        ],
+        [
+          10.0,
+          -30.886327215933164,
+          9.761307557198544,
+          1.0244366364336464
+        ]
+      ],
+      "t_on": 0.0,
+      "t_off": 10.0,
+      "speed_mps": 8.642090681851183,
+      "dir_x": -1.0,
+      "danger_tier": "safe",
+      "cpa_rel_target_m": 9.772885231035302,
+      "t_cpa_rel_s": 6.248542173700988,
+      "law_db": 60.97915459897357,
+      "l1m_db": 80.97915459897357,
+      "params": {
+        "f0": 49.48835541017083,
+        "audio_seed": 86939108877
+      },
+      "dry_gain": 0.004327091538642756,
+      "min_dist_m": 9.773,
+      "t_min_dist_s": 6.25,
+      "recv_pred_db": 55.49,
+      "recv_meas_db": 55.23,
+      "recv_withrefl_db": 57.76,
+      "audible_frac": 0.02,
+      "t_first_audible_s": 6.1,
+      "n_label_frames": 3
+    },
+    {
+      "class": "car_drive",
+      "kind": "vehicle",
+      "track": 1,
+      "wp": [
+        [
+          0.0,
+          -30.11103380062788,
+          -5.842518552820416,
+          1.2734370448534524
+        ],
+        [
+          10.0,
+          13.70541009542206,
+          -5.842518552820416,
+          1.2734370448534524
+        ]
+      ],
+      "t_on": 0.0,
+      "t_off": 10.0,
+      "speed_mps": 4.381644389604994,
+      "dir_x": 1.0,
+      "danger_tier": "safe",
+      "cpa_rel_target_m": 5.846909766081183,
+      "t_cpa_rel_s": 7.601653768906523,
+      "law_db": 65.04354378672683,
+      "l1m_db": 85.04354378672683,
+      "params": {
+        "f0": 43.14721647477194,
+        "audio_seed": 86939108878
+      },
+      "dry_gain": 0.006905954428053201,
+      "min_dist_m": 5.847,
+      "t_min_dist_s": 7.6,
+      "recv_pred_db": 65.9,
+      "recv_meas_db": 65.71,
+      "recv_withrefl_db": 68.43,
+      "audible_frac": 0.66,
+      "t_first_audible_s": 3.4,
+      "n_label_frames": 66
+    },
+    {
+      "class": "siren",
+      "kind": "vehicle",
+      "wp": [
+        [
+          0.0,
+          57.657371765090524,
+          6.089370415375855,
+          1.1370546090202103
+        ],
+        [
+          10.0,
+          -77.94834446603474,
+          6.089370415375855,
+          1.1370546090202103
+        ]
+      ],
+      "t_on": 4.032,
+      "t_off": 8.487,
+      "speed_mps": 13.560571623112526,
+      "dir_x": -1.0,
+      "t_cpa_s": 4.251839330048578,
+      "law_db": 102.76309476411312,
+      "l1m_db": 128.78369467739276,
+      "params": {
+        "siren_type": "fire",
+        "f_lo": 363.58538691860025,
+        "f_hi": 709.8504699279255,
+        "sweep_period_sec": 2.76835631303404,
+        "bell_f0": 1179.541980792647,
+        "audio_seed": 86939108883
+      },
+      "dry_gain": 0.41995015465988217,
+      "min_dist_m": 6.1,
+      "t_min_dist_s": 4.31,
+      "recv_pred_db": 105.9,
+      "recv_meas_db": 106.45,
+      "recv_withrefl_db": 110.64,
+      "audible_frac": 1.0,
+      "n_label_frames": 46
+    }
+  ],
+  "mic": {
+    "motion": "walk",
+    "walk_speed_mps": 1.2287222173166514,
+    "walk_dir_x": 1.0,
+    "waypoints": [
+      [
+        0.0,
+        -6.143611086583257,
+        0.0,
+        1.5
+      ],
+      [
+        10.0,
+        6.143611086583257,
+        0.0,
+        1.5
+      ]
+    ]
+  },
+  "noise": {
+    "dba": 64.07866947071028,
+    "seed": 98352971879637,
+    "gain": 0.00010984181729762807
+  },
+  "cpa_rel_dist_m": 9.773,
+  "cpa_rel_time_s": 6.25,
+  "stats": {
+    "peak": 0.1033,
+    "mix_spl_a": 107.14,
+    "n_label_rows": 115,
+    "gen_seconds": 10.7
+  }
+}

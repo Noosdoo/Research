@@ -1,0 +1,173 @@
+{
+  "row": {
+    "clip_id": "fold1_room2_mix131",
+    "split": "fold1",
+    "motion": "walk",
+    "n_warnings": 1,
+    "w1_class": "siren",
+    "w1_side": "L",
+    "w2_class": "",
+    "w2_side": "",
+    "danger_tier": "caution",
+    "car_side": "R",
+    "scenario": "traffic2",
+    "seed": 12419872716
+  },
+  "sources": [
+    {
+      "class": "car_drive",
+      "kind": "vehicle",
+      "track": 0,
+      "wp": [
+        [
+          0.0,
+          -28.102751322112923,
+          -1.4857740551701741,
+          0.9755966284296262
+        ],
+        [
+          10.0,
+          30.967414547841223,
+          -1.4857740551701741,
+          0.9755966284296262
+        ]
+      ],
+      "t_on": 0.0,
+      "t_off": 10.0,
+      "speed_mps": 5.9070165869954145,
+      "dir_x": 1.0,
+      "danger_tier": "caution",
+      "cpa_rel_target_m": 1.5756025638247735,
+      "t_cpa_rel_s": 4.69873938922316,
+      "law_db": 62.18366461508251,
+      "l1m_db": 82.1836646150825,
+      "params": {
+        "f0": 50.15913890241697,
+        "audio_seed": 86939109017
+      },
+      "dry_gain": 0.00429948990358516,
+      "min_dist_m": 1.576,
+      "t_min_dist_s": 4.7,
+      "recv_pred_db": 68.22,
+      "recv_meas_db": 68.04,
+      "recv_withrefl_db": 69.91,
+      "audible_frac": 1.0,
+      "t_first_audible_s": 0.0,
+      "n_label_frames": 99
+    },
+    {
+      "class": "car_drive",
+      "kind": "vehicle",
+      "track": 1,
+      "wp": [
+        [
+          0.0,
+          69.21858645214044,
+          -0.9154545941599256,
+          1.134293210905324
+        ],
+        [
+          10.0,
+          -4.6613289052593245,
+          -0.9154545941599256,
+          1.134293210905324
+        ]
+      ],
+      "t_on": 0.0,
+      "t_off": 10.0,
+      "speed_mps": 7.387991535739977,
+      "dir_x": -1.0,
+      "danger_tier": "critical",
+      "cpa_rel_target_m": 0.9857984426638398,
+      "t_cpa_rel_s": 8.7794564740467,
+      "law_db": 64.68652749097505,
+      "l1m_db": 84.68652749097505,
+      "params": {
+        "f0": 41.223301737766654,
+        "audio_seed": 86939109018
+      },
+      "dry_gain": 0.0064461105885113956,
+      "min_dist_m": 0.986,
+      "t_min_dist_s": 8.78,
+      "recv_pred_db": 70.25,
+      "recv_meas_db": 70.07,
+      "recv_withrefl_db": 71.31,
+      "audible_frac": 0.97,
+      "t_first_audible_s": 0.3,
+      "n_label_frames": 97
+    },
+    {
+      "class": "siren",
+      "kind": "vehicle",
+      "wp": [
+        [
+          0.0,
+          -60.44874276497582,
+          13.577411964986428,
+          1.206666642842349
+        ],
+        [
+          10.0,
+          38.85231956893605,
+          13.577411964986428,
+          1.206666642842349
+        ]
+      ],
+      "t_on": 3.512,
+      "t_off": 6.312,
+      "speed_mps": 9.930106233391188,
+      "dir_x": 1.0,
+      "t_cpa_s": 6.087421558664658,
+      "law_db": 98.75695592043783,
+      "l1m_db": 124.77755583371746,
+      "params": {
+        "siren_type": "fire",
+        "f_lo": 346.62193515163256,
+        "f_hi": 724.4365322199146,
+        "sweep_period_sec": 3.0790121638991255,
+        "bell_f0": 1204.83379279266,
+        "audio_seed": 86939109023
+      },
+      "dry_gain": 0.2613013120342691,
+      "min_dist_m": 13.581,
+      "t_min_dist_s": 6.23,
+      "recv_pred_db": 99.99,
+      "recv_meas_db": 99.56,
+      "recv_withrefl_db": 100.58,
+      "audible_frac": 1.0,
+      "n_label_frames": 28
+    }
+  ],
+  "mic": {
+    "motion": "walk",
+    "walk_speed_mps": 1.1525562904080298,
+    "walk_dir_x": 1.0,
+    "waypoints": [
+      [
+        0.0,
+        -5.762781452040149,
+        0.0,
+        1.5
+      ],
+      [
+        10.0,
+        5.762781452040149,
+        0.0,
+        1.5
+      ]
+    ]
+  },
+  "noise": {
+    "dba": 49.76476950812836,
+    "seed": 98352972038017,
+    "gain": 2.1049583577134277e-05
+  },
+  "cpa_rel_dist_m": 1.576,
+  "cpa_rel_time_s": 4.7,
+  "stats": {
+    "peak": 0.0216,
+    "mix_spl_a": 95.13,
+    "n_label_rows": 224,
+    "gen_seconds": 9.9
+  }
+}
