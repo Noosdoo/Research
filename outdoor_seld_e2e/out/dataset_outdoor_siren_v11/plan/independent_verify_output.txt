@@ -1,0 +1,31 @@
+﻿rows=7200 cols=['clip_id', 'split', 'motion', 'n_warnings', 'w1_class', 'w1_side', 'w2_class', 'w2_side', 'danger_tier', 'car_side', 'scenario', 'seed', 'scene_type', 'n_car']
+既存シード7970個と照合 → 衝突0
+  [info] fold1/static tier×warn0 差=5(許容9) {'caution': 294, 'safe': 293, 'critical': 298}
+  [info] fold1/static tier×warn2 差=5(許容9) {'safe': 101, 'critical': 96, 'caution': 99}
+  [info] fold1/walk tier×warn0 差=5(許容9) {'caution': 293, 'safe': 298, 'critical': 294}
+  [info] fold1/walk tier×warn2 差=5(許容9) {'caution': 101, 'safe': 96, 'critical': 99}
+fold1: 警告のみ474 純静穏390 複数車1680 | n_car={0: 864, 1: 2256, 2: 1104, 3: 576}
+  [info] fold2/static tier×warn0 差=7(許容7) {'caution': 77, 'safe': 75, 'critical': 70}
+  [info] fold2/static tier×warn2 差=5(許容7) {'safe': 24, 'caution': 22, 'critical': 27}
+  [info] fold2/walk tier×warn0 差=7(許容7) {'safe': 77, 'critical': 75, 'caution': 70}
+  [info] fold2/walk tier×warn2 差=5(許容7) {'caution': 27, 'critical': 24, 'safe': 22}
+fold2: 警告のみ120 純静穏96 複数車420 | n_car={0: 216, 1: 564, 2: 276, 3: 144}
+  [info] fold3/static tier×warn0 差=7(許容7) {'caution': 75, 'critical': 77, 'safe': 70}
+  [info] fold3/static tier×warn2 差=5(許容7) {'critical': 22, 'safe': 27, 'caution': 24}
+  [info] fold3/walk tier×warn0 差=7(許容7) {'safe': 77, 'caution': 70, 'critical': 75}
+  [info] fold3/walk tier×warn2 差=5(許容7) {'critical': 24, 'caution': 27, 'safe': 22}
+fold3: 警告のみ120 純静穏96 複数車420 | n_car={0: 216, 1: 564, 2: 276, 3: 144}
+同一クラスペア: {'bike_bell': 78, 'backup_beep': 82, 'siren': 82} 計242
+fold1 mix前半vs後半 n_car: 1.303 / 1.277
+fold1 mix前半vs後半 n_warn: 0.687 / 0.713
+fold1 mix前半vs後半 motion=walk: 0.497 / 0.503
+fold2 mix前半vs後半 n_car: 1.300 / 1.280
+fold2 mix前半vs後半 n_warn: 0.690 / 0.710
+fold2 mix前半vs後半 motion=walk: 0.512 / 0.488
+fold3 mix前半vs後半 n_car: 1.280 / 1.300
+fold3 mix前半vs後半 n_warn: 0.698 / 0.702
+fold3 mix前半vs後半 motion=walk: 0.495 / 0.505
+
+file md5 = 2d9c6905407c8bafd8c40edcc0c2b0f4
+NG項目: 0
+INDEPENDENT VERIFY: ALL PASS

@@ -1,0 +1,8 @@
+﻿1) pd.read_csv: EmptyDataError を確認
+1) load_output_format_file: EmptyDataError を確認
+2) fold1_room1_mix0001.csv: num_frames=100 イベント=0 ADPIT nb=99 OK
+2) fold1_room1_mix0002.csv: num_frames=97 イベント=3 ADPIT nb=96 OK
+3) 参考: 素のloadは番兵行を1イベントとして返す（旧・例外catch方式の事故）
+3) 採用版 load_ok: read側ラップ下でも {99: []}（偽イベント混入なし）OK
+
+EMPTY-LABEL PATCH TEST: ALL PASS

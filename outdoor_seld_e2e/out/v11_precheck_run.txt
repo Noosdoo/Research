@@ -1,0 +1,38 @@
+﻿# v11 生成前チェック（step11_v11_render.py precheck、レンダなしの解析計算）
+
+- 行数: 7200（coreのみ。評価専用セットはv10とビット同一のため対象外）
+- plan行との実現値一致（n_car/警告数/track/1台目tier）: 不一致 0 行
+- 音源ゼロ（純静穏=空ラベル）: 582 行（設計値582。Colabは空ラベル許容preprocで学習に載せる）
+- 相対CPAの検算: 全車の設計値との最大差 0.052 m
+- ピーク上限（クレスト率×反射同相の保守的バウンド）上位5:
+    fold1_room1_mix4568: 1.046
+    fold1_room1_mix4800: 0.908
+    fold1_room1_mix3642: 0.871
+    fold1_room1_mix3775: 0.762
+    fold1_room1_mix1978: 0.714
+  -> 最大 1.046（1.0未満なら本番assertも確実。超える行はスモークで実測ピークを確認する）
+- クラス別の可聴フレーム率の予測（発音窓内、吸収・反射無視の点近似）:
+    backup_beep: mean=0.94 p10=1.00 完全不可聴率=4.96% (n=1008)
+    bike_bell: mean=0.91 p10=0.64 完全不可聴率=5.16% (n=1008)
+    car_drive: mean=0.73 p10=0.28 完全不可聴率=2.62% (n=9288)
+    crossing: mean=0.78 p10=0.00 完全不可聴率=18.65% (n=1008)
+    horn: mean=1.00 p10=1.00 完全不可聴率=0.00% (n=1008)
+    siren: mean=1.00 p10=1.00 完全不可聴率=0.00% (n=1008)
+- 車のオラクル・リードタイム予測（可聴開始→相対CPA): median=4.8s  >=2.5s: 75.2%  >=2.0s: 81.4%  クリップ内不可聴: 2.5%
+- 音量AUCの事前予測（受音レベルのみでのクラス対判別）:
+    backup_beep vs bike_bell: AUC=0.589
+    backup_beep vs car_drive: AUC=0.601
+    backup_beep vs crossing: AUC=0.810
+    backup_beep vs horn: AUC=0.997
+    backup_beep vs siren: AUC=1.000
+    bike_bell vs car_drive: AUC=0.509
+    bike_bell vs crossing: AUC=0.758
+    bike_bell vs horn: AUC=0.999
+    bike_bell vs siren: AUC=1.000
+    car_drive vs crossing: AUC=0.750
+    car_drive vs horn: AUC=1.000
+    car_drive vs siren: AUC=1.000
+    crossing vs horn: AUC=1.000
+    crossing vs siren: AUC=1.000
+    horn vs siren: AUC=0.860
+
