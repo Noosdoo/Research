@@ -1,0 +1,173 @@
+{
+  "row": {
+    "clip_id": "fold8_room2_mix0010",
+    "split": "fold8",
+    "motion": "walk",
+    "n_warnings": 1,
+    "w1_class": "siren",
+    "w1_side": "R",
+    "w2_class": "",
+    "w2_side": "",
+    "danger_tier": "critical",
+    "car_side": "R",
+    "scenario": "traffic2",
+    "seed": 12420042660,
+    "scene_type": "eval",
+    "n_car": "2"
+  },
+  "sources": [
+    {
+      "class": "car_drive",
+      "kind": "vehicle",
+      "track": 0,
+      "wp": [
+        [
+          0.0,
+          -25.117277793180413,
+          -0.6723000096936433,
+          1.1971435907476478
+        ],
+        [
+          10.0,
+          10.02757831771158,
+          -0.6723000096936433,
+          1.1971435907476478
+        ]
+      ],
+      "t_on": 0.0,
+      "t_off": 10.0,
+      "speed_mps": 3.5144856110891993,
+      "dir_x": 1.0,
+      "danger_tier": "critical",
+      "cpa_rel_target_m": 0.7373664676802854,
+      "t_cpa_rel_s": 8.415859441083544,
+      "law_db": 66.17649784083395,
+      "l1m_db": 86.17649784083395,
+      "params": {
+        "f0": 38.99983512912022,
+        "audio_seed": 86940298625
+      },
+      "dry_gain": 0.007468148832358012,
+      "min_dist_m": 0.737,
+      "t_min_dist_s": 8.42,
+      "recv_pred_db": 78.67,
+      "recv_meas_db": 78.72,
+      "recv_withrefl_db": 79.54,
+      "audible_frac": 1.0,
+      "t_first_audible_s": 0.0,
+      "n_label_frames": 99
+    },
+    {
+      "class": "car_drive",
+      "kind": "vehicle",
+      "track": 1,
+      "wp": [
+        [
+          0.0,
+          70.86982653614186,
+          0.8078777379846342,
+          0.9540752444154462
+        ],
+        [
+          10.0,
+          -21.64648590326152,
+          0.8078777379846342,
+          0.9540752444154462
+        ]
+      ],
+      "t_on": 0.0,
+      "t_off": 10.0,
+      "speed_mps": 9.251631243940338,
+      "dir_x": -1.0,
+      "danger_tier": "critical",
+      "cpa_rel_target_m": 0.9750386034876897,
+      "t_cpa_rel_s": 7.331236430657063,
+      "law_db": 66.07782550654593,
+      "l1m_db": 86.07782550654593,
+      "params": {
+        "f0": 33.88030204390308,
+        "audio_seed": 86940298626
+      },
+      "dry_gain": 0.0077942847132204006,
+      "min_dist_m": 0.975,
+      "t_min_dist_s": 7.33,
+      "recv_pred_db": 70.86,
+      "recv_meas_db": 70.53,
+      "recv_withrefl_db": 71.8,
+      "audible_frac": 0.98,
+      "t_first_audible_s": 0.2,
+      "n_label_frames": 98
+    },
+    {
+      "class": "siren",
+      "kind": "vehicle",
+      "wp": [
+        [
+          0.0,
+          32.00062287128077,
+          -14.201329542198245,
+          0.9590944006546485
+        ],
+        [
+          10.0,
+          -24.559453992046116,
+          -14.201329542198245,
+          0.9590944006546485
+        ]
+      ],
+      "t_on": 5.447,
+      "t_off": 8.88,
+      "speed_mps": 5.656007686332688,
+      "dir_x": -1.0,
+      "t_cpa_s": 5.657811064968641,
+      "law_db": 100.26534304329327,
+      "l1m_db": 126.2859429565729,
+      "params": {
+        "siren_type": "peepo",
+        "f_hi": 963.7485650241168,
+        "f_lo": 775.4055557169754,
+        "tone_sec": 0.6494366572521842
+      },
+      "dry_gain": 0.19867244921424676,
+      "min_dist_m": 14.212,
+      "t_min_dist_s": 5.53,
+      "recv_pred_db": 101.26,
+      "recv_meas_db": 101.11,
+      "recv_withrefl_db": 101.37,
+      "audible_frac": 1.0,
+      "n_label_frames": 35
+    }
+  ],
+  "mic": {
+    "motion": "walk",
+    "walk_speed_mps": 1.3057150606999488,
+    "walk_dir_x": 1.0,
+    "waypoints": [
+      [
+        0.0,
+        -6.5285753034997445,
+        0.0,
+        1.5
+      ],
+      [
+        10.0,
+        6.5285753034997445,
+        0.0,
+        1.5
+      ]
+    ]
+  },
+  "noise": {
+    "dba": 47.36179268455529,
+    "seed": 98354317824553,
+    "gain": 1.5858757962130404e-05
+  },
+  "cpa_rel_dist_m": 0.737,
+  "cpa_rel_time_s": 8.42,
+  "stats": {
+    "peak": 0.0154,
+    "mix_spl_a": 96.87,
+    "n_label_rows": 232,
+    "gen_seconds": 8.0
+  }
+}

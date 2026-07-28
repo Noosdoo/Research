@@ -1,0 +1,173 @@
+{
+  "row": {
+    "clip_id": "fold8_room2_mix0050",
+    "split": "fold8",
+    "motion": "walk",
+    "n_warnings": 1,
+    "w1_class": "siren",
+    "w1_side": "R",
+    "w2_class": "",
+    "w2_side": "",
+    "danger_tier": "caution",
+    "car_side": "L",
+    "scenario": "traffic2",
+    "seed": 12420042700,
+    "scene_type": "eval",
+    "n_car": "2"
+  },
+  "sources": [
+    {
+      "class": "car_drive",
+      "kind": "vehicle",
+      "track": 0,
+      "wp": [
+        [
+          0.0,
+          -40.03814973276007,
+          2.685205789683958,
+          1.1081483198334698
+        ],
+        [
+          10.0,
+          36.889472753070855,
+          2.685205789683958,
+          1.1081483198334698
+        ]
+      ],
+      "t_on": 0.0,
+      "t_off": 10.0,
+      "speed_mps": 7.692762248583092,
+      "dir_x": 1.0,
+      "danger_tier": "caution",
+      "cpa_rel_target_m": 2.7136466004624813,
+      "t_cpa_rel_s": 5.242920822064144,
+      "law_db": 60.92056639264711,
+      "l1m_db": 80.92056639264712,
+      "params": {
+        "f0": 39.15946286081037,
+        "audio_seed": 86940298905
+      },
+      "dry_gain": 0.004178624245786022,
+      "min_dist_m": 2.714,
+      "t_min_dist_s": 5.24,
+      "recv_pred_db": 63.2,
+      "recv_meas_db": 62.98,
+      "recv_withrefl_db": 65.24,
+      "audible_frac": 0.51,
+      "t_first_audible_s": 2.8,
+      "n_label_frames": 51
+    },
+    {
+      "class": "car_drive",
+      "kind": "vehicle",
+      "track": 1,
+      "wp": [
+        [
+          0.0,
+          -21.955156832917172,
+          7.9700386451308525,
+          1.200452736302697
+        ],
+        [
+          10.0,
+          11.993908586649102,
+          7.9700386451308525,
+          1.200452736302697
+        ]
+      ],
+      "t_on": 0.0,
+      "t_off": 10.0,
+      "speed_mps": 3.3949065419566273,
+      "dir_x": 1.0,
+      "danger_tier": "safe",
+      "cpa_rel_target_m": 7.975665775850175,
+      "t_cpa_rel_s": 7.281534324132066,
+      "law_db": 60.48853716329341,
+      "l1m_db": 80.48853716329342,
+      "params": {
+        "f0": 41.39859490918491,
+        "audio_seed": 86940298906
+      },
+      "dry_gain": 0.0037880752913382314,
+      "min_dist_m": 7.976,
+      "t_min_dist_s": 7.28,
+      "recv_pred_db": 60.5,
+      "recv_meas_db": 60.29,
+      "recv_withrefl_db": 63.1,
+      "audible_frac": 0.84,
+      "t_first_audible_s": 1.0,
+      "n_label_frames": 87
+    },
+    {
+      "class": "siren",
+      "kind": "vehicle",
+      "wp": [
+        [
+          0.0,
+          81.07213563524431,
+          -13.058574381838815,
+          0.9059460232324847
+        ],
+        [
+          10.0,
+          -48.23173170824924,
+          -13.058574381838815,
+          0.9059460232324847
+        ]
+      ],
+      "t_on": 3.503,
+      "t_off": 6.101,
+      "speed_mps": 12.930386734349355,
+      "dir_x": -1.0,
+      "t_cpa_s": 6.269892563992501,
+      "law_db": 110.68016711089221,
+      "l1m_db": 136.70076702417185,
+      "params": {
+        "siren_type": "peepo",
+        "f_hi": 960.5300990058628,
+        "f_lo": 769.5073816277426,
+        "tone_sec": 0.6962907033791422
+      },
+      "dry_gain": 0.6623376675943797,
+      "min_dist_m": 13.072,
+      "t_min_dist_s": 6.16,
+      "recv_pred_db": 110.58,
+      "recv_meas_db": 110.35,
+      "recv_withrefl_db": 111.02,
+      "audible_frac": 0.962,
+      "n_label_frames": 25
+    }
+  ],
+  "mic": {
+    "motion": "walk",
+    "walk_speed_mps": 1.2118913357187155,
+    "walk_dir_x": 1.0,
+    "waypoints": [
+      [
+        0.0,
+        -6.059456678593578,
+        0.0,
+        1.5
+      ],
+      [
+        10.0,
+        6.059456678593578,
+        0.0,
+        1.5
+      ]
+    ]
+  },
+  "noise": {
+    "dba": 59.35226724837283,
+    "seed": 98354318141313,
+    "gain": 6.326621998830329e-05
+  },
+  "cpa_rel_dist_m": 2.714,
+  "cpa_rel_time_s": 5.24,
+  "stats": {
+    "peak": 0.0389,
+    "mix_spl_a": 105.28,
+    "n_label_rows": 163,
+    "gen_seconds": 8.2
+  }
+}

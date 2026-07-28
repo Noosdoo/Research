@@ -1,0 +1,15 @@
+v11 run1 学習ランタイムの事後プロビナンス記録（本人がColabで実行、2026-07-28朝に貼付報告）
+
+PSELDNets commit: 8092a14866963e4dc38ee389aa146f0a2edef1bb
+ckpt sha256: 813083ac938c5974a6f36ceca29ea66c0382091db5df1d6d47ece9572d5ac71b
+foa 7199 19d017feb2810468f3aee4be4cdee7aa OK
+metadata 7199 347a54db4b0bc49485e496f5cb699d52 OK
+masks 7199 6c3cb53722a56d5abc7815710dd41185 OK
+PROVENANCE OK
+
+照合先:
+- commit = .gitmodules pin / ノートブック PSELDNETS_COMMIT と一致
+- ckpt sha256 = md/audit/第5回監査への対応_2026-07-19.md の記録値と一致
+- ダイジェスト3本 = manifest_v11.csv 由来の V11_DIGEST_FINAL（7,199本）と一致
+→ 第6回監査の残ブロッカー「clean Colabでの学習完走とログ保存」は解消
+  （train.log = Drive PSELDNets_logs/outdoor_siren_v11/runs/outdoor_siren_v11_run1/）
