@@ -4,7 +4,7 @@
 step13_v9_anatomy.py は無改変で importlib 読み込み(v10.2解剖と同じrunner方式)。
 追加で、ゼミP19用の「クラス別 可聴recall / 方向誤差中央値 / substitution」を集計する。
 入力: out/predictions_v11/val_all.csv(run1) + dataset_outdoor_siren_v11(metadata/masks/work)
-出力: out/v11_anatomy_2026-07-30.md + out/figures_v11_analysis/ + P19表を標準出力
+出力: out/v11_anatomy_run2.md + out/figures_v11_analysis/ + P19表を標準出力
 """
 from __future__ import annotations
 
@@ -25,9 +25,9 @@ m13 = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m13)
 
 m13.DS = ROOT / "out" / "dataset_outdoor_siren_v11"
-m13.PRED = ROOT / "out" / "predictions_v11" / "val_all.csv"
-m13.FIG = ROOT / "out" / "figures_v11_analysis"
-m13.MD = ROOT / "out" / "v11_anatomy_2026-07-30.md"
+m13.PRED = ROOT / "out" / "predictions_v11run2" / "val_all.csv"
+m13.FIG = ROOT / "out" / "figures_v11_analysis_run2"
+m13.MD = ROOT / "out" / "v11_anatomy_run2.md"
 
 # step13内の固定文言(v9 run1/240本)をv11表記に差し替える(本体は無改変のまま)
 import matplotlib  # noqa: E402
