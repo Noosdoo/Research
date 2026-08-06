@@ -1,0 +1,205 @@
+{
+  "row": {
+    "clip_id": "fold2_room1_mix0845",
+    "split": "fold2",
+    "motion": "walk",
+    "n_warnings": 2,
+    "w1_class": "siren",
+    "w1_side": "R",
+    "w2_class": "bike_bell",
+    "w2_side": "L",
+    "danger_tier": "safe",
+    "car_side": "L",
+    "scenario": "v11core",
+    "seed": 12420031295,
+    "scene_type": "arterial",
+    "n_car": "2"
+  },
+  "mic": {
+    "motion": "walk",
+    "walk_speed_mps": 1.1905855766161382,
+    "walk_dir_x": 1.0
+  },
+  "sources": [
+    {
+      "class": "car_drive",
+      "kind": "vehicle",
+      "track": 0,
+      "wp": [
+        [
+          0.0,
+          -35.01886564966061,
+          14.781736648261646,
+          0.9146189393265612
+        ],
+        [
+          10.0,
+          23.59950745248544,
+          14.781736648261646,
+          0.9146189393265612
+        ]
+      ],
+      "t_on": 0.0,
+      "t_off": 10.0,
+      "speed_mps": 5.8618373102146055,
+      "dir_x": 1.0,
+      "danger_tier": "safe",
+      "cpa_rel_target_m": 14.793323133250237,
+      "t_cpa_rel_s": 6.222301734997522,
+      "law_db": 65.09783749097548,
+      "l1m_db": 85.09783749097548,
+      "params": {
+        "f0": 48.80577585801281,
+        "audio_seed": 86940219070
+      },
+      "car_variant": "normal",
+      "dry_gain": 0.003282570108195829,
+      "min_dist_m": 14.793,
+      "t_min_dist_s": 6.22,
+      "recv_pred_db": 59.65,
+      "recv_meas_db": 53.36,
+      "recv_withrefl_db": 55.85,
+      "audible_frac": 0.77,
+      "t_first_audible_s": 2.2,
+      "n_label_frames": 78
+    },
+    {
+      "class": "car_drive",
+      "kind": "vehicle",
+      "track": 1,
+      "wp": [
+        [
+          0.0,
+          44.74589451235152,
+          -1.0059484351204853,
+          1.1720380841912184
+        ],
+        [
+          10.0,
+          -14.500337005752634,
+          -1.0059484351204853,
+          1.1720380841912184
+        ]
+      ],
+      "t_on": 0.0,
+      "t_off": 10.0,
+      "speed_mps": 5.924623151810415,
+      "dir_x": -1.0,
+      "danger_tier": "critical",
+      "cpa_rel_target_m": 1.0580601459001846,
+      "t_cpa_rel_s": 7.12541603915022,
+      "law_db": 62.182965816665785,
+      "l1m_db": 82.18296581666579,
+      "params": {
+        "f0": 36.993792123617744,
+        "audio_seed": 86940219071
+      },
+      "car_variant": "heavy",
+      "dry_gain": 0.002393203121761803,
+      "min_dist_m": 1.059,
+      "t_min_dist_s": 7.13,
+      "recv_pred_db": 68.29,
+      "recv_meas_db": 62.03,
+      "recv_withrefl_db": 63.36,
+      "audible_frac": 0.6,
+      "t_first_audible_s": 4.0,
+      "n_label_frames": 60
+    },
+    {
+      "class": "siren",
+      "kind": "vehicle",
+      "wp": [
+        [
+          0.0,
+          55.490213898964264,
+          -4.43025344027016,
+          1.008295400683848
+        ],
+        [
+          10.0,
+          -94.42063690071336,
+          -4.43025344027016,
+          1.008295400683848
+        ]
+      ],
+      "t_on": 5.817,
+      "t_off": 8.708,
+      "speed_mps": 14.991085079967762,
+      "dir_x": -1.0,
+      "t_cpa_s": 3.7015475266106352,
+      "law_db": 112.97307438102443,
+      "l1m_db": 138.99367429430407,
+      "params": {
+        "siren_type": "fire",
+        "f_lo": 351.04387146186417,
+        "f_hi": 715.9877036938101,
+        "sweep_period_sec": 3.2068135661883193,
+        "bell_f0": 1180.6543898216014,
+        "audio_seed": 86940219076
+      },
+      "track": 0,
+      "dry_gain": 0.6962200848472485,
+      "min_dist_m": 4.458,
+      "t_min_dist_s": 3.8,
+      "recv_pred_db": 104.81,
+      "recv_meas_db": 97.82,
+      "recv_withrefl_db": 103.01,
+      "audible_frac": 0.966,
+      "n_label_frames": 30
+    },
+    {
+      "class": "bike_bell",
+      "kind": "vehicle",
+      "wp": [
+        [
+          0.0,
+          37.31193932782338,
+          10.836018763146726,
+          1.1901183841930147
+        ],
+        [
+          10.0,
+          -31.330285287306793,
+          10.836018763146726,
+          1.1901183841930147
+        ]
+      ],
+      "t_on": 4.213,
+      "t_off": 6.471,
+      "speed_mps": 6.864222461513018,
+      "dir_x": -1.0,
+      "t_cpa_s": 5.4357124258468525,
+      "law_db": 87.78100875513984,
+      "l1m_db": 87.78100875513984,
+      "params": {
+        "bell_type": "ring",
+        "f0": 2884.6872877060127,
+        "strike_rate_hz": 31.967956521597785,
+        "burst_sec": 0.6250970193538815,
+        "gap_sec": 0.5431392377507557
+      },
+      "track": 0,
+      "dry_gain": 0.0026688833698138145,
+      "min_dist_m": 10.84,
+      "t_min_dist_s": 5.37,
+      "recv_pred_db": 66.28,
+      "recv_meas_db": 59.75,
+      "recv_withrefl_db": 59.57,
+      "audible_frac": 0.636,
+      "n_label_frames": 22
+    }
+  ],
+  "noise": {
+    "dba": 57.88584339451073,
+    "seed": 98354227825118,
+    "gain": 8.680867835023533e-05
+  },
+  "cpa_rel_dist_m": 14.793,
+  "cpa_rel_time_s": 6.22,
+  "stats": {
+    "peak": 0.0257,
+    "mix_spl_a": 97.82,
+    "n_label_rows": 190,
+    "gen_seconds": 11.3
+  }
+}
