@@ -1,0 +1,400 @@
+[2026-08-06 21:31:26,005][utils.utilities][INFO] - Printing config tree with Rich! <cfg.extras.print_config=True>
+[2026-08-06 21:31:26,044][train][INFO] - Instantiating datamodule <data.datamodule.SELDDataModule> ...
+[2026-08-06 21:31:28,197][data.datamodule][INFO] - Training clip number is: 7200
+[2026-08-06 21:31:28,197][data.datamodule][INFO] - Validation clip number is: 1800
+[2026-08-06 21:31:28,197][train][INFO] - Instantiating model <models.model_module.SELDModelModule> ...
+[2026-08-06 21:31:28,212][models.components.model_module][INFO] - loss_all is used as the 1st loss.
+[2026-08-06 21:31:28,212][models.components.model_module][INFO] - loss_adpit is used as the 2nd loss.
+[2026-08-06 21:31:28,212][models.components.model_module][INFO] - loss_other is used as the 3rd loss.
+[2026-08-06 21:31:28,215][train][INFO] - Instantiating callbacks...
+[2026-08-06 21:31:28,215][utils.utilities][INFO] - Instantiating callback <lightning.pytorch.callbacks.ModelCheckpoint>
+[2026-08-06 21:31:28,220][train][INFO] - Instantiating loggers...
+[2026-08-06 21:31:28,220][utils.utilities][INFO] - Instantiating logger <lightning.pytorch.loggers.tensorboard.TensorBoardLogger>
+[2026-08-06 21:31:28,221][train][INFO] - Instantiating trainer <lightning.pytorch.trainer.Trainer>
+[2026-08-06 21:31:28,253][train][INFO] - Logging hyperparameters!
+[2026-08-06 21:31:28,406][train][INFO] - Starting training!
+[2026-08-06 21:31:29,992][sde_patch][INFO] - [SDE] head out = classes*3*4 = 96
+[2026-08-06 21:31:30,040][sde_patch][INFO] - [SDE] head warm-start <- /home/s6323122/PSELDNets_logs/v12_init_from_run3ep84.ckpt
+[2026-08-06 21:31:30,042][models.components.model_module][INFO] - Compiling model
+[2026-08-06 21:31:32,267][models.components.model_module][INFO] - Number of parameters of net: 27986936
+[2026-08-06 21:31:32,302][data.datamodule][INFO] - Number of batches per epoch is: 901
+[2026-08-06 21:32:30,558][models.components.model_module][INFO] - train: loss_all: 0.0162, loss_adpit: 0.0059, loss_other: 0.0102, 
+[2026-08-06 21:32:30,559][models.components.model_module][INFO] - Epoch/Total Epoch: 1/100, LR: 0.0003
+[2026-08-06 21:32:30,559][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:32:53,990][models.components.model_module][INFO] - train: loss_all: 0.0115, loss_adpit: 0.0041, loss_other: 0.0074, 
+[2026-08-06 21:32:53,991][models.components.model_module][INFO] - Epoch/Total Epoch: 2/100, LR: 0.0003
+[2026-08-06 21:32:53,991][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:33:17,663][models.components.model_module][INFO] - train: loss_all: 0.0096, loss_adpit: 0.0034, loss_other: 0.0062, 
+[2026-08-06 21:33:17,664][models.components.model_module][INFO] - Epoch/Total Epoch: 3/100, LR: 0.0003
+[2026-08-06 21:33:17,664][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:33:41,884][models.components.model_module][INFO] - train: loss_all: 0.0087, loss_adpit: 0.0030, loss_other: 0.0057, 
+[2026-08-06 21:33:41,885][models.components.model_module][INFO] - Epoch/Total Epoch: 4/100, LR: 0.0003
+[2026-08-06 21:33:41,885][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:34:30,686][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:34:30,689][models.components.model_module][INFO] - val/macro: ER: 0.184, F: 90.2%, LE: 6.4, LR: 92.9%, SELD_scr: 0.097, 
+[2026-08-06 21:34:30,692][models.components.model_module][INFO] - val/micro: ER: 0.184, F: 88.8%, LE: 5.5, LR: 88.4%, SELD_scr: 0.111, 
+[2026-08-06 21:34:30,693][models.components.model_module][INFO] - val: loss_all: 0.0071, loss_adpit: 0.0024, loss_other: 0.0047, 
+[2026-08-06 21:34:32,158][models.components.model_module][INFO] - train: loss_all: 0.0080, loss_adpit: 0.0027, loss_other: 0.0053, 
+[2026-08-06 21:34:32,158][models.components.model_module][INFO] - Epoch/Total Epoch: 5/100, LR: 0.0003
+[2026-08-06 21:34:32,158][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:34:56,079][models.components.model_module][INFO] - train: loss_all: 0.0075, loss_adpit: 0.0025, loss_other: 0.0049, 
+[2026-08-06 21:34:56,080][models.components.model_module][INFO] - Epoch/Total Epoch: 6/100, LR: 0.0003
+[2026-08-06 21:34:56,080][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:35:20,115][models.components.model_module][INFO] - train: loss_all: 0.0071, loss_adpit: 0.0024, loss_other: 0.0047, 
+[2026-08-06 21:35:20,116][models.components.model_module][INFO] - Epoch/Total Epoch: 7/100, LR: 0.0003
+[2026-08-06 21:35:20,116][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:35:43,721][models.components.model_module][INFO] - train: loss_all: 0.0068, loss_adpit: 0.0023, loss_other: 0.0045, 
+[2026-08-06 21:35:43,721][models.components.model_module][INFO] - Epoch/Total Epoch: 8/100, LR: 0.0003
+[2026-08-06 21:35:43,721][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:36:07,770][models.components.model_module][INFO] - train: loss_all: 0.0065, loss_adpit: 0.0022, loss_other: 0.0043, 
+[2026-08-06 21:36:07,771][models.components.model_module][INFO] - Epoch/Total Epoch: 9/100, LR: 0.0003
+[2026-08-06 21:36:07,771][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:36:43,570][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:36:43,572][models.components.model_module][INFO] - val/macro: ER: 0.188, F: 89.9%, LE: 6.3, LR: 93.0%, SELD_scr: 0.099, 
+[2026-08-06 21:36:43,572][models.components.model_module][INFO] - val/micro: ER: 0.188, F: 88.5%, LE: 5.6, LR: 89.0%, SELD_scr: 0.111, 
+[2026-08-06 21:36:43,573][models.components.model_module][INFO] - val: loss_all: 0.0071, loss_adpit: 0.0024, loss_other: 0.0047, 
+[2026-08-06 21:36:44,368][models.components.model_module][INFO] - train: loss_all: 0.0063, loss_adpit: 0.0021, loss_other: 0.0042, 
+[2026-08-06 21:36:44,368][models.components.model_module][INFO] - Epoch/Total Epoch: 10/100, LR: 0.0003
+[2026-08-06 21:36:44,369][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:37:08,448][models.components.model_module][INFO] - train: loss_all: 0.0061, loss_adpit: 0.0020, loss_other: 0.0041, 
+[2026-08-06 21:37:08,449][models.components.model_module][INFO] - Epoch/Total Epoch: 11/100, LR: 0.0003
+[2026-08-06 21:37:08,449][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:37:31,964][models.components.model_module][INFO] - train: loss_all: 0.0059, loss_adpit: 0.0020, loss_other: 0.0040, 
+[2026-08-06 21:37:31,965][models.components.model_module][INFO] - Epoch/Total Epoch: 12/100, LR: 0.0003
+[2026-08-06 21:37:31,965][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:37:56,121][models.components.model_module][INFO] - train: loss_all: 0.0058, loss_adpit: 0.0019, loss_other: 0.0039, 
+[2026-08-06 21:37:56,122][models.components.model_module][INFO] - Epoch/Total Epoch: 13/100, LR: 0.0003
+[2026-08-06 21:37:56,122][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:38:19,579][models.components.model_module][INFO] - train: loss_all: 0.0056, loss_adpit: 0.0019, loss_other: 0.0038, 
+[2026-08-06 21:38:19,580][models.components.model_module][INFO] - Epoch/Total Epoch: 14/100, LR: 0.0003
+[2026-08-06 21:38:19,580][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:38:56,028][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:38:56,030][models.components.model_module][INFO] - val/macro: ER: 0.180, F: 90.3%, LE: 6.0, LR: 92.9%, SELD_scr: 0.095, 
+[2026-08-06 21:38:56,030][models.components.model_module][INFO] - val/micro: ER: 0.180, F: 89.2%, LE: 5.2, LR: 88.7%, SELD_scr: 0.108, 
+[2026-08-06 21:38:56,031][models.components.model_module][INFO] - val: loss_all: 0.0071, loss_adpit: 0.0024, loss_other: 0.0047, 
+[2026-08-06 21:38:57,589][models.components.model_module][INFO] - train: loss_all: 0.0055, loss_adpit: 0.0018, loss_other: 0.0037, 
+[2026-08-06 21:38:57,589][models.components.model_module][INFO] - Epoch/Total Epoch: 15/100, LR: 0.0003
+[2026-08-06 21:38:57,589][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:39:21,677][models.components.model_module][INFO] - train: loss_all: 0.0054, loss_adpit: 0.0018, loss_other: 0.0037, 
+[2026-08-06 21:39:21,678][models.components.model_module][INFO] - Epoch/Total Epoch: 16/100, LR: 0.0003
+[2026-08-06 21:39:21,678][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:39:45,761][models.components.model_module][INFO] - train: loss_all: 0.0053, loss_adpit: 0.0017, loss_other: 0.0036, 
+[2026-08-06 21:39:45,762][models.components.model_module][INFO] - Epoch/Total Epoch: 17/100, LR: 0.0003
+[2026-08-06 21:39:45,762][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:40:09,162][models.components.model_module][INFO] - train: loss_all: 0.0053, loss_adpit: 0.0017, loss_other: 0.0036, 
+[2026-08-06 21:40:09,163][models.components.model_module][INFO] - Epoch/Total Epoch: 18/100, LR: 0.0003
+[2026-08-06 21:40:09,163][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:40:32,620][models.components.model_module][INFO] - train: loss_all: 0.0052, loss_adpit: 0.0017, loss_other: 0.0035, 
+[2026-08-06 21:40:32,621][models.components.model_module][INFO] - Epoch/Total Epoch: 19/100, LR: 0.0003
+[2026-08-06 21:40:32,621][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:41:09,562][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:41:09,564][models.components.model_module][INFO] - val/macro: ER: 0.183, F: 90.4%, LE: 5.9, LR: 92.8%, SELD_scr: 0.096, 
+[2026-08-06 21:41:09,564][models.components.model_module][INFO] - val/micro: ER: 0.183, F: 88.8%, LE: 5.4, LR: 88.2%, SELD_scr: 0.111, 
+[2026-08-06 21:41:09,565][models.components.model_module][INFO] - val: loss_all: 0.0070, loss_adpit: 0.0024, loss_other: 0.0047, 
+[2026-08-06 21:41:10,377][models.components.model_module][INFO] - train: loss_all: 0.0051, loss_adpit: 0.0016, loss_other: 0.0034, 
+[2026-08-06 21:41:10,377][models.components.model_module][INFO] - Epoch/Total Epoch: 20/100, LR: 0.0003
+[2026-08-06 21:41:10,378][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:41:34,083][models.components.model_module][INFO] - train: loss_all: 0.0050, loss_adpit: 0.0016, loss_other: 0.0034, 
+[2026-08-06 21:41:34,084][models.components.model_module][INFO] - Epoch/Total Epoch: 21/100, LR: 0.0003
+[2026-08-06 21:41:34,084][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:41:57,780][models.components.model_module][INFO] - train: loss_all: 0.0049, loss_adpit: 0.0016, loss_other: 0.0033, 
+[2026-08-06 21:41:57,781][models.components.model_module][INFO] - Epoch/Total Epoch: 22/100, LR: 0.0003
+[2026-08-06 21:41:57,781][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:42:21,979][models.components.model_module][INFO] - train: loss_all: 0.0049, loss_adpit: 0.0016, loss_other: 0.0033, 
+[2026-08-06 21:42:21,980][models.components.model_module][INFO] - Epoch/Total Epoch: 23/100, LR: 0.0003
+[2026-08-06 21:42:21,980][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:42:46,412][models.components.model_module][INFO] - train: loss_all: 0.0048, loss_adpit: 0.0015, loss_other: 0.0033, 
+[2026-08-06 21:42:46,413][models.components.model_module][INFO] - Epoch/Total Epoch: 24/100, LR: 0.0003
+[2026-08-06 21:42:46,413][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:43:22,967][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:43:22,968][models.components.model_module][INFO] - val/macro: ER: 0.179, F: 90.3%, LE: 6.0, LR: 93.2%, SELD_scr: 0.094, 
+[2026-08-06 21:43:22,969][models.components.model_module][INFO] - val/micro: ER: 0.179, F: 89.2%, LE: 5.0, LR: 88.6%, SELD_scr: 0.107, 
+[2026-08-06 21:43:22,970][models.components.model_module][INFO] - val: loss_all: 0.0070, loss_adpit: 0.0023, loss_other: 0.0046, 
+[2026-08-06 21:43:24,521][models.components.model_module][INFO] - train: loss_all: 0.0047, loss_adpit: 0.0015, loss_other: 0.0032, 
+[2026-08-06 21:43:24,521][models.components.model_module][INFO] - Epoch/Total Epoch: 25/100, LR: 0.0003
+[2026-08-06 21:43:24,521][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:43:48,536][models.components.model_module][INFO] - train: loss_all: 0.0047, loss_adpit: 0.0015, loss_other: 0.0032, 
+[2026-08-06 21:43:48,537][models.components.model_module][INFO] - Epoch/Total Epoch: 26/100, LR: 0.0003
+[2026-08-06 21:43:48,537][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:44:12,304][models.components.model_module][INFO] - train: loss_all: 0.0046, loss_adpit: 0.0015, loss_other: 0.0031, 
+[2026-08-06 21:44:12,305][models.components.model_module][INFO] - Epoch/Total Epoch: 27/100, LR: 0.0003
+[2026-08-06 21:44:12,305][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:44:36,323][models.components.model_module][INFO] - train: loss_all: 0.0046, loss_adpit: 0.0015, loss_other: 0.0031, 
+[2026-08-06 21:44:36,324][models.components.model_module][INFO] - Epoch/Total Epoch: 28/100, LR: 0.0003
+[2026-08-06 21:44:36,324][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:45:00,316][models.components.model_module][INFO] - train: loss_all: 0.0045, loss_adpit: 0.0015, loss_other: 0.0031, 
+[2026-08-06 21:45:00,317][models.components.model_module][INFO] - Epoch/Total Epoch: 29/100, LR: 0.0003
+[2026-08-06 21:45:00,317][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:45:37,403][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:45:37,405][models.components.model_module][INFO] - val/macro: ER: 0.178, F: 90.4%, LE: 5.9, LR: 93.2%, SELD_scr: 0.094, 
+[2026-08-06 21:45:37,405][models.components.model_module][INFO] - val/micro: ER: 0.178, F: 89.2%, LE: 5.2, LR: 89.0%, SELD_scr: 0.106, 
+[2026-08-06 21:45:37,406][models.components.model_module][INFO] - val: loss_all: 0.0070, loss_adpit: 0.0023, loss_other: 0.0047, 
+[2026-08-06 21:45:39,032][models.components.model_module][INFO] - train: loss_all: 0.0045, loss_adpit: 0.0014, loss_other: 0.0031, 
+[2026-08-06 21:45:39,032][models.components.model_module][INFO] - Epoch/Total Epoch: 30/100, LR: 0.0003
+[2026-08-06 21:45:39,033][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:46:03,011][models.components.model_module][INFO] - train: loss_all: 0.0045, loss_adpit: 0.0014, loss_other: 0.0030, 
+[2026-08-06 21:46:03,012][models.components.model_module][INFO] - Epoch/Total Epoch: 31/100, LR: 0.0003
+[2026-08-06 21:46:03,012][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:46:26,720][models.components.model_module][INFO] - train: loss_all: 0.0044, loss_adpit: 0.0014, loss_other: 0.0030, 
+[2026-08-06 21:46:26,721][models.components.model_module][INFO] - Epoch/Total Epoch: 32/100, LR: 0.0003
+[2026-08-06 21:46:26,721][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:46:50,590][models.components.model_module][INFO] - train: loss_all: 0.0044, loss_adpit: 0.0014, loss_other: 0.0030, 
+[2026-08-06 21:46:50,591][models.components.model_module][INFO] - Epoch/Total Epoch: 33/100, LR: 0.0003
+[2026-08-06 21:46:50,591][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:47:14,661][models.components.model_module][INFO] - train: loss_all: 0.0044, loss_adpit: 0.0014, loss_other: 0.0030, 
+[2026-08-06 21:47:14,662][models.components.model_module][INFO] - Epoch/Total Epoch: 34/100, LR: 0.0003
+[2026-08-06 21:47:14,662][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:47:50,562][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:47:50,564][models.components.model_module][INFO] - val/macro: ER: 0.177, F: 90.5%, LE: 5.8, LR: 92.5%, SELD_scr: 0.095, 
+[2026-08-06 21:47:50,565][models.components.model_module][INFO] - val/micro: ER: 0.177, F: 89.4%, LE: 4.9, LR: 88.7%, SELD_scr: 0.106, 
+[2026-08-06 21:47:50,565][models.components.model_module][INFO] - val: loss_all: 0.0070, loss_adpit: 0.0023, loss_other: 0.0047, 
+[2026-08-06 21:47:51,368][models.components.model_module][INFO] - train: loss_all: 0.0043, loss_adpit: 0.0014, loss_other: 0.0030, 
+[2026-08-06 21:47:51,369][models.components.model_module][INFO] - Epoch/Total Epoch: 35/100, LR: 0.0003
+[2026-08-06 21:47:51,369][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:48:15,758][models.components.model_module][INFO] - train: loss_all: 0.0043, loss_adpit: 0.0014, loss_other: 0.0029, 
+[2026-08-06 21:48:15,759][models.components.model_module][INFO] - Epoch/Total Epoch: 36/100, LR: 0.0003
+[2026-08-06 21:48:15,759][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:48:39,283][models.components.model_module][INFO] - train: loss_all: 0.0043, loss_adpit: 0.0014, loss_other: 0.0029, 
+[2026-08-06 21:48:39,284][models.components.model_module][INFO] - Epoch/Total Epoch: 37/100, LR: 0.0003
+[2026-08-06 21:48:39,284][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:49:02,936][models.components.model_module][INFO] - train: loss_all: 0.0042, loss_adpit: 0.0013, loss_other: 0.0029, 
+[2026-08-06 21:49:02,937][models.components.model_module][INFO] - Epoch/Total Epoch: 38/100, LR: 0.0003
+[2026-08-06 21:49:02,937][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:49:26,949][models.components.model_module][INFO] - train: loss_all: 0.0042, loss_adpit: 0.0013, loss_other: 0.0029, 
+[2026-08-06 21:49:26,950][models.components.model_module][INFO] - Epoch/Total Epoch: 39/100, LR: 0.0003
+[2026-08-06 21:49:26,950][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:50:02,806][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:50:02,808][models.components.model_module][INFO] - val/macro: ER: 0.178, F: 90.5%, LE: 5.8, LR: 92.6%, SELD_scr: 0.095, 
+[2026-08-06 21:50:02,809][models.components.model_module][INFO] - val/micro: ER: 0.178, F: 89.3%, LE: 5.0, LR: 88.3%, SELD_scr: 0.107, 
+[2026-08-06 21:50:02,810][models.components.model_module][INFO] - val: loss_all: 0.0069, loss_adpit: 0.0022, loss_other: 0.0047, 
+[2026-08-06 21:50:04,002][models.components.model_module][INFO] - train: loss_all: 0.0042, loss_adpit: 0.0013, loss_other: 0.0029, 
+[2026-08-06 21:50:04,003][models.components.model_module][INFO] - Epoch/Total Epoch: 40/100, LR: 0.0003
+[2026-08-06 21:50:04,003][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:50:27,761][models.components.model_module][INFO] - train: loss_all: 0.0042, loss_adpit: 0.0013, loss_other: 0.0028, 
+[2026-08-06 21:50:27,761][models.components.model_module][INFO] - Epoch/Total Epoch: 41/100, LR: 0.0003
+[2026-08-06 21:50:27,761][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:50:52,229][models.components.model_module][INFO] - train: loss_all: 0.0041, loss_adpit: 0.0013, loss_other: 0.0028, 
+[2026-08-06 21:50:52,229][models.components.model_module][INFO] - Epoch/Total Epoch: 42/100, LR: 0.0003
+[2026-08-06 21:50:52,229][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:51:16,280][models.components.model_module][INFO] - train: loss_all: 0.0041, loss_adpit: 0.0013, loss_other: 0.0028, 
+[2026-08-06 21:51:16,280][models.components.model_module][INFO] - Epoch/Total Epoch: 43/100, LR: 0.0003
+[2026-08-06 21:51:16,281][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:51:40,641][models.components.model_module][INFO] - train: loss_all: 0.0041, loss_adpit: 0.0013, loss_other: 0.0028, 
+[2026-08-06 21:51:40,642][models.components.model_module][INFO] - Epoch/Total Epoch: 44/100, LR: 0.0003
+[2026-08-06 21:51:40,642][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:52:16,890][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:52:16,892][models.components.model_module][INFO] - val/macro: ER: 0.173, F: 90.9%, LE: 5.6, LR: 93.1%, SELD_scr: 0.091, 
+[2026-08-06 21:52:16,893][models.components.model_module][INFO] - val/micro: ER: 0.173, F: 89.6%, LE: 4.8, LR: 88.6%, SELD_scr: 0.104, 
+[2026-08-06 21:52:16,893][models.components.model_module][INFO] - val: loss_all: 0.0069, loss_adpit: 0.0022, loss_other: 0.0046, 
+[2026-08-06 21:52:18,508][models.components.model_module][INFO] - train: loss_all: 0.0041, loss_adpit: 0.0013, loss_other: 0.0028, 
+[2026-08-06 21:52:18,508][models.components.model_module][INFO] - Epoch/Total Epoch: 45/100, LR: 0.0003
+[2026-08-06 21:52:18,508][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:52:42,688][models.components.model_module][INFO] - train: loss_all: 0.0040, loss_adpit: 0.0013, loss_other: 0.0028, 
+[2026-08-06 21:52:42,690][models.components.model_module][INFO] - Epoch/Total Epoch: 46/100, LR: 0.0003
+[2026-08-06 21:52:42,690][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:53:06,532][models.components.model_module][INFO] - train: loss_all: 0.0040, loss_adpit: 0.0013, loss_other: 0.0028, 
+[2026-08-06 21:53:06,533][models.components.model_module][INFO] - Epoch/Total Epoch: 47/100, LR: 0.0003
+[2026-08-06 21:53:06,533][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:53:30,467][models.components.model_module][INFO] - train: loss_all: 0.0040, loss_adpit: 0.0013, loss_other: 0.0027, 
+[2026-08-06 21:53:30,468][models.components.model_module][INFO] - Epoch/Total Epoch: 48/100, LR: 0.0003
+[2026-08-06 21:53:30,468][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:53:54,306][models.components.model_module][INFO] - train: loss_all: 0.0040, loss_adpit: 0.0012, loss_other: 0.0027, 
+[2026-08-06 21:53:54,307][models.components.model_module][INFO] - Epoch/Total Epoch: 49/100, LR: 0.0003
+[2026-08-06 21:53:54,307][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:54:31,248][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:54:31,250][models.components.model_module][INFO] - val/macro: ER: 0.183, F: 90.5%, LE: 5.8, LR: 92.6%, SELD_scr: 0.096, 
+[2026-08-06 21:54:31,250][models.components.model_module][INFO] - val/micro: ER: 0.183, F: 88.8%, LE: 5.2, LR: 87.8%, SELD_scr: 0.111, 
+[2026-08-06 21:54:31,251][models.components.model_module][INFO] - val: loss_all: 0.0069, loss_adpit: 0.0022, loss_other: 0.0046, 
+[2026-08-06 21:54:32,162][models.components.model_module][INFO] - train: loss_all: 0.0039, loss_adpit: 0.0012, loss_other: 0.0027, 
+[2026-08-06 21:54:32,163][models.components.model_module][INFO] - Epoch/Total Epoch: 50/100, LR: 0.0003
+[2026-08-06 21:54:32,163][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:54:56,062][models.components.model_module][INFO] - train: loss_all: 0.0039, loss_adpit: 0.0012, loss_other: 0.0027, 
+[2026-08-06 21:54:56,063][models.components.model_module][INFO] - Epoch/Total Epoch: 51/100, LR: 0.0003
+[2026-08-06 21:54:56,063][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:55:19,905][models.components.model_module][INFO] - train: loss_all: 0.0039, loss_adpit: 0.0012, loss_other: 0.0027, 
+[2026-08-06 21:55:19,906][models.components.model_module][INFO] - Epoch/Total Epoch: 52/100, LR: 0.0003
+[2026-08-06 21:55:19,906][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:55:43,703][models.components.model_module][INFO] - train: loss_all: 0.0039, loss_adpit: 0.0012, loss_other: 0.0027, 
+[2026-08-06 21:55:43,704][models.components.model_module][INFO] - Epoch/Total Epoch: 53/100, LR: 0.0003
+[2026-08-06 21:55:43,704][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:56:07,632][models.components.model_module][INFO] - train: loss_all: 0.0039, loss_adpit: 0.0012, loss_other: 0.0027, 
+[2026-08-06 21:56:07,633][models.components.model_module][INFO] - Epoch/Total Epoch: 54/100, LR: 0.0003
+[2026-08-06 21:56:07,633][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:56:43,358][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:56:43,360][models.components.model_module][INFO] - val/macro: ER: 0.177, F: 90.7%, LE: 5.6, LR: 92.5%, SELD_scr: 0.094, 
+[2026-08-06 21:56:43,361][models.components.model_module][INFO] - val/micro: ER: 0.177, F: 89.4%, LE: 4.8, LR: 88.2%, SELD_scr: 0.107, 
+[2026-08-06 21:56:43,361][models.components.model_module][INFO] - val: loss_all: 0.0068, loss_adpit: 0.0022, loss_other: 0.0046, 
+[2026-08-06 21:56:44,148][models.components.model_module][INFO] - train: loss_all: 0.0038, loss_adpit: 0.0012, loss_other: 0.0026, 
+[2026-08-06 21:56:44,149][models.components.model_module][INFO] - Epoch/Total Epoch: 55/100, LR: 0.0003
+[2026-08-06 21:56:44,149][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:57:08,427][models.components.model_module][INFO] - train: loss_all: 0.0038, loss_adpit: 0.0012, loss_other: 0.0026, 
+[2026-08-06 21:57:08,428][models.components.model_module][INFO] - Epoch/Total Epoch: 56/100, LR: 0.0003
+[2026-08-06 21:57:08,428][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:57:32,349][models.components.model_module][INFO] - train: loss_all: 0.0038, loss_adpit: 0.0012, loss_other: 0.0026, 
+[2026-08-06 21:57:32,350][models.components.model_module][INFO] - Epoch/Total Epoch: 57/100, LR: 0.0003
+[2026-08-06 21:57:32,350][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:57:55,816][models.components.model_module][INFO] - train: loss_all: 0.0038, loss_adpit: 0.0012, loss_other: 0.0026, 
+[2026-08-06 21:57:55,817][models.components.model_module][INFO] - Epoch/Total Epoch: 58/100, LR: 0.0003
+[2026-08-06 21:57:55,817][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:58:19,157][models.components.model_module][INFO] - train: loss_all: 0.0038, loss_adpit: 0.0012, loss_other: 0.0026, 
+[2026-08-06 21:58:19,158][models.components.model_module][INFO] - Epoch/Total Epoch: 59/100, LR: 0.0003
+[2026-08-06 21:58:19,159][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:58:55,437][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:58:55,439][models.components.model_module][INFO] - val/macro: ER: 0.177, F: 90.8%, LE: 5.6, LR: 93.0%, SELD_scr: 0.093, 
+[2026-08-06 21:58:55,439][models.components.model_module][INFO] - val/micro: ER: 0.177, F: 89.3%, LE: 4.8, LR: 88.8%, SELD_scr: 0.106, 
+[2026-08-06 21:58:55,440][models.components.model_module][INFO] - val: loss_all: 0.0068, loss_adpit: 0.0022, loss_other: 0.0046, 
+[2026-08-06 21:58:56,323][models.components.model_module][INFO] - train: loss_all: 0.0038, loss_adpit: 0.0012, loss_other: 0.0026, 
+[2026-08-06 21:58:56,324][models.components.model_module][INFO] - Epoch/Total Epoch: 60/100, LR: 2.9999999999999997e-05
+[2026-08-06 21:58:56,324][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:59:20,046][models.components.model_module][INFO] - train: loss_all: 0.0037, loss_adpit: 0.0012, loss_other: 0.0026, 
+[2026-08-06 21:59:20,048][models.components.model_module][INFO] - Epoch/Total Epoch: 61/100, LR: 2.9999999999999997e-05
+[2026-08-06 21:59:20,048][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 21:59:44,217][models.components.model_module][INFO] - train: loss_all: 0.0037, loss_adpit: 0.0011, loss_other: 0.0026, 
+[2026-08-06 21:59:44,218][models.components.model_module][INFO] - Epoch/Total Epoch: 62/100, LR: 2.9999999999999997e-05
+[2026-08-06 21:59:44,218][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:00:08,469][models.components.model_module][INFO] - train: loss_all: 0.0037, loss_adpit: 0.0011, loss_other: 0.0025, 
+[2026-08-06 22:00:08,470][models.components.model_module][INFO] - Epoch/Total Epoch: 63/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:00:08,470][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:00:33,045][models.components.model_module][INFO] - train: loss_all: 0.0037, loss_adpit: 0.0011, loss_other: 0.0025, 
+[2026-08-06 22:00:33,046][models.components.model_module][INFO] - Epoch/Total Epoch: 64/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:00:33,046][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:01:10,473][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:01:10,475][models.components.model_module][INFO] - val/macro: ER: 0.167, F: 91.3%, LE: 5.0, LR: 93.1%, SELD_scr: 0.088, 
+[2026-08-06 22:01:10,476][models.components.model_module][INFO] - val/micro: ER: 0.167, F: 90.1%, LE: 4.2, LR: 88.7%, SELD_scr: 0.101, 
+[2026-08-06 22:01:10,476][models.components.model_module][INFO] - val: loss_all: 0.0067, loss_adpit: 0.0022, loss_other: 0.0045, 
+[2026-08-06 22:01:12,480][models.components.model_module][INFO] - train: loss_all: 0.0036, loss_adpit: 0.0011, loss_other: 0.0025, 
+[2026-08-06 22:01:12,480][models.components.model_module][INFO] - Epoch/Total Epoch: 65/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:01:12,480][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:01:36,294][models.components.model_module][INFO] - train: loss_all: 0.0036, loss_adpit: 0.0011, loss_other: 0.0025, 
+[2026-08-06 22:01:36,295][models.components.model_module][INFO] - Epoch/Total Epoch: 66/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:01:36,295][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:02:00,393][models.components.model_module][INFO] - train: loss_all: 0.0036, loss_adpit: 0.0011, loss_other: 0.0025, 
+[2026-08-06 22:02:00,394][models.components.model_module][INFO] - Epoch/Total Epoch: 67/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:02:00,394][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:02:24,265][models.components.model_module][INFO] - train: loss_all: 0.0036, loss_adpit: 0.0011, loss_other: 0.0025, 
+[2026-08-06 22:02:24,267][models.components.model_module][INFO] - Epoch/Total Epoch: 68/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:02:24,267][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:02:47,814][models.components.model_module][INFO] - train: loss_all: 0.0035, loss_adpit: 0.0011, loss_other: 0.0025, 
+[2026-08-06 22:02:47,815][models.components.model_module][INFO] - Epoch/Total Epoch: 69/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:02:47,815][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:03:24,899][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:03:24,901][models.components.model_module][INFO] - val/macro: ER: 0.166, F: 91.4%, LE: 4.9, LR: 93.0%, SELD_scr: 0.087, 
+[2026-08-06 22:03:24,902][models.components.model_module][INFO] - val/micro: ER: 0.166, F: 90.1%, LE: 4.1, LR: 88.6%, SELD_scr: 0.100, 
+[2026-08-06 22:03:24,903][models.components.model_module][INFO] - val: loss_all: 0.0067, loss_adpit: 0.0022, loss_other: 0.0045, 
+[2026-08-06 22:03:26,550][models.components.model_module][INFO] - train: loss_all: 0.0035, loss_adpit: 0.0011, loss_other: 0.0024, 
+[2026-08-06 22:03:26,551][models.components.model_module][INFO] - Epoch/Total Epoch: 70/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:03:26,551][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:03:50,425][models.components.model_module][INFO] - train: loss_all: 0.0035, loss_adpit: 0.0011, loss_other: 0.0024, 
+[2026-08-06 22:03:50,426][models.components.model_module][INFO] - Epoch/Total Epoch: 71/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:03:50,426][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:04:14,248][models.components.model_module][INFO] - train: loss_all: 0.0035, loss_adpit: 0.0011, loss_other: 0.0024, 
+[2026-08-06 22:04:14,248][models.components.model_module][INFO] - Epoch/Total Epoch: 72/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:04:14,249][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:04:38,924][models.components.model_module][INFO] - train: loss_all: 0.0035, loss_adpit: 0.0011, loss_other: 0.0024, 
+[2026-08-06 22:04:38,925][models.components.model_module][INFO] - Epoch/Total Epoch: 73/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:04:38,925][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:05:03,655][models.components.model_module][INFO] - train: loss_all: 0.0034, loss_adpit: 0.0010, loss_other: 0.0024, 
+[2026-08-06 22:05:03,656][models.components.model_module][INFO] - Epoch/Total Epoch: 74/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:05:03,656][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:05:40,225][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:05:40,227][models.components.model_module][INFO] - val/macro: ER: 0.167, F: 91.3%, LE: 4.9, LR: 92.9%, SELD_scr: 0.088, 
+[2026-08-06 22:05:40,228][models.components.model_module][INFO] - val/micro: ER: 0.167, F: 90.1%, LE: 4.1, LR: 88.5%, SELD_scr: 0.101, 
+[2026-08-06 22:05:40,228][models.components.model_module][INFO] - val: loss_all: 0.0066, loss_adpit: 0.0021, loss_other: 0.0045, 
+[2026-08-06 22:05:41,076][models.components.model_module][INFO] - train: loss_all: 0.0034, loss_adpit: 0.0010, loss_other: 0.0024, 
+[2026-08-06 22:05:41,077][models.components.model_module][INFO] - Epoch/Total Epoch: 75/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:05:41,077][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:06:04,722][models.components.model_module][INFO] - train: loss_all: 0.0034, loss_adpit: 0.0010, loss_other: 0.0024, 
+[2026-08-06 22:06:04,723][models.components.model_module][INFO] - Epoch/Total Epoch: 76/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:06:04,723][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:06:29,142][models.components.model_module][INFO] - train: loss_all: 0.0034, loss_adpit: 0.0010, loss_other: 0.0024, 
+[2026-08-06 22:06:29,143][models.components.model_module][INFO] - Epoch/Total Epoch: 77/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:06:29,143][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:06:52,959][models.components.model_module][INFO] - train: loss_all: 0.0034, loss_adpit: 0.0010, loss_other: 0.0024, 
+[2026-08-06 22:06:52,960][models.components.model_module][INFO] - Epoch/Total Epoch: 78/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:06:52,960][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:07:16,369][models.components.model_module][INFO] - train: loss_all: 0.0034, loss_adpit: 0.0010, loss_other: 0.0023, 
+[2026-08-06 22:07:16,370][models.components.model_module][INFO] - Epoch/Total Epoch: 79/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:07:16,370][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:07:52,685][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:07:52,687][models.components.model_module][INFO] - val/macro: ER: 0.168, F: 91.3%, LE: 5.0, LR: 92.9%, SELD_scr: 0.088, 
+[2026-08-06 22:07:52,688][models.components.model_module][INFO] - val/micro: ER: 0.168, F: 90.0%, LE: 4.1, LR: 88.5%, SELD_scr: 0.102, 
+[2026-08-06 22:07:52,688][models.components.model_module][INFO] - val: loss_all: 0.0066, loss_adpit: 0.0021, loss_other: 0.0044, 
+[2026-08-06 22:07:53,581][models.components.model_module][INFO] - train: loss_all: 0.0033, loss_adpit: 0.0010, loss_other: 0.0023, 
+[2026-08-06 22:07:53,582][models.components.model_module][INFO] - Epoch/Total Epoch: 80/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:07:53,582][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:08:18,086][models.components.model_module][INFO] - train: loss_all: 0.0033, loss_adpit: 0.0010, loss_other: 0.0023, 
+[2026-08-06 22:08:18,087][models.components.model_module][INFO] - Epoch/Total Epoch: 81/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:08:18,087][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:08:42,241][models.components.model_module][INFO] - train: loss_all: 0.0033, loss_adpit: 0.0010, loss_other: 0.0023, 
+[2026-08-06 22:08:42,241][models.components.model_module][INFO] - Epoch/Total Epoch: 82/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:08:42,241][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:09:06,247][models.components.model_module][INFO] - train: loss_all: 0.0033, loss_adpit: 0.0010, loss_other: 0.0023, 
+[2026-08-06 22:09:06,248][models.components.model_module][INFO] - Epoch/Total Epoch: 83/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:09:06,248][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:09:30,142][models.components.model_module][INFO] - train: loss_all: 0.0033, loss_adpit: 0.0010, loss_other: 0.0023, 
+[2026-08-06 22:09:30,143][models.components.model_module][INFO] - Epoch/Total Epoch: 84/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:09:30,143][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:10:07,289][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:10:07,291][models.components.model_module][INFO] - val/macro: ER: 0.167, F: 91.3%, LE: 5.0, LR: 93.0%, SELD_scr: 0.088, 
+[2026-08-06 22:10:07,291][models.components.model_module][INFO] - val/micro: ER: 0.167, F: 90.1%, LE: 4.1, LR: 88.6%, SELD_scr: 0.101, 
+[2026-08-06 22:10:07,292][models.components.model_module][INFO] - val: loss_all: 0.0065, loss_adpit: 0.0021, loss_other: 0.0044, 
+[2026-08-06 22:10:08,183][models.components.model_module][INFO] - train: loss_all: 0.0033, loss_adpit: 0.0010, loss_other: 0.0023, 
+[2026-08-06 22:10:08,183][models.components.model_module][INFO] - Epoch/Total Epoch: 85/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:10:08,184][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:10:32,635][models.components.model_module][INFO] - train: loss_all: 0.0032, loss_adpit: 0.0010, loss_other: 0.0023, 
+[2026-08-06 22:10:32,635][models.components.model_module][INFO] - Epoch/Total Epoch: 86/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:10:32,636][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:10:57,258][models.components.model_module][INFO] - train: loss_all: 0.0032, loss_adpit: 0.0010, loss_other: 0.0023, 
+[2026-08-06 22:10:57,259][models.components.model_module][INFO] - Epoch/Total Epoch: 87/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:10:57,259][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:11:21,209][models.components.model_module][INFO] - train: loss_all: 0.0032, loss_adpit: 0.0009, loss_other: 0.0023, 
+[2026-08-06 22:11:21,210][models.components.model_module][INFO] - Epoch/Total Epoch: 88/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:11:21,210][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:11:45,259][models.components.model_module][INFO] - train: loss_all: 0.0032, loss_adpit: 0.0009, loss_other: 0.0023, 
+[2026-08-06 22:11:45,260][models.components.model_module][INFO] - Epoch/Total Epoch: 89/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:11:45,260][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:12:22,643][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:12:22,646][models.components.model_module][INFO] - val/macro: ER: 0.166, F: 91.3%, LE: 4.9, LR: 93.0%, SELD_scr: 0.088, 
+[2026-08-06 22:12:22,646][models.components.model_module][INFO] - val/micro: ER: 0.166, F: 90.1%, LE: 4.1, LR: 88.7%, SELD_scr: 0.100, 
+[2026-08-06 22:12:22,647][models.components.model_module][INFO] - val: loss_all: 0.0065, loss_adpit: 0.0021, loss_other: 0.0044, 
+[2026-08-06 22:12:23,528][models.components.model_module][INFO] - train: loss_all: 0.0032, loss_adpit: 0.0009, loss_other: 0.0022, 
+[2026-08-06 22:12:23,528][models.components.model_module][INFO] - Epoch/Total Epoch: 90/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:12:23,528][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:12:47,847][models.components.model_module][INFO] - train: loss_all: 0.0032, loss_adpit: 0.0009, loss_other: 0.0022, 
+[2026-08-06 22:12:47,848][models.components.model_module][INFO] - Epoch/Total Epoch: 91/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:12:47,848][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:13:12,157][models.components.model_module][INFO] - train: loss_all: 0.0032, loss_adpit: 0.0009, loss_other: 0.0022, 
+[2026-08-06 22:13:12,158][models.components.model_module][INFO] - Epoch/Total Epoch: 92/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:13:12,158][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:13:35,951][models.components.model_module][INFO] - train: loss_all: 0.0031, loss_adpit: 0.0009, loss_other: 0.0022, 
+[2026-08-06 22:13:35,951][models.components.model_module][INFO] - Epoch/Total Epoch: 93/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:13:35,951][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:13:59,555][models.components.model_module][INFO] - train: loss_all: 0.0031, loss_adpit: 0.0009, loss_other: 0.0022, 
+[2026-08-06 22:13:59,556][models.components.model_module][INFO] - Epoch/Total Epoch: 94/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:13:59,556][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:14:37,175][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:14:37,177][models.components.model_module][INFO] - val/macro: ER: 0.166, F: 91.3%, LE: 4.9, LR: 93.1%, SELD_scr: 0.087, 
+[2026-08-06 22:14:37,178][models.components.model_module][INFO] - val/micro: ER: 0.166, F: 90.2%, LE: 4.0, LR: 88.7%, SELD_scr: 0.100, 
+[2026-08-06 22:14:37,178][models.components.model_module][INFO] - val: loss_all: 0.0064, loss_adpit: 0.0021, loss_other: 0.0044, 
+[2026-08-06 22:14:38,756][models.components.model_module][INFO] - train: loss_all: 0.0031, loss_adpit: 0.0009, loss_other: 0.0022, 
+[2026-08-06 22:14:38,757][models.components.model_module][INFO] - Epoch/Total Epoch: 95/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:14:38,757][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:15:02,888][models.components.model_module][INFO] - train: loss_all: 0.0031, loss_adpit: 0.0009, loss_other: 0.0022, 
+[2026-08-06 22:15:02,889][models.components.model_module][INFO] - Epoch/Total Epoch: 96/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:15:02,889][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:15:27,187][models.components.model_module][INFO] - train: loss_all: 0.0031, loss_adpit: 0.0009, loss_other: 0.0022, 
+[2026-08-06 22:15:27,188][models.components.model_module][INFO] - Epoch/Total Epoch: 97/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:15:27,188][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:15:51,715][models.components.model_module][INFO] - train: loss_all: 0.0031, loss_adpit: 0.0009, loss_other: 0.0022, 
+[2026-08-06 22:15:51,716][models.components.model_module][INFO] - Epoch/Total Epoch: 98/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:15:51,716][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:16:16,375][models.components.model_module][INFO] - train: loss_all: 0.0031, loss_adpit: 0.0009, loss_other: 0.0022, 
+[2026-08-06 22:16:16,376][models.components.model_module][INFO] - Epoch/Total Epoch: 99/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:16:16,376][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:16:53,284][models.components.model_module][INFO] - ----------------------------------------------------------------------------------
+[2026-08-06 22:16:53,286][models.components.model_module][INFO] - val/macro: ER: 0.165, F: 91.5%, LE: 4.9, LR: 92.9%, SELD_scr: 0.087, 
+[2026-08-06 22:16:53,286][models.components.model_module][INFO] - val/micro: ER: 0.165, F: 90.2%, LE: 4.0, LR: 88.5%, SELD_scr: 0.100, 
+[2026-08-06 22:16:53,287][models.components.model_module][INFO] - val: loss_all: 0.0064, loss_adpit: 0.0021, loss_other: 0.0043, 
+[2026-08-06 22:16:54,925][models.components.model_module][INFO] - train: loss_all: 0.0031, loss_adpit: 0.0009, loss_other: 0.0022, 
+[2026-08-06 22:16:54,926][models.components.model_module][INFO] - Epoch/Total Epoch: 100/100, LR: 2.9999999999999997e-05
+[2026-08-06 22:16:54,926][models.components.model_module][INFO] - ----------------------------------------------------------------------------------

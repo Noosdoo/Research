@@ -1,0 +1,36 @@
++ echo 'e2e repo SHA: 47c69332d55b205a60386efee7a9fb883a2472e2'
+e2e repo SHA: 47c69332d55b205a60386efee7a9fb883a2472e2
+++ date -Iseconds
++ echo 'date: 2026-08-09T17:26:15+09:00  job: 363'
+date: 2026-08-09T17:26:15+09:00  job: 363
++ echo '== T1-T3 (test_sde_units.py) =='
+== T1-T3 (test_sde_units.py) ==
++ .venv/bin/python test_sde_units.py
+T3 ckptヘッド拡張: PASS
+[SDE] train patches applied (W_DIST=2.0, DIST_SCALE=0.1)
+T1 損失xyz等価: PASS (diff=0.00e+00, dist項=13.1323)
+T2 抽出等価(本番6列パス・既存h5と照合): PASS (200本, dist>0要素 26,848)
+ALL UNIT TESTS DONE
++ echo '== T4-T5+旧T6 (test_sde_units2.py) =='
+== T4-T5+旧T6 (test_sde_units2.py) ==
++ .venv/bin/python test_sde_units2.py
+[SDE] train patches applied (W_DIST=2.0, DIST_SCALE=0.1)
+T4 実ckptヘッドforward等価: PASS (xyz diff=0.0e+00, dist≡0, src=epoch_094.ckpt)
+T5 デコードチェーン等価: PASS (60フレーム/1016行、[class,az,el]完全一致・dist同乗)
+T5b 6列CSV往復: PASS
+T6 dist値h5全照合+フレーム数一致: PASS (200本, dist>0要素 26,848)
+ALL UNIT TESTS (T4-T6) DONE
++ echo '== T6実データ版 (test_sde_units3.py) =='
+== T6実データ版 (test_sde_units3.py) ==
++ .venv/bin/python test_sde_units3.py
+[SDE] train patches applied (W_DIST=2.0, DIST_SCALE=0.1)
+
+Dataset synth is being developed......
+
+_hdf5/data/24000fs/wav/dev/outdoor_siren_v11_10sChunklen_10sHoplen_train.csv
+outdoor_siren_v11 train dataset: 4800 segments
+T6実データ getitem [先頭] fold1_room1_mix0001: PASS (h5 0:100 dist>0 98, pad 0fr)
+T6実データ getitem [中間] fold1_room1_mix2401: PASS (h5 0:100 dist>0 158, pad 0fr)
+T6実データ getitem [末尾] fold1_room1_mix4800: PASS (h5 0:100 dist>0 148, pad 0fr)
+T6実データ getitem [空ラベル] fold1_room1_mix0004: PASS (h5 0:100 dist>0 0, pad 0fr)
+T6実データ版: ALL PASS (実DatasetMultiACCDOA.__getitem__経由)
