@@ -1,0 +1,45 @@
++ echo 'e2e repo SHA: 47c69332d55b205a60386efee7a9fb883a2472e2'
+e2e repo SHA: 47c69332d55b205a60386efee7a9fb883a2472e2
+++ date -Iseconds
++ echo 'date: 2026-08-09T21:43:08+09:00  job: 392'
+date: 2026-08-09T21:43:08+09:00  job: 392
++ sha256sum test_sde_units.py test_sde_units2.py test_sde_units3.py sde_patch.py _preproc_sde.py /home/s6323122/research/outdoor_seld_e2e/scripts/step12_notify_v33.py /home/s6323122/research/outdoor_seld_e2e/scripts/_v12_notify_server33.py
+0d1d1ffb16e1e91a4ffdeb62719c6c510fb2800880a4dbe478e4c5cdddd173a9  test_sde_units.py
+2c38f1ecb4b5c16b6bb68a271111641558f217429e78ba2d307614f6245f087f  test_sde_units2.py
+10ff27a1f05c69714d474d31767d52f74259eb1aa7c479fa13751a5257f4394f  test_sde_units3.py
+b8322a6aea3a873f4d4369ac01370391b1c21d45720917e20571b0b8c47731f3  sde_patch.py
+910cec44ca5a5353175326f1f6efd5978cae41e161d3c2dea41e078c8b069910  _preproc_sde.py
+66f431419fea625aacc4ded9a59f7aff2264c3d03dbb0c73a57e0ac15e70a469  /home/s6323122/research/outdoor_seld_e2e/scripts/step12_notify_v33.py
+9c1e61bc266124e011c0c3866e2a2f473fbac40fc42ca308de12d14293e3c719  /home/s6323122/research/outdoor_seld_e2e/scripts/_v12_notify_server33.py
++ echo '== T1-T3 (test_sde_units.py) =='
+== T1-T3 (test_sde_units.py) ==
++ .venv/bin/python test_sde_units.py
+T3 ckptヘッド拡張: PASS
+[SDE] train patches applied (W_DIST=2.0, DIST_SCALE=0.1)
+T1 損失xyz等価: PASS (diff=0.00e+00, dist項=13.1323)
+T2 抽出等価(本番6列パス・既存h5と照合): PASS (200本, dist>0要素 26,848)
+ALL UNIT TESTS DONE
++ echo '== T4-T5+旧T6 (test_sde_units2.py) =='
+== T4-T5+旧T6 (test_sde_units2.py) ==
++ .venv/bin/python test_sde_units2.py
+[SDE] train patches applied (W_DIST=2.0, DIST_SCALE=0.1)
+T4 実ckptヘッドforward等価: PASS (xyz diff=0.0e+00, dist≡0, src=epoch_094.ckpt)
+T5 デコードチェーン等価: PASS (60フレーム/1016行、[class,az,el]完全一致・dist同乗)
+T5b 6列CSV往復: PASS
+T6 dist値h5全照合+フレーム数一致: PASS (200本, dist>0要素 26,848)
+ALL UNIT TESTS (T4-T6) DONE
++ echo '== T6実データ版 (test_sde_units3.py) =='
+== T6実データ版 (test_sde_units3.py) ==
++ .venv/bin/python test_sde_units3.py
+[SDE] train patches applied (W_DIST=2.0, DIST_SCALE=0.1)
+
+Dataset synth is being developed......
+
+_hdf5/data/24000fs/wav/dev/outdoor_siren_v11_10sChunklen_10sHoplen_train.csv
+outdoor_siren_v11 train dataset: 4800 segments
+T6実データ getitem [先頭] fold1_room1_mix0001: PASS (h5 0:100 dist>0 98, pad 0fr)
+T6実データ getitem [中間] fold1_room1_mix2401: PASS (h5 0:100 dist>0 158, pad 0fr)
+T6実データ getitem [末尾] fold1_room1_mix4800: PASS (h5 0:100 dist>0 148, pad 0fr)
+T6実データ getitem [空ラベル] fold1_room1_mix0004: PASS (h5 0:100 dist>0 0, pad 0fr)
+T6実データ getitem [合成短尾(pad>0)] fold1_room1_mix0001: PASS (h5 0:93 dist>0 91, pad 7fr)
+T6実データ版: ALL PASS (実DatasetMultiACCDOA.__getitem__経由)
