@@ -35,17 +35,22 @@
 効き目は **地面反射 ＞ 幾何減衰 ＞ ドップラー ≫ 大気吸収**。
 事前登録では no_ground は「むしろ改善」と予想していたため、**最大の劣化は予想外**。
 
-## サーバ側に残っている大物（本番前の片付けで扱いを分けること）
+## サーバ側の成果物 — **すべて残す（削除禁止）**
 
-以下は容量が大きいためリポジトリには入れていない。**削除してよいもの/残すもの**を分ける。
+本人指示（2026-08-16 19:33）:「一応すべて保存しといてね。削除しないでください」
 
-| 対象 | 場所（is-server） | 扱い |
+容量に問題はない（サーバ空き **104TB** に対し、確認runの生成物は合計 **約140GB**）。
+**消す理由がないので消さない。** 本番のarmとは名前空間が分かれているので混ざらない
+（本番は別名で作るか、混同を避けたいならこれらをリネームして退避する）。
+
+| 対象 | 場所（is-server） | 容量 |
 | --- | --- | --- |
-| armデータセット ×4 | `out/dataset_outdoor_siren_v12_abl_*` | 各34GB。**削除可**（再生成できる） |
-| arm用datasetsルート ×4 | `PSELDNet/PSELDNets/datasets_v12_abl_*` | **削除可** |
-| arm用キャッシュ ×4 | `PSELDNet/PSELDNets/_hdf5_abl_*` | **削除可** |
-| **学習済みckpt ×5** | `PSELDNets_logs/outdoor_siren_v12/runs/outdoor_siren_v12_abl_*`<br>`.../outdoor_siren_v12_sde_w3_seed2` | **残す**（再現に2.5時間かかる。特に seed2 はフロアの根拠） |
-| **予測CSV ×6** | `PSELDNets_logs/.../runs/infer_*/val_all.csv` | **残す**（各8MB。再採点の入力） |
+| armデータセット ×4 | `outdoor_seld_e2e/out/dataset_outdoor_siren_v12_abl_{no_1r,no_doppler,no_airabs,no_ground}` | 約34GB×4 |
+| arm用datasetsルート ×4 | `PSELDNet/PSELDNets/datasets_v12_abl_*` | 各4KB |
+| arm用キャッシュ ×4 | `PSELDNet/PSELDNets/_hdf5_abl_*` | 約740MB×4 |
+| 学習済みrun ×5 | `PSELDNets_logs/outdoor_siren_v12/runs/outdoor_siren_v12_abl_*`<br>`.../outdoor_siren_v12_sde_w3_seed2` | 646MB×5 |
+| 推論出力 ×9 | `PSELDNets_logs/.../runs/infer_outdoor_siren_v12_abl_*`<br>`.../infer_outdoor_siren_v12_sde_w3_seed2_fullval` | 約15MB×9 |
+| 採点結果 | **本ディレクトリ（リポジトリ内）** | 60KB |
 
-**注意**: 計画書 §9.8「本番開始前の片付け」は当初「確認runの成果物を削除する」と書いていたが、
-本指示により **ckptと予測CSVは残す** よう改訂済み（2026-08-16）。
+**計画書 §9.8 の「本番開始前の片付け」は、この指示により「削除しない」へ改訂済み**
+（2026-08-16）。本番担当者は確認runの成果物を消さないこと。
