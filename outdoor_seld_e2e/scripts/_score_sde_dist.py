@@ -33,6 +33,7 @@ if hasattr(sys.stdout, "reconfigure"):
 CLS_JP = {0: "サイレン", 1: "クラクション", 2: "バック音", 3: "ベル",
           4: "車", 5: "踏切", 6: "キックボード", 7: "バイク"}
 CAR = 4
+EDGE_FR = 0   # 区間端の除外フレーム数（0=除外なし＝既定・従来挙動）
 N_CLS = 8   # 【Sol再監査2026-08-09】v12系は8クラス。v11予測ではn=0のクラスが単に非表示になる
 
 
@@ -48,7 +49,33 @@ def circ_diff(a, b):
     return abs((a - b + 180.0) % 360.0 - 180.0)
 
 
+# 【2026-08-17 監査対応・事前登録§8.6】no_doppler armは一定遅延規約により
+# 音の到達タイミングがラベル窓から最大±0.3sずれる。区間端フレームは
+# そのずれと干渉するため、no_doppler の解剖では端を除外した層を主に読む。
+# 既定 EDGE_FR=0（除外なし＝従来と完全同一の挙動）。--edge-frames で指定する。
+def drop_edge_frames(frames, edge_fr: int):
+    """連続フレーム列の各ランについて、先頭・末尾 edge_fr フレームを除いた集合を返す。"""
+    if edge_fr <= 0:
+        return set(frames)
+    keep, run = set(), []
+    for f in sorted(frames):
+        if run and f == run[-1] + 1:
+            run.append(f)
+        else:
+            if run:
+                keep |= set(run[edge_fr:len(run) - edge_fr] if len(run) > 2 * edge_fr else [])
+            run = [f]
+    if run:
+        keep |= set(run[edge_fr:len(run) - edge_fr] if len(run) > 2 * edge_fr else [])
+    return keep
+
+
 def main():
+    global EDGE_FR
+    if "--edge-frames" in sys.argv:      # 既定0。no_dopplerの解剖では3(=±0.3s)を指定
+        EDGE_FR = int(sys.argv[sys.argv.index("--edge-frames") + 1])
+        print(f"[score] 区間端 ±{EDGE_FR}フレーム（±{EDGE_FR/10:.1f}s）を除外して採点します",
+              flush=True)
     OUT.mkdir(parents=True, exist_ok=True)
     # 予測読み込み: pred[clip][(frame,class)] = [(az,dist),...]
     # 7列 [clip,frame,class,track,az,el,dist]（監査対応v2の新形式）と
@@ -71,6 +98,10 @@ def main():
 
     pairs = []          # (class, gt_dist, pred_dist, 方位差)
     n_gt = n_paired = 0
+    # 【2026-08-17 監査対応】tier別の**全GTフレーム数**（ペア成立の有無によらず）。
+    # 従来のtier再現率は分母が「検出できたフレーム」だけで、検出失敗が分母から
+    # 消えていた。armごとに検出率が違うと比較が成立しないため、絶対到達率を併記する。
+    gt_tier_all = defaultdict(int)
     for clip in clips:
         gt = defaultdict(list)
         mp = META / f"{clip}.csv"
@@ -80,8 +111,19 @@ def main():
             g = line.strip().split(",")
             if len(g) == 6:
                 gt[(int(g[0]), int(g[1]))].append((float(g[3]), float(g[5])))
+        if EDGE_FR > 0:
+            # クラスごとに連続ランを取り、端 EDGE_FR フレームを除外する
+            by_cls = defaultdict(list)
+            for (fr, ci) in gt:
+                by_cls[ci].append(fr)
+            keep = {(fr, ci) for ci, frs in by_cls.items()
+                    for fr in drop_edge_frames(frs, EDGE_FR)}
+            gt = {k: v for k, v in gt.items() if k in keep}
         for key, gts in gt.items():
             n_gt += len(gts)
+            if key[1] == CAR:
+                for _, _gd in gts:
+                    gt_tier_all[tier(_gd)] += 1
             preds = list(pred.get(clip, {}).get(key, []))
             # 方位最近傍のgreedyペアリング
             for gaz, gdist in sorted(gts, key=lambda x: x[0]):
@@ -147,6 +189,23 @@ def main():
             recall = (pd_t[m] == t).mean()
             R.append(f"- GT={t} ({m.sum():,}fr): 正しく{t}と判定 "
                      f"{100*recall:.1f}%")
+    # 【2026-08-17 監査対応】絶対到達率＝未検出を失敗として算入した再現率。
+    # arm間比較で使うのはこちら（分母が全armで同一のため）。
+    R += ["", "### 絶対到達率（未検出を失敗として算入・**arm間比較はこちらを使う**）",
+          "| GT tier | 正解fr | 全GTfr | 絶対到達率 | 参考:条件付き |",
+          "| --- | --- | --- | --- | --- |"]
+    for t in ("重大", "注意", "安全"):
+        m = gt_t == t
+        tot = gt_tier_all.get(t, 0)
+        if tot:
+            hit = int((pd_t[m] == t).sum())
+            cond = (100 * hit / m.sum()) if m.sum() else float("nan")
+            R.append(f"| {t} | {hit:,} | {tot:,} | **{100*hit/tot:.1f}%** "
+                     f"| {cond:.1f}% |")
+    miss = {t: gt_tier_all.get(t, 0) - int((gt_t == t).sum())
+            for t in ("重大", "注意", "安全")}
+    R.append(f"- 未検出で分母から落ちていたフレーム: "
+             + " / ".join(f"{t} {miss[t]:,}" for t in ("重大", "注意", "安全")))
     near = car & (gd <= 5.0)
     const_near = np.abs(np.median(gd[near]) - gd[near])  # 最良定数の帰無
     R += ["", f"## 至近側（GT≤5m、役割③の作動域）: n={near.sum():,} / "
