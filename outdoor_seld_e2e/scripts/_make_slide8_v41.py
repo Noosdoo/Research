@@ -225,5 +225,10 @@ label(BX, BY + BH + 40, BW,
       size=9.5, color=MUTED)
 
 out = ROOT / "md/seminar/図_提案手法2層_v4.1_2026-08-18.pptx"
-prs.save(out)
+try:                                   # PowerPointで開いたままだと上書きできない
+    prs.save(out)
+except PermissionError:
+    out = out.with_name(out.stem + "_新" + out.suffix)
+    prs.save(out)
+    print("※ 元のファイルがPowerPointで開かれていたため別名で保存した")
 print(f"saved: {out} ({out.stat().st_size // 1024} KB)")
