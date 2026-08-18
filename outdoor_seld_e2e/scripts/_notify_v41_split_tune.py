@@ -96,12 +96,15 @@ def fires(T, half, cs, cm, tw, tcau, dmax, need, rule="cpa"):
         else:
             gate = np.isfinite(dc) & (d <= dmax)
             with np.errstate(invalid="ignore"):
-                mS = (gate & (dc <= cs) & (tc <= tw)) | (d <= v4.T3)
-                mM = (gate & (dc <= cm) & (tc <= tcau)) | (d <= v4.SUPP)
-        hM = runlen(mM, need)
+                cS = gate & (dc <= cs) & (tc <= tw)
+                cM = gate & (dc <= cm) & (tc <= tcau)
+            # 距離保険は v3.4 と同じ CONFIRM、最接近予測だけ need フレーム待つ
+            hM = runlen(cM, need) | runlen(d <= v4.SUPP, v4.CONFIRM)
+            hS = runlen(cS, need) | runlen(d <= v4.T3, v4.CONFIRM)
+        if rule == "dist":
+            hM, hS = runlen(mM, need), runlen(mS, need)
         if not hM.any():
             continue
-        hS = runlen(mS, need)
         mid = [(int(fr[i]), float(az[i]), float(d[i])) for i in np.flatnonzero(hM)]
         st = [(int(fr[i]), float(az[i]), float(d[i])) for i in np.flatnonzero(hS)]
         res[clip][cls] = v4._episodes_with_upgrade(mid, st)

@@ -10,6 +10,8 @@ HTML版=中間発表スライド_2026-08-10.htmlは2026-08-10時点の旧版で�
 """
 from __future__ import annotations
 
+import io
+
 from pathlib import Path
 
 from pptx import Presentation
@@ -132,6 +134,9 @@ def new_slide():
 
 
 PAGENO = [0]
+# 総ページ数は自分のソースの new_slide() 呼び出し回数から数える（手書きだとズレる）
+NPAGES = sum(1 for _l in io.open(__file__, encoding="utf-8")
+             if _l.startswith("sl = new_slide"))
 
 
 def footer(sl, active):
@@ -150,7 +155,7 @@ def footer(sl, active):
              first=True)
         x += wd + 8
     tb = box(sl, W - 140, 504, 90, 22)
-    para(tb.text_frame, f"{PAGENO[0]} / 18", size=10.5, color=MUTED,
+    para(tb.text_frame, f"{PAGENO[0]} / {NPAGES}", size=10.5, color=MUTED,
          align=PP_ALIGN.RIGHT, after=0, first=True)
 
 
@@ -644,6 +649,67 @@ for i, (t, lines) in enumerate([
         para(c.text_frame, ln, size=12.5, color=INK2, line=1.3)
 footer(sl, 4)
 
+# ============ 10.5 通知設計の改良（2026-08-18 追加） ============
+sl = new_slide()
+header(sl, "DESIGN UPDATE", "通知設計の改良 — 「どこまで近づくか」を予測して鳴らす")
+
+lx, lw2 = 54, 452
+c = card(sl, lx, 108, lw2, 74, title="問題：距離だけで鳴らすと、速い相手ほど余裕が消える")
+para(c.text_frame, "時速50kmの車では、安全境界を越えてから最接近まで約0.2秒しかない",
+     size=12.5, color=INK2, line=1.3)
+c = card(sl, lx, 192, lw2, 92, title="試して失敗した案：接近速度から到達時間で鳴らす",
+         border=RED, lw=1.5)
+para(c.text_frame, [("「近づいているか」しか見ないため、", {}),
+                    ("横をすれ違うだけの車にも鳴った", {"bold": True, "color": RED}),
+                    ("。安全な相手への抑制が崩壊した", {})],
+     size=12.5, color=INK2, line=1.3)
+para(c.text_frame, "→ 速度だけでは足りない。進行方向が要る", size=12, color=MUTED,
+     line=1.3)
+c = card(sl, lx, 294, lw2, 92, title="採用：このまま進むと「どこまで」近づくかを解く",
+         border=GREEN, lw=1.5)
+para(c.text_frame, [("距離の縮み方と", {}), ("方位の振れ方", {"bold": True, "color": INK}),
+                    ("から最接近の距離と時刻を求め、", {}),
+                    ("正面に来る相手だけ早く鳴らす", {"bold": True, "color": GREEN})],
+     size=12.5, color=INK2, line=1.3)
+para(c.text_frame, "近距離では従来の距離判定を保険として残す", size=12, color=MUTED,
+     line=1.3)
+
+# --- 右：正面 vs 横すれ違いの図 ---
+bx, by, bw, bh = 530, 108, W - 54 - 530, 278
+rect(sl, bx, by, bw, bh, fill=WHITE, line=HAIR)
+cx, cy = bx + 96, by + 180
+rect(sl, cx - 44, cy - 44, 88, 88, fill=RED22, line=RED, lw=1.2,
+     shape=MSO_SHAPE.OVAL, dash="dash")
+rect(sl, cx - 7, cy - 7, 14, 14, fill=INK, shape=MSO_SHAPE.OVAL)
+label(sl, cx - 60, cy + 48, 120, "歩行者", size=10.5, color=INK2)
+conn(sl, bx + bw - 24, cy, cx + 54, cy, RED, 2.5, arrow=True)
+label(sl, cx + 46, cy - 30, bx + bw - 14 - (cx + 46), "正面に来る → 鳴らす", size=11.5, color=RED,
+      bold=True, align=PP_ALIGN.RIGHT)
+gy = by + 74
+conn(sl, bx + bw - 24, gy, bx + 24, gy, GREEN, 2.5, arrow=True)
+label(sl, bx + 14, gy - 32, bw - 40, "横を通り過ぎる → 鳴らさない", size=11.5,
+      color=GREEN, bold=True, align=PP_ALIGN.RIGHT)
+label(sl, bx + 10, by + bh - 26, bw - 20,
+      "どちらも「近づいて」はいる。区別できるのは最接近の予測だけ", size=10.5)
+
+# --- 下：結果 ---
+c = card(sl, 54, 398, W - 108, 62)
+para(c.text_frame,
+     [("通知から最接近までの余裕（中央値）", {}), ("　0.20秒 → 1.50秒", {"bold": True, "color": INK, "size": 16}),
+      ("　／　余裕が2.5秒以上あった割合", {}), ("　4.1% → 26.1%", {"bold": True, "color": INK, "size": 16})],
+     size=12.5, color=INK2, line=1.25, first=True)
+para(c.text_frame,
+     [("同時に至近への到達 ", {}), ("+1.0pt", {"bold": True, "color": GREEN}),
+      ("・注意への到達 ", {}), ("+5.2pt", {"bold": True, "color": GREEN}),
+      ("。代償として安全な相手への抑制 ", {}), ("−3.3pt", {"bold": True, "color": RED}),
+      ("（早く鳴らすことと余計に鳴らさないことは両立しない）", {})],
+     size=12, color=INK2, line=1.25)
+label(sl, 54, 464, W - 108,
+      "同一の推定結果に対し通知規則だけを差し替えた比較（合成データ・検証用分割）。"
+      "しきい値は検証データを2つに割り、片方で選んでもう片方で採点して決定",
+      size=10.5, align=PP_ALIGN.LEFT)
+footer(sl, 4)
+
 # ============ 11 ablation ============
 sl = new_slide()
 header(sl, "NEXT 1/2", "今後の方針① — 物理ablationで問いに答える（9月）")
@@ -705,11 +771,12 @@ items = [
              "至近警告の実環境確認は自転車・キックボードでの部分検証にとどまる"),
     ("指標", "総合SELDスコアは事前基準に僅差で未達。実録ではフレーム単位の正解位置が"
              "得られないため、実測のSELDスコアは出さない（通知評価と幾何近似の誤差のみ）"),
-    ("通知", "至近警告が届かない主因は、距離推定が閾値まで下がりきらないケース"
-             "（失敗例は全数分類済み・安全な車への誤帰属はほぼ無し）"),
+    ("通知", "接近方向を見る改良で余裕時間は伸びたが、安全な相手への抑制は下がる。"
+             "早く鳴らすことと余計に鳴らさないことは両立しない"),
     ("学習", "キックボードの高騒音下検出は他クラスより低い — 距離重視の学習との"
              "トレードオフが残る"),
-    ("設計", "通知の同一物体判定は方位の連続性による近似（完全なトラッキングは将来課題）"),
+    ("設計", "上限実験では、余裕時間の頭打ちの主因は距離推定の精度と複数音源の追跡"
+             "（同一物体の判定は方位の連続性による近似にとどまる）"),
 ]
 y = 112
 for tag, body in items:
@@ -732,9 +799,11 @@ bullets(sl, 54, 120, W - 108, [
               ("を日本準拠の合成データで構築し、", {}),
               ("学習に未使用の評価データで性能を確認", {"bold": True, "color": INK}),
               ("（事前設定の目標をおおむね達成）", {})]},
-    {"runs": [("通知層が", {}), ("推定距離で段階的に出し分け", {"bold": True, "color": INK}),
+    {"runs": [("通知層が", {}), ("段階的に出し分け", {"bold": True, "color": INK}),
               (" — 至近への警告・安全な車の抑制・静かなキックボードへの警告を"
-               "いずれも確認（数値は検証のページ。", {}),
+               "いずれも確認。さらに", {}),
+              ("最接近の予測で鳴らす設計", {"bold": True, "color": INK}),
+              ("に改め、速い相手ほど余裕が縮む弱点を緩和（数値は検証のページ。", {}),
               ("すべて合成データでの評価", {"bold": True, "color": INK}), ("）", {})]},
     {"runs": [("遠方サイレンの", {}),
               ("初検知距離を定量化", {"bold": True, "color": INK}),
@@ -743,6 +812,9 @@ bullets(sl, 54, 120, W - 108, [
               ("静止条件を全ablation版の共通試験", {"bold": True, "color": INK}),
               ("、", {}), ("歩行条件は別枠で評価", {"bold": True, "color": INK}),
               ("——で「どの物理が必要か」と「実環境でどれだけ落ちるか」を測る", {})]},
+    {"runs": [("あわせて", {}), ("距離推定の精度向上", {"bold": True, "color": INK}),
+              ("を目標に加える — 上限実験から、通知の余裕時間を伸ばす鍵が"
+               "そこにあると分かったため", {})]},
 ], size=16, gap=20)
 stripe(sl, 456)
 footer(sl, 5)

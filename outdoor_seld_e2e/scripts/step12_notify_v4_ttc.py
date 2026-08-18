@@ -25,7 +25,9 @@ v3.4 までの通知は **推定距離のしきい値だけ**で判定してい�
 
   - 遠くても速ければ鳴る（速さによらずリードタイムが一定になる）
   - **遠ざかっている（v <= 0）相手には鳴らさない**
-  - 2.5秒は既存の根拠（人間の知覚反応時間・AASHTO / 車載FCW約2.6秒）をそのまま使う
+  - 2.5秒は AASHTO Green Book の知覚反応時間（全ドライバーの90パーセンタイル超）。
+    **ただし『運転中で制動を予期している人』の値**であり、歩行中の難聴者が振動通知を
+    受ける場面の安全保証値ではない。第7回監査の裁定どおり**「理想線」**として扱う
 
 距離しきい値は完全には捨てず、**保険**として残す（速度推定が使えないほど d が
 不安定なとき、または既に危険域内にいるときは距離規則で鳴らす）。
@@ -67,8 +69,8 @@ LINK_DEG = 60.0                   # v3.4のトリガ連結幅
 CONFIRM = 2                       # 距離規則の確認フレーム数
 
 # ---- v4 で新規に導入する定数（事前に決めて固定する）----
-TTC_WARN = 2.5        # [s] 警告を出す到達時間。人間の知覚反応時間（既存根拠）
-TTC_CAUTION = 4.0     # [s] 注意段の到達時間
+TTC_WARN = 2.5        # [s] 警告を出す到達時間。AASHTO知覚反応時間（**理想線**・上の注記参照）
+TTC_CAUTION = 4.0     # [s] 注意段の到達時間。TTC<4秒=危険という基準（Vogel 2003）
 R_DANGER = 1.5        # [m] 危険域の半径。強トリガの距離しきい値と同じ値を使う
 VEL_WIN = 5           # [frame] 速度推定の窓（0.5s）。短いとノイズ、長いと遅れる
 V_MIN = 0.5           # [m/s] これ未満の接近速度は「接近していない」とみなす
@@ -84,8 +86,10 @@ D_MAX_TTC = 30.0      # [m] これより遠い推定距離ではTTCを信用し�
 #   「リード重視」は**両方の分割から独立に同じ設定が選ばれ**、どちらのホールドアウト
 #   でも同じ改善量を再現した（安全重視は分割ごとに別設定が選ばれ再現しなかった）。
 #   → 下の値はその「リード重視」設定。詳細は md/design/通知v4.1_最接近予測_2026-08-18.md
-CPA_STRONG_M = 1.0    # [m] 予測最接近がこれ以下なら強
-CPA_MID_M = 2.0       # [m] 予測最接近がこれ以下なら中
+# なお 1.0m/2.0m は**外部根拠のない設計値**（探索で決めた）。危険度の定義 T3=1.5m /
+# SUPP=3.2m より厳しい＝鳴らす側を保守的に倒している。説明時に混同しないこと。
+CPA_STRONG_M = 1.0    # [m] 予測最接近がこれ以下なら強（設計値・外部根拠なし）
+CPA_MID_M = 2.0       # [m] 予測最接近がこれ以下なら中（設計値・外部根拠なし）
 CONFIRM_CPA = 4       # [frame] 最接近予測側の確認フレーム数（距離規則のCONFIRMとは別）
 
 
@@ -247,18 +251,24 @@ def fires_cpa(d_at, az_at, nframes):
         # closing_speed は −ḋ（接近を正）を返すので符号を戻す
         pre[j] = cpa_of(d, None if v is None else -v, adot)
 
-    def _hit(j, d, dc_th, tc_th, d_th):
+    def _cond(j, dc_th, tc_th):
         dc, tc = pre.get(j, (None, None))
-        return (dc is not None and dc <= dc_th and tc <= tc_th) or d <= d_th
+        return dc is not None and dc <= dc_th and tc <= tc_th
 
-    _c = CONFIRM_CPA
+    # 距離保険と最接近予測は**別々の列**として数える。
+    # 監査(2026-08-18)で、両者を1本にまとめると保険側まで CONFIRM_CPA フレーム
+    # 待つことになり、v3.4 より2フレーム遅れて鳴る事故が判明した
+    # （v3.4よりリードが悪化したイベントが17.6%→2.1%に減った）。
+    def _stream(dc_th, tc_th, d_th):
+        a = _trigger_stream(d_at, az_at, nframes,
+                            lambda j, d: _cond(j, dc_th, tc_th), confirm=CONFIRM_CPA)
+        b = _trigger_stream(d_at, az_at, nframes,
+                            lambda j, d: d <= d_th, confirm=CONFIRM)
+        return sorted(set(a) | set(b))
+
     return _episodes_with_upgrade(
-        _trigger_stream(d_at, az_at, nframes,
-                        lambda j, d: _hit(j, d, CPA_MID_M, TTC_CAUTION, SUPP),
-                        confirm=_c),
-        _trigger_stream(d_at, az_at, nframes,
-                        lambda j, d: _hit(j, d, CPA_STRONG_M, TTC_WARN, T3),
-                        confirm=_c))
+        _stream(CPA_MID_M, TTC_CAUTION, SUPP),
+        _stream(CPA_STRONG_M, TTC_WARN, T3))
 
 
 def fires_dist(d_at, az_at, nframes):
