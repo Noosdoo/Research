@@ -150,13 +150,14 @@ label(LX, 174, LW, "▼", size=11, color=INK2)
 c = card(LX, 192, LW, 176, "通知層(3役割) ― 最接近の予測で出し分け",
          border=AMBERD, lw=1.5)
 para(c.text_frame, [("近距離", {"bold": True, "color": RED}),
-                    ("：このまま進むと約1m以内まで近づき、2.5秒以内に到達", {})],
-     size=12.5)
+                    ("：このまま進むと約1m以内・2.5秒以内に到達 … ", {}),
+                    ("4フレーム連続", {"bold": True})], size=12.5)
 para(c.text_frame, [("中距離", {"bold": True, "color": AMBERD}),
-                    ("：約2m以内・4秒以内", {})], size=12.5)
+                    ("：約2m以内・4秒以内 … ", {}),
+                    ("4フレーム連続", {"bold": True})], size=12.5)
 para(c.text_frame, [("遠距離", {"bold": True, "color": GREEN}),
                     ("：横を通り過ぎるだけの対象は鳴らさない", {})], size=12.5)
-para(c.text_frame, "※ 既に1.5m/3.2m以内にいる場合は距離だけでも鳴らす(保険)",
+para(c.text_frame, "※ 既に1.5m/3.2m以内なら距離だけでも鳴らす(保険・2フレーム連続)",
      size=11.5, color=MUTED)
 para(c.text_frame, [("対象は", {}), ("車・キックボード・バイク", {"bold": True}),
                     ("。サイレン等5クラスは距離を使わず検出したら通知", {})],
@@ -216,6 +217,12 @@ label(BX + 8, PY + 72, BW - 16, "点線の円＝保険として残した距離�
 label(BX, BY + BH + 8, BW,
       "船の見張りと同じ原理 ― 方位が変わらず近づく相手が危ない",
       size=11, color=INK2)
+label(BX, BY + BH + 26, BW,
+      "※「変わらない」の許容幅は固定値ではなく距離と速さで決まる",
+      size=9.5, color=MUTED)
+label(BX, BY + BH + 40, BW,
+      "（時速50kmの車なら 20m先で毎秒2度以内 / 10m先で毎秒8度以内）",
+      size=9.5, color=MUTED)
 
 out = ROOT / "md/seminar/図_提案手法2層_v4.1_2026-08-18.pptx"
 prs.save(out)
