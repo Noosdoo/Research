@@ -22,6 +22,7 @@ export CAUSAL_CKPT=$HOME/PSELDNets_logs/outdoor_siren_v12/runs/outdoor_siren_v12
 export CAUSAL_OUT=${CAUSAL_OUT:-infer_v12_w3_causal_val}
 export CAUSAL_DSDIR=$PS/datasets_v12
 export CAUSAL_PREFIX=${CAUSAL_PREFIX:-fold2_}
+export CAUSAL_FOA=${CAUSAL_FOA:-}
 export CAUSAL_LIMIT=${CAUSAL_LIMIT:-0}
 
 ls -l $CAUSAL_CKPT

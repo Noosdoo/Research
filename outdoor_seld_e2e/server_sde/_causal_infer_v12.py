@@ -87,7 +87,9 @@ model.eval().cuda()
 NCLS = ds.num_classes
 print(f"[causal] ckpt={CKPT}\n[causal] classes={NCLS} dataset={DSDIR}", flush=True)
 
-foa = DSDIR / DATASET / "foa"
+# 確定評価セットなど、別ディレクトリの音を使うときは CAUSAL_FOA で上書きする
+foa = (Path(os.environ["CAUSAL_FOA"]) if os.environ.get("CAUSAL_FOA")
+       else DSDIR / DATASET / "foa")
 clips = sorted(p.name for p in foa.glob(f"{PREFIX}*.flac"))
 if LIMIT:
     clips = clips[:LIMIT]
