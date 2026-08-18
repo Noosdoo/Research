@@ -15,19 +15,26 @@
 \setlength{\columnsep}{7mm}
 \renewcommand{\baselinestretch}{0.98}
 
-\title{\vspace{-8mm}\bf SELDモデルを用いた難聴歩行者向け屋外危険音通知システムの構築}
-\author{松本 鋭\thanks{東京理科大学 創域理工学部 情報計算科学科 4年}\\ Satoshi Matsumoto}
-\date{}
+% 表題は手組みにする。jsarticle の \maketitle は二段組だと内部で \twocolumn を
+% 呼ぶため、\twocolumn[...] の中に入れると入れ子になって壊れる
+% （Argument of \@newline has an extra } の原因）。
 
 \begin{document}
 
-\twocolumn[
-  \begin{@twocolumnfalse}
-    \hfill{\small 2026/09/XX 夏ゼミ配布資料}\\[-2mm]
-    \maketitle
-    \vspace{-6mm}
-  \end{@twocolumnfalse}
+\twocolumn[%
+  \noindent\hfill{\small 2026/09/XX 夏ゼミ配布資料}\par
+  \vskip 3mm
+  \begin{center}
+    {\LARGE\bfseries SELDモデルを用いた\\
+     難聴歩行者向け屋外危険音通知システムの構築\par}
+    \vskip 3mm
+    {\large 松本 鋭\footnotemark[1]\par}
+    \vskip 1mm
+    {\normalsize Satoshi Matsumoto\par}
+  \end{center}
+  \vskip 5mm
 ]
+\footnotetext[1]{東京理科大学 創域理工学部 情報計算科学科 4年}
 
 % ---------------------------------------------------------------
 \section{研究背景と目的}
