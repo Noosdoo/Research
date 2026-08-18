@@ -130,6 +130,54 @@ check("V8 統合規則がv3.4と同一（フレーム差>1で分割・方位差>
       len(eps_gap) == 2 and len(eps_az) == 2,
       f"(gap={len(eps_gap)}, az={len(eps_az)})")
 
+# ---- V9〜V12: v4.1（最接近予測）----
+# TTC規則が壊れた原因は「近づいてさえいれば鳴る」こと。横をすり抜ける相手にも鳴った。
+# v4.1 は**このまま進むとどこまで近づくか**を解くので、その差が出るはずである。
+
+
+def passby(b, v, d0=30.0, nframes=80):
+    """横オフセット b [m] で等速 v [m/s] ですれ違う軌跡の (距離, 方位)。
+
+    直線 x(t)=b, y(t)=y0−v·t（受聴者は原点）。b=0 なら正面衝突コース。
+    """
+    y0 = float(np.sqrt(max(d0 * d0 - b * b, 0.0)))
+    d_at, az_at = {}, {}
+    for j in range(nframes):
+        y = y0 - v * j / v4.FPS
+        d_at[j] = float(np.hypot(b, y))
+        az_at[j] = float(np.degrees(np.arctan2(b, y)))
+    return d_at, az_at
+
+
+# 幾何そのものの検算（規則を通す前に、式が正しいことを確かめる）
+dc0, tc0 = v4.cpa_of(20.0, -14.0, 0.0)              # 正面・14m/s
+b_, d_, v_ = 5.0, 20.0, 14.0
+vt = v_ * b_ / d_
+vr = -v_ * float(np.sqrt(1 - (b_ / d_) ** 2))
+dc5, tc5 = v4.cpa_of(d_, vr, vt / d_)               # 5m横をすり抜け
+# t_cpa は「最接近する時刻」まで（危険域に入るまでの TTC とは別物）
+check("V9 最接近の式（正面=0m / 5m横すれ違い=5m・到達20/14秒）",
+      abs(dc0) < 1e-6 and abs(tc0 - 20.0 / 14.0) < 1e-6 and abs(dc5 - 5.0) < 1e-6,
+      f"(正面 {dc0:.3f}m {tc0:.3f}s / 横 {dc5:.3f}m {tc5:.3f}s)")
+
+# 本命: 正面衝突コースには鳴り、5m横を通るだけの相手には鳴らない
+d_head, az_head = passby(0.3, 14.0)
+d_side, az_side = passby(5.0, 14.0)
+f_head = v4.fires_cpa(d_head, az_head, 80)
+f_side = v4.fires_cpa(d_side, az_side, 80)
+head_d = f_head[0][3] if f_head else None
+check("V10 【本命】正面に来る相手には遠くで鳴る",
+      bool(f_head) and head_d is not None and head_d > v4.SUPP,
+      f"(発火時の距離 {head_d if head_d is None else round(head_d, 1)}m)")
+check("V11 【本命】5m横を通り過ぎるだけの相手には鳴らない",
+      not f_side, f"({f_side})")
+
+# 同じ2本を旧TTC規則に通すと、横すれ違いにも鳴ってしまう（v4が使えなかった理由）
+t_side = v4.fires_ttc(d_side, az_side, 80)
+check("V12 旧TTC規則は横すれ違いにも鳴る（v4.1で直したこと）",
+      bool(t_side) and not f_side,
+      f"(TTC規則={len(t_side)}件 / 最接近予測={len(f_side)}件)")
+
 print()
 if fails:
     print(f"NG: {len(fails)}件 {fails}")

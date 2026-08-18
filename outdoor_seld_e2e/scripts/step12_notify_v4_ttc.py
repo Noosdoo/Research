@@ -74,6 +74,20 @@ VEL_WIN = 5           # [frame] 速度推定の窓（0.5s）。短いとノイ�
 V_MIN = 0.5           # [m/s] これ未満の接近速度は「接近していない」とみなす
 D_MAX_TTC = 30.0      # [m] これより遠い推定距離ではTTCを信用しない（誤差が大きい）
 
+# ---- v4.1（最接近予測）の規則側パラメータ ----
+# T3/SUPP は「GTの危険区分の定義」なので動かさない。鳴らす側のしきい値はここで分ける。
+#
+# 選び方（2026-08-18）: val の 1,358 クリップを末尾番号の偶奇で2分割し、
+#   「片方で選び、もう片方で採点」を両向きに実施した。方針は事前に2つだけ決めた:
+#     安全重視 = 抑制がv3.4以上・重大到達がv3.4−1pt以内 の中でリード最大
+#     リード重視 = 抑制がv3.4−5pt以内・重大到達がv3.4以上 の中でリード最大
+#   「リード重視」は**両方の分割から独立に同じ設定が選ばれ**、どちらのホールドアウト
+#   でも同じ改善量を再現した（安全重視は分割ごとに別設定が選ばれ再現しなかった）。
+#   → 下の値はその「リード重視」設定。詳細は md/design/通知v4.1_最接近予測_2026-08-18.md
+CPA_STRONG_M = 1.0    # [m] 予測最接近がこれ以下なら強
+CPA_MID_M = 2.0       # [m] 予測最接近がこれ以下なら中
+CONFIRM_CPA = 4       # [frame] 最接近予測側の確認フレーム数（距離規則のCONFIRMとは別）
+
 
 def cdiff(a, b):
     return abs((a - b + 180.0) % 360.0 - 180.0)
@@ -102,6 +116,44 @@ def ttc_of(d, v, r_danger=R_DANGER):
     return max(0.0, (d - r_danger) / v)
 
 
+def azimuth_rate(az_at, j, win=VEL_WIN):
+    """方位の変化率[rad/s]。±180°の折り返しを展開してから最小二乗の傾きを取る。"""
+    azs = [az_at.get(k) for k in range(j - win + 1, j + 1)]
+    if any(a is None for a in azs) or len(azs) < win:
+        return None
+    unw = np.unwrap(np.radians(np.asarray(azs, dtype=float)))
+    t = np.arange(win) / FPS
+    return float(np.polyfit(t, unw, 1)[0])
+
+
+def cpa_of(d, ddot, adot):
+    """**最接近**の (予測距離[m], 到達時間[s]) を等速直線運動として解く。
+
+    相対位置 r（大きさ d）と相対速度 v を、動径成分 ḋ と接線成分 d·ȧ に分けると
+
+        |v|²    = ḋ² + (d·ȧ)²
+        t_cpa   = −(r·v)/|v|²   = −d·ḋ / |v|²
+        d_cpa   = |r×v|/|v|     = d²|ȧ| / |v|
+
+    ここが v4 の TTC 規則との決定的な違い。TTC は「接近しているか」しか見ないので
+    **最終的に5m横を通り過ぎる車にも接近中は鳴ってしまう**（2026-08-18の評価で
+    安全抑制が82.1%→15.7%に落ちた）。最接近距離を予測すれば、
+    「近づいてはいるが危険域には入らない」相手を鳴らさずに済む。
+
+    t_cpa < 0（既に最接近を過ぎた＝遠ざかり中）は None を返す。
+    """
+    if ddot is None or adot is None:
+        return None, None
+    v_r, v_t = ddot, d * adot
+    v2 = v_r * v_r + v_t * v_t
+    if v2 < 1e-9 or d > D_MAX_TTC:
+        return None, None
+    t_cpa = -(d * v_r) / v2
+    if t_cpa < 0:
+        return None, None
+    return abs(d * d * adot) / np.sqrt(v2), t_cpa
+
+
 def track_series(pred_clip, cls, nframes, link_deg=LINK_DEG):
     """1クラスぶんの (frame -> 最寄り距離, 方位) 系列を作る。
 
@@ -124,12 +176,13 @@ def track_series(pred_clip, cls, nframes, link_deg=LINK_DEG):
     return d_at, az_at
 
 
-def _trigger_stream(d_at, az_at, nframes, cond):
+def _trigger_stream(d_at, az_at, nframes, cond, confirm=None):
     """cond(j, d) が CONFIRM フレーム連続で True になったフレームを列挙する。
 
     v3.4 と同じく **段ごとに独立した列**を作る（強と中を1本のカウンタで混ぜない）。
     混ぜると「強→中へ変化した瞬間に中で発火」のような、v3.4に無い挙動が出る。
     """
+    need = CONFIRM if confirm is None else confirm
     hits, run = [], 0
     for j in range(nframes):
         d = d_at.get(j)
@@ -137,7 +190,7 @@ def _trigger_stream(d_at, az_at, nframes, cond):
             run = 0
             continue
         run += 1
-        if run >= CONFIRM:
+        if run >= need:
             hits.append((j, az_at[j], d))
     return hits
 
@@ -176,6 +229,38 @@ def fires_ttc(d_at, az_at, nframes):
     return _episodes_with_upgrade(mid, strong)
 
 
+def fires_cpa(d_at, az_at, nframes):
+    """v4.1【推奨】: **予測最接近距離**で発火する。
+
+    強＝「このままなら CPA_STRONG_M 以内まで来る」かつ到達が TTC_WARN 以内、
+    中＝「CPA_MID_M まで来る」かつ到達が TTC_CAUTION 以内。
+    距離しきい値は保険として残す（既に危険域内なら速度が測れなくても鳴る）。
+    """
+    # フレームごとの予測は1回だけ計算する（強/中で使い回す）
+    pre = {}
+    for j in range(nframes):
+        d = d_at.get(j)
+        if d is None:
+            continue
+        v = closing_speed(d_at, j)
+        adot = azimuth_rate(az_at, j)
+        # closing_speed は −ḋ（接近を正）を返すので符号を戻す
+        pre[j] = cpa_of(d, None if v is None else -v, adot)
+
+    def _hit(j, d, dc_th, tc_th, d_th):
+        dc, tc = pre.get(j, (None, None))
+        return (dc is not None and dc <= dc_th and tc <= tc_th) or d <= d_th
+
+    _c = CONFIRM_CPA
+    return _episodes_with_upgrade(
+        _trigger_stream(d_at, az_at, nframes,
+                        lambda j, d: _hit(j, d, CPA_MID_M, TTC_CAUTION, SUPP),
+                        confirm=_c),
+        _trigger_stream(d_at, az_at, nframes,
+                        lambda j, d: _hit(j, d, CPA_STRONG_M, TTC_WARN, T3),
+                        confirm=_c))
+
+
 def fires_dist(d_at, az_at, nframes):
     """v3.4相当（比較の土台）: 距離しきい値のみ・強/中は独立列。"""
     strong = _trigger_stream(d_at, az_at, nframes, lambda j, d: d <= T3)
@@ -210,7 +295,7 @@ def load_pred(path: Path):
 
 def run_rule(pred, rule: str, nframes: int = 100):
     """clip -> cls -> [episode] を返す。episodeの先頭が発火時刻。"""
-    fn = fires_ttc if rule == "ttc" else fires_dist
+    fn = {"ttc": fires_ttc, "cpa": fires_cpa}.get(rule, fires_dist)
     res = {}
     for clip, frames in pred.items():
         per_cls = {}
@@ -234,11 +319,13 @@ def main() -> int:
     outdir.mkdir(parents=True, exist_ok=True)
     pred = load_pred(pred_path)
 
-    rules = ["dist", "ttc"] if rule == "both" else [rule]
+    rules = ["dist", "ttc", "cpa"] if rule == "both" else [rule]
     R = [f"# 通知 v4（TTC規則） pred={pred_path.name}", "",
          f"- 定数: TTC_WARN={TTC_WARN}s / TTC_CAUTION={TTC_CAUTION}s / "
          f"R_DANGER={R_DANGER}m / VEL_WIN={VEL_WIN}fr({VEL_WIN/FPS:.1f}s) / "
          f"V_MIN={V_MIN}m/s / D_MAX_TTC={D_MAX_TTC}m",
+         f"- v4.1: CPA_STRONG={CPA_STRONG_M}m / CPA_MID={CPA_MID_M}m / "
+         f"CONFIRM_CPA={CONFIRM_CPA}fr",
          f"- 引き継ぎ: T3={T3} T2={T2} SUPP={SUPP} AZ_MATCH={AZ_MATCH} "
          f"LINK_DEG={LINK_DEG} CONFIRM={CONFIRM}", ""]
     summary = {}
@@ -256,8 +343,8 @@ def main() -> int:
                f"最大 {max(d_fire):.2f}m / >3.2mで発火 "
                f"{100*np.mean(np.array(d_fire) > SUPP):.1f}%"
                if d_fire else "- 発火なし"), ""]
-    if len(rules) == 2:
-        a, b = summary["dist"], summary["ttc"]
+    if len(rules) >= 2:
+        a, b = summary["dist"], summary[rules[-1]]
         R += ["## 距離規則 → TTC規則 の変化", "",
               f"- エピソード数 {a['n_ep']:,} → {b['n_ep']:,}",
               f"- 発火時距離の中央 {np.median(a['d_fire']):.2f}m → "
