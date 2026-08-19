@@ -18,7 +18,7 @@ source $HOME/research/outdoor_seld_e2e/server_sde/_baseline_guard.sh
 guard_record
 
 export PS
-export CAUSAL_CKPT=$HOME/PSELDNets_logs/outdoor_siren_v12/runs/outdoor_siren_v12_sde_w3/checkpoints/epoch_099.ckpt
+export CAUSAL_CKPT=${CAUSAL_CKPT:-$HOME/PSELDNets_logs/outdoor_siren_v12/runs/outdoor_siren_v12_sde_w3/checkpoints/epoch_099.ckpt}
 export CAUSAL_OUT=${CAUSAL_OUT:-infer_v12_w3_causal_val}
 export CAUSAL_DSDIR=$PS/datasets_v12
 export CAUSAL_PREFIX=${CAUSAL_PREFIX:-fold2_}
