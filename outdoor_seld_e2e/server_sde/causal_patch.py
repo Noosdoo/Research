@@ -38,11 +38,30 @@ import os
 
 import numpy as np
 import torch
+import torch.utils.data
 
 KMIN = int(os.environ.get("CAUSAL_KMIN", "40"))
 REPEAT = int(os.environ.get("CAUSAL_REPEAT", "8"))
 NFRAME = 100                      # 10秒 / 0.1秒
-_rng = np.random.default_rng(int(os.environ.get("CAUSAL_SEED", "0")))
+SEED = int(os.environ.get("CAUSAL_SEED", "0"))
+
+
+def _draw_k(idx):
+    """終端フレーム k を引く。
+
+    【2026-08-19 監査①の修正】以前はモジュール変数の乱数を使っていたが、
+    num_workers=8 だと8つのワーカーが同じ種を複製するため、
+    各クリップが毎エポックほぼ同じ k を見ていた可能性があった。
+    torch.initial_seed() は DataLoader が**ワーカーごと・エポックごと**に
+    振り直すので、これに idx を混ぜれば worker/epoch/item のすべてで変わる。
+    """
+    # numpy整数(idx)と巨大なPython整数(torch.initial_seed)を直接足すと
+    # numpyがint64へ変換しようとして溢れる。先に縮めて全部Python intにする。
+    w = torch.utils.data.get_worker_info()
+    base = int(torch.initial_seed()) % (2 ** 32) if w else SEED
+    seed = (base + SEED + int(idx) * 2654435761) % (2 ** 32)
+    rng = np.random.default_rng(seed)
+    return int(rng.integers(KMIN, NFRAME + 1))
 
 
 def _right_align(x, lab, k):
@@ -76,7 +95,7 @@ def apply():
         lab = s["adpit_label"]
         if lab.shape[0] != NFRAME:
             return s
-        k = int(_rng.integers(KMIN, NFRAME + 1))
+        k = _draw_k(idx)
         s["data"], s["adpit_label"] = _right_align(s["data"], lab, k)
         return s
 
