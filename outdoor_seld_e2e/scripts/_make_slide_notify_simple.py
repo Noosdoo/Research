@@ -1,24 +1,20 @@
 # -*- coding: utf-8 -*-
-"""検証スライド「通知は間に合うようになったか」— 簡潔版（2026-08-20）。
+"""検証スライド「通知はいつ・どれだけ届くか」（2026-08-20）。
 
-## なぜ簡潔版を作るか
+## 方針: 初見の聴衆に向けて書く
 
-先に作った詳しい版（_make_slide_notify_results.py）は5行の表で、
-「距離しきい値」「余裕が0.5秒以上あった割合」など**説明なしでは伝わらない語**が並び、
-10分の発表では重すぎた。夏ゼミは先輩方のレジュメを見るかぎり提案段階の発表が主で、
-結果を詳細に出す場ではない。
+聞き手は全員この研究を初めて見る。**「前のやり方」「改良した」は内輪の話**であって、
+聴衆には関係がない。before/after を並べると、知らない旧方式の説明から始める羽目になり、
+限られた時間を自分の開発史に使ってしまう。
 
-ただし 8/4 のゼミで「トラックが来る3秒前に検知できても使えない、そこを工夫するとか」
-という指摘を受けている以上、**それに答えた事実は1枚だけ見せる**必要がある。
+したがってこの1枚は **いまのシステムがどう動くか**だけを述べる:
 
-そこで **図1つ・数字1つ・代償1行**に絞る。詳しい版は付録に回して聞かれたら出す。
+  - 危険な車が一番近づく 0.80秒前に警告が届く
+  - 1.5m以内まで近づく危険な車の 85.0% に警告が届いた
+  - 安全な車の 85.2% は鳴らさずに済んだ
 
-## 落とした行と理由
-
-- 「余裕が0.5秒以上あった割合 0.6%→65.3%」…… 0.5秒という基準に外部の根拠がない
-  （採点器がたまたま出す値を使っていた）
-- 「安全な車への誤った至近警告 1.3%→3.7%」…… 代償は1行にまとめた
-- 「実時間では75.0%」「キックボード88.7%」…… 付録・質疑へ
+8/4のゼミでいただいた「3秒前に検知できても使えない」という指摘への答えでもあるが、
+**それはスライドに書かず、口頭で添える**。指摘した本人は0.8秒の意味が分かる。
 
 出力: md/seminar/図_検証_通知層_簡潔_2026-08-20.pptx
 """
@@ -132,62 +128,56 @@ def label(x, y, w, text, size=11, color=MUTED, align=PP_ALIGN.LEFT, bold=False):
 # ============ 見出し ============
 line(54, 96, W - 54, 96, INK, 1.5)
 tb = box(54, 40, 860, 48)
-para(tb.text_frame, "検 証 ― 通 知 は 「 間 に 合 う 」 よ う に な っ た か",
+para(tb.text_frame, "検 証 ― 通 知 は い つ ・ ど れ だ け 届 く か",
      size=26, bold=True, color=INK, first=True, space=0)
 
-# ============ 図：いつ鳴るか ============
-X0, X1 = 250, 800            # X1 = 最接近の位置
-Y_OLD, Y_NEW = 186, 300
-SEC = (X1 - X0) / 2.0        # 軸の全長を2.0秒とする
-label(54, 126, 500, "車が一番近づく瞬間までに、どれだけ余裕があるか",
-      size=13, color=INK2, bold=True)
+# ============ 図: 警告から最接近までの余裕 ============
+X0, X1 = 300, 812                 # X1 = 車が一番近づく位置
+AY = 218
+FIRE = X0 + 96                    # 警告が鳴る位置
+label(54, 108, 420, "危険な車が近づいてくるとき、警告はいつ届くか",
+      size=13.5, color=INK2, bold=True)
 
-# 最接近の縦線
-line(X1, Y_OLD - 44, X1, Y_NEW + 52, MUTED, 1.2)
-label(X1 - 60, Y_OLD - 68, 120, "車が一番近づく", size=12, color=INK,
+line(X0, AY, X1 + 40, AY, INK, 3.0, arrow=True)
+label(X1 + 6, AY + 16, 120, "時間", size=11, color=MUTED)
+
+# 車が一番近づく瞬間
+line(X1, AY - 56, X1, AY + 30, MUTED, 1.5)
+rect(X1 - 13, AY - 13, 26, 26, fill=RED, shape=MSO_SHAPE.OVAL)
+label(X1 - 90, AY - 82, 180, "車が一番近づく", size=13.5, color=RED,
       align=PP_ALIGN.CENTER, bold=True)
 
-for y, tag, col, fire_x, note in (
-        (Y_OLD, "前のやり方", RED, X1, "鳴った瞬間が、もう一番近い瞬間"),
-        (Y_NEW, "新しいやり方", GREEN, X1 - 0.8 * SEC, "0.8秒前に鳴る")):
-    line(X0, y, X1, y, col, 3.0)
-    label(70, y - 11, 170, tag, size=14, color=col, bold=True)
-    rect(fire_x - 11, y - 11, 22, 22, fill=col, shape=MSO_SHAPE.OVAL)
-    if y == Y_OLD:
-        label(fire_x - 240, y - 34, 210, "鳴る", size=13, color=col,
-              align=PP_ALIGN.RIGHT, bold=True)
-        label(fire_x - 330, y + 16, 300, note, size=12, color=col,
-              align=PP_ALIGN.RIGHT)
-    else:
-        label(fire_x - 210, y - 34, 200, "鳴る", size=13, color=col,
-              align=PP_ALIGN.RIGHT, bold=True)
-        # 余裕の帯
-        rect(fire_x, y + 14, X1 - fire_x, 22, fill=CHIP, line=GREEN, lw=1.0)
-        label(fire_x, y + 17, X1 - fire_x, "0.8秒の余裕", size=12.5,
-              color=GREEN, align=PP_ALIGN.CENTER, bold=True)
+# 警告
+line(FIRE, AY - 56, FIRE, AY + 30, MUTED, 1.5)
+rect(FIRE - 13, AY - 13, 26, 26, fill=GREEN, shape=MSO_SHAPE.OVAL)
+label(FIRE - 90, AY - 82, 180, "警告が届く", size=13.5, color=GREEN,
+      align=PP_ALIGN.CENTER, bold=True)
+
+# 余裕の帯
+rect(FIRE, AY + 40, X1 - FIRE, 34, fill=CHIP, line=GREEN, lw=1.5)
+label(FIRE, AY + 47, X1 - FIRE, "0.80 秒 の 余 裕", size=16, color=GREEN,
+      align=PP_ALIGN.CENTER, bold=True)
+label(FIRE, AY + 80, X1 - FIRE, "（中央値）", size=11, color=MUTED,
+      align=PP_ALIGN.CENTER)
 
 # ============ 数字 ============
-c = rect(54, 372, 520, 76, fill=WHITE, line=HAIR)
-para(c.text_frame, "1.5m以内まで近づく危険な車に、警告が届いた割合",
-     size=12.5, color=INK2, first=True, space=6)
-para(c.text_frame, [("69.9 %", {"size": 22, "bold": True, "color": MUTED}),
-                    ("　→　", {"size": 16, "color": INK2}),
-                    ("85.0 %", {"size": 26, "bold": True, "color": GREEN})],
-     size=16, align=PP_ALIGN.CENTER)
-
-c = rect(596, 372, 310, 76, fill=WHITE, line=RED, lw=1.5)
-para(c.text_frame, "代わりに", size=12.5, bold=True, color=RED, first=True,
-     space=4)
-para(c.text_frame, "安全な車にも鳴りやすくなる（鳴らさずに済んだ割合 90.4→85.2%）",
-     size=11.5, color=INK2, line=1.25)
-
-label(54, 468, 860,
-      "確定評価セット（学習にも検証にも使っていない1,800クリップ）で、"
-      "危険な車508台を同じ採点方法で比較。判定の規則だけを差し替えた",
-      size=11, color=MUTED)
-label(54, 494, 860,
-      "「3秒前に検知できても使えない」というご指摘に対する答え",
-      size=13, color=INK, bold=True)
+NUMS = [
+    (54, ["1.5m以内まで近づく危険な車のうち", "警告が届いた割合"], "85.0 %"),
+    (365, ["3.2mより遠くを通る安全な車のうち", "鳴らさずに済んだ割合"], "85.2 %"),
+    (676, ["静音なキックボードのうち", "警告が届いた割合"], "88.7 %"),
+]
+for x, ttl, num in NUMS:
+    c = rect(x, 356, 230, 104, fill=WHITE, line=HAIR)
+    for i, t in enumerate(ttl):
+        para(c.text_frame, t, size=11.5, color=INK2, first=(i == 0), space=1)
+    para(c.text_frame, num, size=27, bold=True, color=GREEN,
+         align=PP_ALIGN.CENTER, space=0)
+label(54, 476, 860,
+      "学習にも検証にも使っていない1,800クリップで、1回だけ採点した値",
+      size=11.5, color=MUTED)
+label(54, 502, 860,
+      "「全部鳴らす」でも「近づくまで黙る」でもなく、鳴らす相手と鳴らす時刻を選ぶ",
+      size=13.5, color=INK, bold=True)
 
 out = ROOT / "md/seminar/図_検証_通知層_簡潔_2026-08-20.pptx"
 try:
