@@ -184,6 +184,46 @@ para(c.text_frame, [("上の値は判定時刻より", {}),
                     ("75.0%", {"bold": True, "color": INK, "size": 13}),
                     ("（因果学習後）", {})], size=11.5, line=1.25)
 
+# ============ 下：いつ鳴るかの帯（この1枚の要点） ============
+LY = 418
+rect(54, LY, 596, 62, fill=WHITE, line=HAIR)
+ax0, ax1 = 178, 612          # 左端=1.5秒前 / 右端=最接近
+AXY = LY + 36
+
+
+def _t(sec):                 # 0=最接近, 1.5=1.5秒前
+    return ax1 - (ax1 - ax0) * sec / 1.5
+
+
+c2 = sl.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Emu(int(ax0 * 12700)),
+                             Emu(int(AXY * 12700)), Emu(int(ax1 * 12700)),
+                             Emu(int(AXY * 12700)))
+c2.shadow.inherit = False
+c2.line.color.rgb = INK
+c2.line.width = Pt(1.5)
+for sec in (1.5, 1.0, 0.5, 0.0):
+    x = _t(sec)
+    cc = sl.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Emu(int(x * 12700)),
+                                 Emu(int((AXY - 4) * 12700)),
+                                 Emu(int(x * 12700)), Emu(int((AXY + 4) * 12700)))
+    cc.shadow.inherit = False
+    cc.line.color.rgb = MUTED
+    cc.line.width = Pt(1.0)
+label(_t(0.0) - 46, AXY + 8, 92, "最接近", size=10, color=INK,
+      align=PP_ALIGN.CENTER, bold=True)
+label(_t(1.5) - 40, AXY + 8, 92, "1.5秒前", size=10, color=MUTED,
+      align=PP_ALIGN.CENTER)
+label(60, LY + 8, 120, "いつ鳴るか", size=11.5, color=INK, bold=True)
+
+# 旧方式=最接近と同時
+rect(_t(0.0) - 6, AXY - 20, 12, 12, fill=RED, shape=MSO_SHAPE.OVAL)
+label(_t(0.0) - 200, AXY - 26, 190, "距離しきい値のみ ＝ 同時", size=11,
+      color=RED, align=PP_ALIGN.RIGHT, bold=True)
+# 新方式=0.8秒前
+rect(_t(0.8) - 6, AXY + 8, 12, 12, fill=GREEN, shape=MSO_SHAPE.OVAL)
+label(_t(0.8) - 190, AXY + 26, 186, "最接近の予測 ＝ 0.80秒前", size=11,
+      color=GREEN, align=PP_ALIGN.RIGHT, bold=True)
+
 label(54, 494, 860,
       "「全部鳴らす」でも「近づくまで黙る」でもなく、"
       "鳴らす相手と鳴らす時刻を選べることを数値で確認した",
