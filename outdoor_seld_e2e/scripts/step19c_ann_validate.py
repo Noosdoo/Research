@@ -18,13 +18,13 @@
        ここが崩れていると誤警告の二重計上/取りこぼしが起きる）
   S8 事前登録との突き合わせ（切り出しclip数ではなく take_id 単位）。
      区分A〜E・歩行の本数、歩行対比の pair_id ごとの静止/歩行1本ずつを検査。
-     100分連続負例は区分=負例露出とし、120本の計画数から分離する
+     100分連続負例は区分=負例露出とし、200本の計画数から分離する
 
 使い方:
   python scripts/step19c_ann_validate.py --ann out/realsmoke/ann_all.csv --cut
   python scripts/step19c_ann_validate.py --ann ann_orig.csv          # 原録音注釈
   python scripts/step19c_ann_validate.py --ann ann_all.csv --cut --strict  # 収録完了後
-  （--plan で区分ごとの計画本数を上書き。既定は 2026-08-14 確定案の A〜E各20＋歩行20。
+  （--plan で区分ごとの計画本数を上書き。既定は 2026-08-20 改訂案の A〜E各20＋歩行100＝計200本。
     --strict は本数不足などの警告も不合格にする＝全収録完了後の最終ゲート用）
 """
 from __future__ import annotations
@@ -46,7 +46,7 @@ CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "car_drive", "crossing",
 DIST_CLASSES = {"car_drive", "kick", "bike"}
 QUADS = {"F", "B", "L", "R"}
 LATERAL_KEYS = ("横距離m", "横距離", "lateral_m")
-PLAN_DEFAULT = {"A": 20, "B": 20, "C": 20, "D": 20, "E": 20, "歩行": 20}
+PLAN_DEFAULT = {"A": 20, "B": 20, "C": 20, "D": 20, "E": 20, "歩行": 100}
 EXPOSURE_KIND = "負例露出"
 STATES = {"静止", "歩行"}
 EPS = 1e-6
