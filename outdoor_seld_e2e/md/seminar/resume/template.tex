@@ -1,0 +1,74 @@
+\documentclass[a4j,twocolumn]{jarticle}
+\usepackage{fancybox,wrapfig,ascmac,tabularx}
+\usepackage[dvipdfmx]{graphicx}
+
+\makeatletter
+\def\section{\@startsection{section}{1}{\z@}{2ex plus .2ex minus .2ex}%
+			{.5ex plus .2ex minus .2ex}{\large\bfseries}}
+\def\thesection{\arabic{section}.}
+\def\subsection{\@startsection{subsection}{1}{\z@}{.7ex plus .2ex minus .2ex}%
+			{.5ex plus .2ex minus .2ex}{\normalsize\bfseries}}
+\def\thesubsection{\arabic{section}.\arabic{subsection}}
+\def\thefootnote{\fnsymbol{footnote}}
+\makeatother
+
+
+\def\baselinestretch{0.8}
+
+\setlength{\textheight}{23.5cm}%297-30-27 - 5
+\setlength{\textwidth}{17.4cm}%210-18-18 - 10
+%\setlength{\headheight}{0.0in}
+\setlength{\headsep}{0.0in}
+\setlength{\oddsidemargin}{-.9cm}%+3
+\setlength{\evensidemargin}{-.9cm}%+3
+\setlength{\columnsep}{7mm}
+
+% local settings
+% end of local settings
+
+\begin{document}
+\pagestyle{empty}
+\thispagestyle{empty}
+
+\twocolumn[%
+
+\begin{flushright}
+2022/09/17 %/18
+夏ゼミ配布資料 %できるだけ早めのアップロードをお願いします。
+\end{flushright}
+
+\begin{center}
+ {\Large タイトル}\vspace{.5ex}
+
+\large
+\mbox{}
+\hfil
+\setcounter{footnote}{1}
+{\bfseries 名前*}
+\hfil
+\mbox{}
+
+\mbox{}
+\hfil
+{\sffamily　Name}
+\hfil
+\mbox{}
+\hfil
+
+\end{center}
+]
+
+\setcounter{footnote}{1}
+\footnotetext{東京理科大学 理工学部 情報科学科 4年}
+ %\footnotetext{東京理科大学 理工学研究科 情報科学専攻 修士課程 年}
+
+\section{はじめに}
+
+\section{おわりに}
+
+\begin{thebibliography}{9}
+
+\bibitem{key} ...
+
+\end{thebibliography}
+\end{document}

@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="830" viewBox="0 0 1100 830"
+     font-family="Meiryo, 'Yu Gothic', 'Hiragino Kaku Gothic ProN', sans-serif">
+  <defs>
+    <marker id="aInk" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#222838"/>
+    </marker>
+    <marker id="aRed" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#C0392B"/>
+    </marker>
+    <marker id="aGold" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#B8860B"/>
+    </marker>
+    <marker id="aGray" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 z" fill="#8A8F9A"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1100" height="830" fill="#FFFFFF"/>
+
+  <text x="40" y="36" font-size="22" font-weight="bold" fill="#222838">通知層はどうやって「鳴らすか」を決めるか</text>
+  <text x="40" y="60" font-size="13" fill="#595F6E">モデルが出すのは距離と方向だけ。そこから「このまま進むとどこまで近づくか」を計算する</text>
+
+  <!-- ================= Block A : 入力 ================= -->
+  <rect x="40" y="80" width="480" height="230" rx="8" fill="#FFFFFF" stroke="#C9CBD2"/>
+  <text x="62" y="108" font-size="14" font-weight="bold" fill="#222838">① 0.1秒ごとの推定を 0.5秒（5フレーム）ためる</text>
+
+  <text x="70" y="128" font-size="11" fill="#595F6E">推定距離</text>
+  <line x1="70" y1="190" x2="255" y2="190" stroke="#DDDFE3"/>
+  <polyline points="70,135 115,147.5 160,160 205,172.5 250,185" fill="none" stroke="#7E6F98" stroke-width="2"/>
+  <circle cx="70" cy="135" r="3.5" fill="#7E6F98"/>
+  <circle cx="115" cy="147.5" r="3.5" fill="#7E6F98"/>
+  <circle cx="160" cy="160" r="3.5" fill="#7E6F98"/>
+  <circle cx="205" cy="172.5" r="3.5" fill="#7E6F98"/>
+  <circle cx="250" cy="185" r="3.5" fill="#7E6F98"/>
+  <text x="70" y="150" font-size="10" fill="#8A8F9A">20.6m</text>
+  <text x="222" y="180" font-size="10" fill="#8A8F9A">19.4m</text>
+  <text x="70" y="208" font-size="13" font-weight="bold" fill="#222838">傾き ＝ −13.9 m/s</text>
+  <text x="70" y="226" font-size="12" fill="#595F6E">＝ 近づく速さ</text>
+
+  <text x="300" y="128" font-size="11" fill="#595F6E">推定方位</text>
+  <line x1="300" y1="190" x2="485" y2="190" stroke="#DDDFE3"/>
+  <polyline points="300,185 345,172.5 390,160 435,147.5 480,135" fill="none" stroke="#B8860B" stroke-width="2"/>
+  <circle cx="300" cy="185" r="3.5" fill="#B8860B"/>
+  <circle cx="345" cy="172.5" r="3.5" fill="#B8860B"/>
+  <circle cx="390" cy="160" r="3.5" fill="#B8860B"/>
+  <circle cx="435" cy="147.5" r="3.5" fill="#B8860B"/>
+  <circle cx="480" cy="135" r="3.5" fill="#B8860B"/>
+  <text x="300" y="180" font-size="10" fill="#8A8F9A">30.0°</text>
+  <text x="452" y="150" font-size="10" fill="#8A8F9A">30.4°</text>
+  <text x="300" y="208" font-size="13" font-weight="bold" fill="#222838">傾き ＝ 0.02 rad/s</text>
+  <text x="300" y="226" font-size="12" fill="#595F6E">＝ 方位が横に流れる速さ</text>
+
+  <text x="70" y="256" font-size="11.5" fill="#8A8F9A">5点それぞれに最小二乗で直線をあてはめて傾きを取る</text>
+  <text x="70" y="274" font-size="11.5" fill="#8A8F9A">（1フレームだけ跳ねた値に引きずられないため）</text>
+  <text x="70" y="296" font-size="11.5" fill="#C0392B">検出が途切れて傾きが出せないときは、この列では鳴らない</text>
+
+  <!-- ================= Block B : 分解 ================= -->
+  <rect x="540" y="80" width="520" height="230" rx="8" fill="#FFFFFF" stroke="#C9CBD2"/>
+  <text x="562" y="108" font-size="14" font-weight="bold" fill="#222838">② 相手の速さを2つに分ける</text>
+
+  <line x1="600" y1="265" x2="880" y2="150" stroke="#C9CBD2" stroke-dasharray="4 3"/>
+  <circle cx="600" cy="265" r="7" fill="#222838"/>
+  <text x="566" y="288" font-size="11.5" fill="#595F6E">歩行者</text>
+
+  <rect x="868" y="140" width="26" height="16" rx="4" fill="#E0A526"/>
+  <text x="900" y="146" font-size="11.5" fill="#595F6E">相手</text>
+
+  <line x1="880" y1="150" x2="820" y2="215" stroke="#222838" stroke-width="2.4" marker-end="url(#aInk)"/>
+  <text x="826" y="238" font-size="11.5" font-weight="bold" fill="#222838">相手の速さ</text>
+
+  <line x1="880" y1="150" x2="806" y2="180" stroke="#C0392B" stroke-width="2.2" marker-end="url(#aRed)"/>
+  <text x="742" y="176" font-size="11.5" font-weight="bold" fill="#C0392B">近づく速さ</text>
+
+  <line x1="806" y1="180" x2="820" y2="215" stroke="#2E7D5B" stroke-width="2.2" marker-end="url(#aGold)"/>
+  <text x="828" y="196" font-size="11.5" font-weight="bold" fill="#2E7D5B">横にすれる速さ</text>
+  <text x="828" y="212" font-size="10.5" fill="#8A8F9A">＝ 距離 × 方位の流れ</text>
+
+  <text x="562" y="272" font-size="12" fill="#595F6E">この2つの比で「どこまで近づくか」が決まる。</text>
+  <text x="562" y="292" font-size="12" fill="#595F6E">横にすれる成分が小さいほど、まっすぐ自分に向かってくる。</text>
+
+  <!-- ================= Block C : 2ケース ================= -->
+  <text x="40" y="340" font-size="14" font-weight="bold" fill="#222838">③ 近づく速さが同じでも、方位の流れ方で結論が逆になる</text>
+
+  <!-- Panel A -->
+  <rect x="40" y="352" width="500" height="450" rx="8" fill="#FFFFFF" stroke="#C9CBD2"/>
+  <text x="62" y="380" font-size="14" font-weight="bold" fill="#C0392B">正面に来る車</text>
+  <text x="160" y="380" font-size="11.5" fill="#8A8F9A">方位がほとんど変わらない</text>
+
+  <line x1="251" y1="400" x2="251" y2="775" stroke="#DDDFE3" stroke-width="16"/>
+  <line x1="251" y1="410" x2="251" y2="768" stroke="#8A8F9A" stroke-width="1.4"
+        stroke-dasharray="6 5" marker-end="url(#aGray)"/>
+
+  <circle cx="240" cy="730" r="36" fill="none" stroke="#E0A526" stroke-dasharray="4 4"/>
+  <circle cx="240" cy="730" r="18" fill="none" stroke="#C0392B" stroke-dasharray="4 4"/>
+
+  <line x1="240" y1="730" x2="251" y2="440" stroke="#7E6F98" stroke-width="1"/>
+  <line x1="240" y1="730" x2="251" y2="540" stroke="#7E6F98" stroke-width="1"/>
+  <line x1="240" y1="730" x2="251" y2="640" stroke="#7E6F98" stroke-width="1"/>
+
+  <rect x="238" y="432" width="26" height="16" rx="4" fill="#E0A526"/>
+  <rect x="238" y="532" width="26" height="16" rx="4" fill="#E0A526"/>
+  <rect x="238" y="632" width="26" height="16" rx="4" fill="#E0A526"/>
+  <text x="272" y="444" font-size="10.5" fill="#8A8F9A">1.0秒前</text>
+  <text x="272" y="544" font-size="10.5" fill="#8A8F9A">0.5秒前</text>
+  <text x="272" y="644" font-size="10.5" fill="#8A8F9A">今</text>
+
+  <line x1="240" y1="730" x2="251" y2="730" stroke="#C0392B" stroke-width="2.5"/>
+  <circle cx="240" cy="730" r="7" fill="#222838"/>
+  <text x="196" y="756" font-size="11.5" fill="#595F6E">歩行者</text>
+
+  <text x="290" y="726" font-size="13" font-weight="bold" fill="#C0392B">最接近 0.6m</text>
+  <text x="290" y="744" font-size="11.5" fill="#595F6E">1.4秒後に到達</text>
+
+  <rect x="62" y="400" width="120" height="26" rx="13" fill="#C0392B"/>
+  <text x="78" y="418" font-size="12.5" font-weight="bold" fill="#FFFFFF">強を鳴らす</text>
+  <text x="62" y="448" font-size="11.5" fill="#595F6E">1.0mの円の内側に入る</text>
+  <text x="62" y="466" font-size="11.5" fill="#595F6E">と予測されるため</text>
+
+  <!-- Panel B -->
+  <rect x="560" y="352" width="500" height="450" rx="8" fill="#FFFFFF" stroke="#C9CBD2"/>
+  <text x="582" y="380" font-size="14" font-weight="bold" fill="#2E7D5B">横を通り過ぎる車</text>
+  <text x="700" y="380" font-size="11.5" fill="#8A8F9A">方位がどんどん横に流れる</text>
+
+  <line x1="716" y1="400" x2="716" y2="775" stroke="#DDDFE3" stroke-width="16"/>
+  <line x1="716" y1="410" x2="716" y2="768" stroke="#8A8F9A" stroke-width="1.4"
+        stroke-dasharray="6 5" marker-end="url(#aGray)"/>
+
+  <circle cx="640" cy="730" r="36" fill="none" stroke="#E0A526" stroke-dasharray="4 4"/>
+  <circle cx="640" cy="730" r="18" fill="none" stroke="#C0392B" stroke-dasharray="4 4"/>
+
+  <line x1="640" y1="730" x2="716" y2="440" stroke="#7E6F98" stroke-width="1"/>
+  <line x1="640" y1="730" x2="716" y2="540" stroke="#7E6F98" stroke-width="1"/>
+  <line x1="640" y1="730" x2="716" y2="640" stroke="#7E6F98" stroke-width="1"/>
+
+  <rect x="703" y="432" width="26" height="16" rx="4" fill="#E0A526"/>
+  <rect x="703" y="532" width="26" height="16" rx="4" fill="#E0A526"/>
+  <rect x="703" y="632" width="26" height="16" rx="4" fill="#E0A526"/>
+  <text x="737" y="444" font-size="10.5" fill="#8A8F9A">1.0秒前</text>
+  <text x="737" y="544" font-size="10.5" fill="#8A8F9A">0.5秒前</text>
+  <text x="737" y="644" font-size="10.5" fill="#8A8F9A">今</text>
+
+  <line x1="640" y1="730" x2="716" y2="730" stroke="#2E7D5B" stroke-width="2.5"/>
+  <circle cx="640" cy="730" r="7" fill="#222838"/>
+  <text x="596" y="756" font-size="11.5" fill="#595F6E">歩行者</text>
+
+  <text x="748" y="726" font-size="13" font-weight="bold" fill="#2E7D5B">最接近 4.2m</text>
+  <text x="748" y="744" font-size="11.5" fill="#595F6E">1.4秒後に到達</text>
+
+  <rect x="582" y="400" width="120" height="26" rx="13" fill="#2E7D5B"/>
+  <text x="600" y="418" font-size="12.5" font-weight="bold" fill="#FFFFFF">鳴らさない</text>
+  <text x="582" y="448" font-size="11.5" fill="#595F6E">2.0mの円の外を通ると</text>
+  <text x="582" y="466" font-size="11.5" fill="#595F6E">予測されるため</text>
+
+  <text x="582" y="600" font-size="11.5" fill="#8A8F9A">点線の円 ＝ 鳴らす基準</text>
+  <text x="582" y="618" font-size="11.5" fill="#C0392B">赤 1.0m（強）</text>
+  <text x="582" y="636" font-size="11.5" fill="#B8860B">黄 2.0m（中）</text>
+
+  <text x="40" y="822" font-size="11.5" fill="#8A8F9A">※ 円に入る予測だけでは鳴らない。到達時刻の条件（強 2.5秒以内 / 中 4.0秒以内）も同時に満たし、それが0.4秒つづいて初めて鳴る。別に「推定距離が1.5m／3.2mを切ったら鳴る」保険の列があり、こちらは0.2秒で鳴る。</text>
+</svg>
