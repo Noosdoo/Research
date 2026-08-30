@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 660" width="1000" height="660" font-family="Meiryo, 'Hiragino Kaku Gothic ProN', sans-serif">
+  <rect width="1000" height="660" fill="#ffffff"/>
+
+  <!-- title -->
+  <rect x="40" y="26" width="6" height="26" fill="#7e6f98"/>
+  <text x="60" y="47" font-size="22" font-weight="bold" fill="#222838">首元振動デバイス — 完成イメージ（試作案）</text>
+  <text x="60" y="70" font-size="14" fill="#595f6e">振動子5個で方向を、強さと間隔で危険度を表す。部品はすべて既製品で、合計5,000〜10,000円。</text>
+
+  <!-- ============ Panel A : 装着イメージ ============ -->
+  <rect x="40" y="88" width="440" height="330" fill="#ffffff" stroke="#c9cbd2"/>
+  <text x="60" y="114" font-size="15" font-weight="bold" fill="#222838">装着したところ</text>
+
+  <!-- 肩 -->
+  <path d="M 130 400 C 140 320 190 292 260 292 C 330 292 380 320 390 400 Z" fill="#e9ebee"/>
+  <!-- 首 -->
+  <rect x="238" y="212" width="44" height="86" rx="14" fill="#dfe2e7"/>
+  <!-- 頭 -->
+  <ellipse cx="260" cy="172" rx="50" ry="58" fill="#e9ebee"/>
+  <!-- バンド（首の周り） -->
+  <path d="M 178 286 A 82 30 0 0 0 342 286" fill="none" stroke="#3a4155" stroke-width="17" stroke-linecap="round"/>
+  <path d="M 178 286 A 82 30 0 0 1 342 286" fill="none" stroke="#565d70" stroke-width="17" stroke-linecap="round" opacity="0.45"/>
+
+  <!-- 振動子5個（バンド前面） -->
+  <g>
+    <circle cx="186" cy="290" r="11" fill="#c9cbd2" stroke="#8a8f9a"/>
+    <circle cx="223" cy="309" r="11" fill="#c9cbd2" stroke="#8a8f9a"/>
+    <circle cx="260" cy="315" r="11" fill="#e0a526" stroke="#c0392b" stroke-width="2.5"/>
+    <circle cx="297" cy="309" r="11" fill="#c9cbd2" stroke="#8a8f9a"/>
+    <circle cx="334" cy="290" r="11" fill="#c9cbd2" stroke="#8a8f9a"/>
+  </g>
+  <text x="260" y="345" font-size="12.5" fill="#c0392b" text-anchor="middle" font-weight="bold">鳴っている位置＝音の方向</text>
+
+  <!-- 制御ボックス（首の後ろ） -->
+  <rect x="228" y="252" width="64" height="26" rx="5" fill="#232b3e"/>
+  <text x="260" y="270" font-size="11" fill="#ffffff" text-anchor="middle">制御部＋電池</text>
+  <text x="330" y="248" font-size="11.5" fill="#595f6e">首の後ろ</text>
+  <path d="M 326 252 L 296 262" stroke="#8a8f9a" stroke-width="1.2"/>
+
+  <text x="60" y="384" font-size="12.5" fill="#595f6e">ネックバンド型。制御部と電池は首の後ろにまとめる</text>
+  <text x="60" y="404" font-size="12.5" fill="#595f6e">（重さが前に来ないようにする）</text>
+
+  <!-- ============ Panel B : 上から見た配置 ============ -->
+  <rect x="520" y="88" width="440" height="330" fill="#ffffff" stroke="#c9cbd2"/>
+  <text x="540" y="114" font-size="15" font-weight="bold" fill="#222838">上から見た配置</text>
+
+  <!-- 前方向の矢印 -->
+  <path d="M 740 146 L 740 168" stroke="#8a8f9a" stroke-width="1.6"/>
+  <path d="M 734 152 L 740 142 L 746 152 Z" fill="#8a8f9a"/>
+  <text x="740" y="138" font-size="12" fill="#595f6e" text-anchor="middle">歩く向き（前）</text>
+
+  <!-- バンドの円 -->
+  <circle cx="740" cy="272" r="86" fill="none" stroke="#3a4155" stroke-width="14"/>
+  <!-- 首 -->
+  <circle cx="740" cy="272" r="46" fill="#e9ebee" stroke="#c9cbd2"/>
+  <text x="740" y="278" font-size="14" fill="#595f6e" text-anchor="middle">首</text>
+
+  <!-- 5個の振動子（前方180度） -->
+  <g>
+    <circle cx="654" cy="272" r="13" fill="#c9cbd2" stroke="#8a8f9a"/>
+    <text x="628" y="277" font-size="12" fill="#8a8f9a" text-anchor="middle">左</text>
+
+    <circle cx="679" cy="211" r="13" fill="#c9cbd2" stroke="#8a8f9a"/>
+    <text x="650" y="196" font-size="12" fill="#8a8f9a" text-anchor="middle">左前</text>
+
+    <circle cx="740" cy="186" r="13" fill="#c9cbd2" stroke="#8a8f9a"/>
+    <text x="740" y="172" font-size="12" fill="#8a8f9a" text-anchor="middle">前</text>
+
+    <circle cx="801" cy="211" r="13" fill="#e0a526" stroke="#c0392b" stroke-width="2.5"/>
+    <text x="832" y="196" font-size="12" fill="#c0392b" text-anchor="middle" font-weight="bold">右前</text>
+
+    <circle cx="826" cy="272" r="13" fill="#c9cbd2" stroke="#8a8f9a"/>
+    <text x="852" y="277" font-size="12" fill="#8a8f9a" text-anchor="middle">右</text>
+  </g>
+
+  <!-- 制御部（後ろ） -->
+  <rect x="706" y="345" width="68" height="24" rx="5" fill="#232b3e"/>
+  <text x="740" y="362" font-size="11" fill="#ffffff" text-anchor="middle">制御部＋電池</text>
+
+  <!-- 右前から来る車 -->
+  <path d="M 912 148 L 838 200" stroke="#c0392b" stroke-width="2.4" stroke-dasharray="7 5"/>
+  <path d="M 848 190 L 834 204 L 852 206 Z" fill="#c0392b"/>
+  <rect x="900" y="126" width="46" height="24" rx="5" fill="#e0a526"/>
+  <text x="923" y="143" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">車</text>
+
+  <text x="540" y="396" font-size="12.5" fill="#222838">右前から車 → <tspan fill="#c0392b" font-weight="bold">右前の1個だけが鳴る</tspan></text>
+
+  <!-- ============ 配線ブロック図 ============ -->
+  <rect x="40" y="438" width="920" height="130" fill="#f4f5f7" stroke="#c9cbd2"/>
+  <text x="60" y="464" font-size="15" font-weight="bold" fill="#222838">中身のつなぎ方</text>
+
+  <g font-size="12.5">
+    <rect x="62" y="482" width="126" height="52" rx="6" fill="#ffffff" stroke="#c9cbd2"/>
+    <text x="125" y="504" fill="#222838" text-anchor="middle">PC</text>
+    <text x="125" y="522" fill="#595f6e" text-anchor="middle" font-size="11">通知層の出力</text>
+
+    <path d="M 188 508 L 232 508" stroke="#8a8f9a" stroke-width="1.6"/>
+    <path d="M 224 503 L 234 508 L 224 513 Z" fill="#8a8f9a"/>
+    <text x="210" y="500" font-size="10.5" fill="#8a8f9a" text-anchor="middle">USB / BLE</text>
+
+    <rect x="236" y="482" width="140" height="52" rx="6" fill="#232b3e"/>
+    <text x="306" y="504" fill="#ffffff" text-anchor="middle">ESP32</text>
+    <text x="306" y="522" fill="#c9cbd2" text-anchor="middle" font-size="11">PWMで強さと間隔</text>
+
+    <path d="M 376 508 L 420 508" stroke="#8a8f9a" stroke-width="1.6"/>
+    <path d="M 412 503 L 422 508 L 412 513 Z" fill="#8a8f9a"/>
+
+    <rect x="424" y="482" width="150" height="52" rx="6" fill="#ffffff" stroke="#c9cbd2"/>
+    <text x="499" y="504" fill="#222838" text-anchor="middle">トランジスタ ×5</text>
+    <text x="499" y="522" fill="#595f6e" text-anchor="middle" font-size="11">モーターを駆動</text>
+
+    <path d="M 574 508 L 618 508" stroke="#8a8f9a" stroke-width="1.6"/>
+    <path d="M 610 503 L 620 508 L 610 513 Z" fill="#8a8f9a"/>
+
+    <rect x="622" y="482" width="160" height="52" rx="6" fill="#ffffff" stroke="#e0a526" stroke-width="2"/>
+    <text x="702" y="504" fill="#222838" text-anchor="middle" font-weight="bold">振動モーター ×5</text>
+    <text x="702" y="522" fill="#595f6e" text-anchor="middle" font-size="11">コイン型</text>
+
+    <rect x="812" y="482" width="126" height="52" rx="6" fill="#ffffff" stroke="#c9cbd2"/>
+    <text x="875" y="504" fill="#222838" text-anchor="middle">リポ電池</text>
+    <text x="875" y="522" fill="#595f6e" text-anchor="middle" font-size="11">＋充電モジュール</text>
+    <path d="M 812 508 L 786 508" stroke="#8a8f9a" stroke-width="1.6" stroke-dasharray="4 3"/>
+  </g>
+
+  <text x="60" y="556" font-size="12" fill="#8a8f9a">強さ＝PWMのduty、間隔＝待ち時間。制御のコードは50行程度で足りる。</text>
+
+  <text x="40" y="600" font-size="12.5" fill="#595f6e">
+    <tspan font-weight="bold" fill="#222838">デモの作り方</tspan>：推論をその場で回さず、<tspan font-weight="bold" fill="#222838">通知層の出力を先に計算しておいて</tspan>、クリップの再生に合わせて振動を出す。
+  </text>
+  <text x="40" y="622" font-size="12.5" fill="#595f6e">これなら実時間の推論がなくても「動いている」ことを示せる。</text>
+  <text x="40" y="646" font-size="11.5" fill="#8a8f9a">※ 構想段階のイメージ図。実機は未製作（2026-08-27）</text>
+</svg>
