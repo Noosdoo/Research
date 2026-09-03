@@ -41,7 +41,10 @@ public class ScenarioVisualizer : MonoBehaviour
     bool showDet = true, showDeco = true;
     string sceneType = "";
     float realCrossZ = float.NaN;
-    bool mapMode = false;            // _layout.csv に map 行があれば実地図（OSM）を描き、合成の車線・飾りは出さない   // _layout.csv に本物の交差道路（xlane）があればその前方距離。飾りの交差点はそこに合わせる
+    bool mapMode = false;
+    // 歩行: 歩行者は画面中央に固定し、街（車線・飾り・地図）を後ろへ流す。配置図は「5 秒時点の歩行者」基準で描いてある
+    float walkDir = 0f, walkSpeed = 0f;
+    GameObject worldRoot;            // _layout.csv に map 行があれば実地図（OSM）を描き、合成の車線・飾りは出さない   // _layout.csv に本物の交差道路（xlane）があればその前方距離。飾りの交差点はそこに合わせる
     const float WARN_RING_M = 15f;
     readonly List<GameObject> decoGos = new List<GameObject>();
     readonly List<Renderer> signalLamps = new List<Renderer>();   // [赤,黄,青] × 灯器
@@ -141,6 +144,10 @@ public class ScenarioVisualizer : MonoBehaviour
                 dets.Add(new Det { t = t, az = az, d = d, cls = p[1], hasD = hasD });
             }
         BuildLayout(Path.Combine(player.DataDir, clip + "_layout.csv"));
+        if (worldRoot == null) worldRoot = new GameObject("WorldRoot");
+        worldRoot.transform.position = Vector3.zero;
+        foreach (var g in layoutGos) if (g != null) g.transform.SetParent(worldRoot.transform, true);
+        foreach (var g in decoGos) if (g != null) g.transform.SetParent(worldRoot.transform, true);
     }
 
     // ---- 道路配置 ---------------------------------------------------------------
@@ -160,10 +167,14 @@ public class ScenarioVisualizer : MonoBehaviour
             {
                 sceneType = p[1];
                 float wd;
+                walkDir = 0f; walkSpeed = 0f;
                 if (p[2] == "walk" && PF(p[3], out wd) && wd != 0f)
                 {
                     walkArrow.SetActive(true);
                     walkArrow.transform.position = new Vector3(0, 0.03f, wd > 0 ? 1.6f : -1.6f);
+                    walkDir = wd > 0 ? 1f : -1f;
+                    float sp;
+                    walkSpeed = (p.Length > 4 && p[4] != "" && PF(p[4], out sp) && sp > 0f) ? sp : 4.3f / 3.6f;
                 }
             }
             else if (p[0] == "lane")
@@ -399,6 +410,31 @@ public class ScenarioVisualizer : MonoBehaviour
         float roadMinX = -0.6f, roadMaxX = 0.6f;           // Unity x = −y
         foreach (var y in laneYs) { float x = -y; roadMinX = Mathf.Min(roadMinX, x - 1.5f); roadMaxX = Mathf.Max(roadMaxX, x + 1.5f); }
         bool urban = sceneType == "arterial" || sceneType == "daily";
+        if (sceneType == "parking")
+        {
+            // 駐車場: 広いアスファルト・両側に駐車枠（白線）と停めてある車・周りは低いフェンス。車線（通路）は lane 行のまま
+            Deco(PrimitiveType.Cube, new Vector3(0, 0.002f, 0), new Vector3(46f, 0.01f, 80f), new Color(0.3f, 0.3f, 0.32f));
+            for (int side = -1; side <= 1; side += 2)
+            {
+                float xBay = side * (Mathf.Max(roadMaxX, -roadMinX) + 4.5f);     // 通路の外側に駐車枠の列
+                for (int k = -7; k <= 7; k++)
+                {
+                    float z = k * 5.2f;
+                    Deco(PrimitiveType.Cube, new Vector3(xBay, 0.012f, z + 2.6f), new Vector3(5.0f, 0.01f, 0.12f), new Color(0.92f, 0.92f, 0.9f));   // 枠線
+                    if ((k * 7 + side * 3 + 11) % 3 != 0)                                                                                        // 3台に2台は駐車中
+                    {
+                        var body = Deco(PrimitiveType.Cube, new Vector3(xBay, 0.7f, z), new Vector3(1.8f, 1.4f, 4.4f), new Color(0.55f + 0.1f * (k % 3), 0.55f, 0.6f + 0.1f * ((k + side) % 2)));
+                        Deco(PrimitiveType.Cube, new Vector3(xBay, 1.55f, z - 0.3f), new Vector3(1.6f, 0.5f, 2.4f), new Color(0.3f, 0.35f, 0.4f));
+                    }
+                }
+                Deco(PrimitiveType.Cube, new Vector3(xBay, 0.012f, 0), new Vector3(0.12f, 0.01f, 80f), new Color(0.92f, 0.92f, 0.9f));   // 枠の背中側の線
+                Deco(PrimitiveType.Cube, new Vector3(side * 23f, 0.6f, 0), new Vector3(0.1f, 1.2f, 80f), new Color(0.5f, 0.5f, 0.52f));  // フェンス
+            }
+            for (int k = -3; k <= 3; k++)
+                Deco(PrimitiveType.Cylinder, new Vector3(-24.5f, 2.5f, k * 12f), new Vector3(0.2f, 2.5f, 0.2f), new Color(0.35f, 0.35f, 0.38f));   // 照明柱
+            foreach (var g in decoGos) g.SetActive(showDeco);
+            return;
+        }
         bool realCross = !float.IsNaN(realCrossZ);
         float zX = realCross ? realCrossZ : 25f;           // 交差点の位置（本物の横切る道路があればそこ。無ければ前方25m・飾り）
         if (urban)
@@ -529,6 +565,9 @@ public class ScenarioVisualizer : MonoBehaviour
 
         float now = player.PlayTime;
         bool playing = player.IsPlaying;
+        if (worldRoot != null)
+            worldRoot.transform.position = (walkDir != 0f && walkSpeed > 0f)
+                ? new Vector3(0f, 0f, -walkDir * walkSpeed * (now - 5f)) : Vector3.zero;
         foreach (var kv in tracks)
         {
             Sample s = default; bool found = false;

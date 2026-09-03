@@ -8,6 +8,7 @@
 //       毎フレーム連続に変える（安全→注意→至近で徐々に強くなる案）。警告音の単発パターンはそのまま
 //   P : パンニング ON/OFF — 連続モードで方位に応じて左右の振幅を配分（正面=両手半分、真横=片手のみ）。
 //       ⚠️ Joy-con 2本では前後が区別できない（首元4〜6方向デバイスでは隣接振動子の按分にする）
+//   R : Joy-con の役割割当（前左→前右→後左→後右 の順に、その役で持っている本のボタンを押す）  T : 役割順に1本ずつ震わせて確認
 //   B : （Joy-con 4本のとき）前ペア/後ペアの入れ替え
 //   4本構成: 接続順で 左1本目=前左(+45°) 右1本目=前右(−45°) 左2本目=後左(+135°) 右2本目=後右(−135°)。
 //       連続モードのパンは4方向の按分（cos²の重み）になり、前後が区別できる。2本なら従来の左右按分
@@ -52,6 +53,11 @@ public class JoyconDemoPlayer : MonoBehaviour
     // 束ね用: 手ごとの実行中パターン
     class Runner { public string tier; public float endTime, lastFireTime; public Coroutine co; }
     readonly Dictionary<Joycon, Runner> runners = new Dictionary<Joycon, Runner>();
+    // 役割（角度）: 前左 +45 / 前右 −45 / 後左 +135 / 後右 −135。R で割当モード（持っている Joy-con のボタンを 前左→前右→後左→後右 の順に押す）
+    readonly Dictionary<Joycon, float> roleOf = new Dictionary<Joycon, float>();
+    static readonly float[] ROLE_ORDER = { 45f, -45f, 135f, -135f };
+    int assignStep = -1;            // -1=割当モードでない, 0..3=次に押すべき役割の番号
+    string RoleName(float ang) { return (Mathf.Abs(ang) < 90f ? "前" : "後") + (ang > 0 ? "左" : "右"); }
 
     // 可視化(ScenarioVisualizer)から読むための公開プロパティ（v1 と同じ名前）
     public string CurrentClip { get { return clips.Count > 0 ? clips[clipIdx] : null; } }
@@ -129,6 +135,9 @@ public class JoyconDemoPlayer : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.P)) panMode = !panMode;
         if (Input.GetKeyDown(KeyCode.B)) swapFrontBack = !swapFrontBack;
         if (Input.GetKeyDown(KeyCode.J)) switchCue = !switchCue;
+        if (Input.GetKeyDown(KeyCode.R)) { roleOf.Clear(); assignStep = joycons.Count > 0 ? 0 : -1; lastFire = joycons.Count > 0 ? "割当: 前左で持っている Joy-con のボタンを押してください" : "Joy-con が接続されていません"; }
+        if (Input.GetKeyDown(KeyCode.T)) StartCoroutine(RoleTest());
+        AssignTick();
         if (Input.GetKeyDown(KeyCode.Space))
         {
             if (src.isPlaying) { src.Stop(); StopAllRunners(); }
@@ -175,16 +184,36 @@ public class JoyconDemoPlayer : MonoBehaviour
         // 通知の方位で担当の Joy-con を決める（4本: 前左/前右/後左/後右、2本: 左右）
         string role;
         Joycon jc = HandForAz(c.az, out role);
-        // 束ね: 同じ Joy-con・同じ段の再トリガが MERGE_SEC 以内 → 延長だけ
+        // 束ね: 同じ段の再トリガが MERGE_SEC 以内 → 新しい連打を出さず延長だけ。担当が別の Joy-con に移った場合は
+        // 振動をそちらへ移す（方向は更新するが「ぶっぶっ」の頭出しはしない）
         Runner r;
-        if (mergeMode && isDist && jc != null && runners.TryGetValue(jc, out r) && r.tier == c.tier
-            && (src.time - r.lastFireTime) < MERGE_SEC)
+        if (mergeMode && isDist && jc != null)
         {
-            r.endTime = Mathf.Max(r.endTime, src.time) + EXTEND_SEC;
-            r.lastFireTime = src.time;
-            mergedCount++;
-            lastFire = $"{c.t:F1}s {role} {c.tier} ({c.cls}) → 束ね（延長 +{EXTEND_SEC:F1}s）";
-            return;
+            Joycon prevJc = null; Runner prev = null;
+            foreach (var kv in runners)
+                if (kv.Value.tier == c.tier && (src.time - kv.Value.lastFireTime) < MERGE_SEC && (prev == null || kv.Value.lastFireTime > prev.lastFireTime))
+                { prevJc = kv.Key; prev = kv.Value; }
+            if (prev != null)
+            {
+                mergedCount++;
+                if (prevJc == jc)
+                {
+                    prev.endTime = Mathf.Max(prev.endTime, src.time) + EXTEND_SEC;
+                    prev.lastFireTime = src.time;
+                    lastFire = $"{c.t:F1}s {role} {c.tier} ({c.cls}) → 束ね（延長 +{EXTEND_SEC:F1}s）";
+                }
+                else
+                {
+                    if (prev.co != null) StopCoroutine(prev.co);
+                    runners.Remove(prevJc);
+                    var mv = new Runner { tier = c.tier, lastFireTime = src.time,
+                                          endTime = Mathf.Max(prev.endTime, src.time) + EXTEND_SEC, };
+                    runners[jc] = mv;
+                    mv.co = StartCoroutine(PatternUntil(jc, mv, true));
+                    lastFire = $"{c.t:F1}s {role} {c.tier} ({c.cls}) → 束ね（担当を移して延長）";
+                }
+                return;
+            }
         }
         firedCount++;
         lastFire = $"{c.t:F1}s {role} {c.tier} ({c.cls} az={c.az:F0}°)";
@@ -198,8 +227,9 @@ public class JoyconDemoPlayer : MonoBehaviour
     }
 
     // 段ごとのパルスを endTime まで繰り返す（束ねで endTime が伸びれば続く）
-    IEnumerator PatternUntil(Joycon jc, Runner r)
+    IEnumerator PatternUntil(Joycon jc, Runner r, bool continued = false)
     {
+        if (continued) yield return new WaitForSeconds(0.05f);      // 移動時は頭出しを避けて滑らかにつなぐ
         while (src.isPlaying && src.time < r.endTime)
         {
             if (r.tier == "強") { jc.SetRumble(320f, 640f, 1.0f, 110); yield return new WaitForSeconds(0.18f); }
@@ -286,9 +316,22 @@ public class JoyconDemoPlayer : MonoBehaviour
     // 4本の役割割当（接続順・isLeft から）。B で前後ペアを入れ替え
     List<KeyValuePair<Joycon, float>> Roles4()
     {
+        var roles = new List<KeyValuePair<Joycon, float>>();
+        if (roleOf.Count >= 4)
+        {
+            // R で本人が決めた割当を使う（B/S の入替もその上に掛かる）
+            foreach (var kv in roleOf)
+            {
+                float a = kv.Value;
+                if (swapFrontBack) a = (a > 0 ? 180f - a : -180f - a);
+                if (swapSides) a = -a;
+                roles.Add(new KeyValuePair<Joycon, float>(kv.Key, a));
+            }
+            return roles;
+        }
+        // 未割当: 接続順（HID の列挙順なので持ち方と合わないことがある → R で割り当て直す）
         var lefts = new List<Joycon>(); var rights = new List<Joycon>();
         foreach (var j in joycons) (j.isLeft ? lefts : rights).Add(j);
-        var roles = new List<KeyValuePair<Joycon, float>>();
         float fl = 45f, fr = -45f, bl = 135f, br = -135f;
         if (swapFrontBack) { fl = 135f; fr = -135f; bl = 45f; br = -45f; }
         if (swapSides) { fl = -fl; fr = -fr; bl = -bl; br = -br; }
@@ -297,6 +340,52 @@ public class JoyconDemoPlayer : MonoBehaviour
         if (lefts.Count > 1) roles.Add(new KeyValuePair<Joycon, float>(lefts[1], bl));
         if (rights.Count > 1) roles.Add(new KeyValuePair<Joycon, float>(rights[1], br));
         return roles;
+    }
+
+    static readonly Joycon.Button[] ANY_BUTTONS = {
+        Joycon.Button.SHOULDER_1, Joycon.Button.SHOULDER_2, Joycon.Button.SL, Joycon.Button.SR,
+        Joycon.Button.DPAD_UP, Joycon.Button.DPAD_DOWN, Joycon.Button.DPAD_LEFT, Joycon.Button.DPAD_RIGHT,
+        Joycon.Button.STICK, Joycon.Button.PLUS, Joycon.Button.MINUS };
+    bool AnyButtonDown(Joycon j)
+    {
+        foreach (var b in ANY_BUTTONS) if (j.GetButtonDown(b)) return true;
+        return false;
+    }
+
+    // 割当モード: 画面の指示どおりに、その役割で持っている Joy-con のボタンを押す。押した本を 0.3 秒震わせて確認
+    void AssignTick()
+    {
+        if (assignStep < 0) return;
+        foreach (var j in joycons)
+        {
+            if (roleOf.ContainsKey(j) || !AnyButtonDown(j)) continue;
+            roleOf[j] = ROLE_ORDER[assignStep];
+            j.SetRumble(160f, 320f, 0.8f, 300);
+            assignStep++;
+            if (assignStep >= Mathf.Min(4, joycons.Count)) { assignStep = -1; lastFire = "割当完了: " + RoleSummary(); }
+            break;
+        }
+    }
+
+    string RoleSummary()
+    {
+        var parts = new List<string>();
+        foreach (var kv in Roles4()) parts.Add($"{RoleName(kv.Value)}={(kv.Key.isLeft ? "L" : "R")}");
+        return string.Join(" ", parts);
+    }
+
+    // T: 役割の順に 1 本ずつ震わせる（前左→前右→後左→後右）。どれがどれか手で確かめる
+    IEnumerator RoleTest()
+    {
+        var roles = Roles4();
+        roles.Sort((a, b) => System.Array.IndexOf(ROLE_ORDER, Mathf.Round(a.Value)).CompareTo(System.Array.IndexOf(ROLE_ORDER, Mathf.Round(b.Value))));
+        foreach (var kv in roles)
+        {
+            lastFire = $"テスト: {RoleName(kv.Value)} が震えます";
+            kv.Key.SetRumble(200f, 400f, 1.0f, 500);
+            yield return new WaitForSeconds(0.9f);
+        }
+        lastFire = "テスト終了: " + RoleSummary();
     }
 
     // 画面の文字: 左上に半透明の箱をひとつ（幅は画面の 55% まで・折り返し）。右上は ScenarioVisualizer の凡例が使う
@@ -314,7 +403,9 @@ public class JoyconDemoPlayer : MonoBehaviour
         items.Add(new KeyValuePair<string, GUIStyle>(
             $"Joy-con {joycons.Count}本   束ね(M) {(mergeMode ? "ON" : "OFF")}   連続(G) {(gradedMode ? "ON" : "OFF")}   パン(P) {(panMode ? "ON" : "OFF")}   " +
             $"切替合図(J) {(switchCue ? "ON" : "OFF")}   左右入替(S) {(swapSides ? "ON" : "OFF")}" +
-            (joycons.Count >= 4 ? $"   4本 {(swapFrontBack ? "後/前" : "前/後")}(B)" : ""), st));
+            (joycons.Count >= 4 ? $"   4本 {(swapFrontBack ? "後/前" : "前/後")}(B)   R=割当 T=テスト  [{RoleSummary()}]" : ""), st));
+        if (assignStep >= 0)
+            items.Add(new KeyValuePair<string, GUIStyle>($"★ 割当中: 「{RoleName(ROLE_ORDER[assignStep])}」で持っている Joy-con のボタン（ZL/ZR/SL/SR/十字/スティック押込）を押してください（{assignStep + 1}/{Mathf.Min(4, joycons.Count)}）", hd));
         items.Add(new KeyValuePair<string, GUIStyle>(
             $"←/→ 切替   Space 再生/停止   再生 {T:F1}s   通知 {firedCount} 回 / 束ね {mergedCount} 回 / 切替合図 {switchCount} 回" +
             (gradedMode ? $"   緊急度 {lastGradedU:F2}" : ""), st));

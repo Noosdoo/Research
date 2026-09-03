@@ -460,6 +460,19 @@ def run(spec_path: Path) -> None:
     st = np.sign(st) * np.abs(st) ** 0.5 * 0.7
     base = OUT / f"custom_{name}"
     sf.write(f"{base}.wav", st.astype(np.float32), m9.FS_OUT, subtype="PCM_16")
+    if "--save-foa" in sys.argv:
+        # 本物の検出層（因果推論）に通すための入力: 4ch FOA flac（24 kHz・10 s）と GT ラベル（frame,class,track,az,el,dist）
+        mi = OUT / "model_infer"
+        (mi / "foa").mkdir(parents=True, exist_ok=True)
+        (mi / "metadata_dist").mkdir(parents=True, exist_ok=True)
+        sf.write(mi / "foa" / f"custom_{name}.flac", mix.T.astype(np.float32), m9.FS_OUT, subtype="PCM_24")
+        with open(mi / "metadata_dist" / f"custom_{name}.csv", "w", encoding="utf-8", newline="\n") as f:
+            for ci, az, dist, act, ev, oi in gt:
+                if not ev.get("_label", True):
+                    continue
+                for k in range(100):
+                    if act[k] and np.isfinite(az[k]) and np.isfinite(dist[k]):
+                        f.write(f"{k},{ci},{oi},{az[k]:.1f},0,{dist[k]:.2f}\n")
     with open(f"{base}_scene.csv", "w", encoding="utf-8", newline="\n") as f:
         f.write("t_s,obj,class,az_deg,dist_m,vis\n")        # vis: 1=鳴っている, 0=いるが無音（薄く描く。消さない）
         for ci, az, dist, act, ev, oi in gt:
@@ -482,7 +495,7 @@ def run(spec_path: Path) -> None:
             f.write(f"{t:.1f},{u:.3f},{az:.0f}\n")
     with open(f"{base}_layout.csv", "w", encoding="utf-8", newline="\n") as f:
         f.write("type,a,b,c,d\n")
-        f.write(f"scene,{S.get('scene_type', 'residential')},{S.get('motion', 'static')},{1.0 if S.get('motion') == 'walk' else 0.0},\n")
+        f.write(f"scene,{S.get('scene_type', 'residential')},{S.get('motion', 'static')},{1.0 if S.get('motion') == 'walk' else 0.0},{float(S.get('walk_speed_kmh', 4.3)) / 3.6 if S.get('motion') == 'walk' else 0.0:.3f}\n")
         for r in layout_rows:
             kind = r[0]
             if kind == "static":

@@ -143,7 +143,7 @@ def layout_rows(clip):
         return []
     sc = json.loads(sj.read_text(encoding="utf-8"))
     rows = [("scene", sc["row"].get("scene_type", ""), sc["mic"].get("motion", ""),
-             sc["mic"].get("walk_dir_x", 0.0), "")]
+             sc["mic"].get("walk_dir_x", 0.0), round(float(sc["mic"].get("walk_speed_mps", 0.0)), 3))]
     seen = set()
     for s in sc["sources"]:
         if s["kind"] == "vehicle":
