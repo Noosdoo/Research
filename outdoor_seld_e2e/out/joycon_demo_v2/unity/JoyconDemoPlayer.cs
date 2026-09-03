@@ -405,11 +405,33 @@ public class JoyconDemoPlayer : MonoBehaviour
     void OnGUI()
     {
         // 左上の操作パネル: 行ごとに高さを計算して折り返す（画面幅の 52% まで。右上の凡例と重ならない）
-        var st = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true, richText = true };
-        st.normal.textColor = Color.white;
-        var hd = new GUIStyle(st) { fontSize = 16, fontStyle = FontStyle.Bold };
-        float w = Mathf.Min(820f, Screen.width * 0.52f);
+        int fs = 14;
+        GUIStyle st = null, hd = null;
+        float w = Mathf.Min(900f, Screen.width * 0.60f);
         float tw = w - 20f;
+        List<KeyValuePair<string, GUIStyle>> items = null;
+        float[] hs = null; float total = 0f;
+        int nCue = 0;
+        for (int attempt = 0; attempt < 4; attempt++)
+        {
+            st = new GUIStyle(GUI.skin.label) { fontSize = fs, wordWrap = true, richText = true };
+            st.normal.textColor = Color.white;
+            hd = new GUIStyle(st) { fontSize = fs + 2, fontStyle = FontStyle.Bold };
+            items = BuildPanelItems(st, hd, out nCue);
+            total = 12f;
+            hs = new float[items.Count];
+            for (int i = 0; i < items.Count; i++) { hs[i] = items[i].Value.CalcHeight(new GUIContent(items[i].Key), tw) + 3f; total += hs[i]; }
+            if (gradedMode) total += 30f;
+            if (total + 12f <= Screen.height - 70f) break;   // 下の「いまの判定」パネルの分を空けて収める
+            fs -= 1;                                          // 収まらなければ 1 段小さく（14→13→12→11）
+        }
+        {
+        }
+        DrawPanel(items, hs, total, w, tw, st);
+    }
+
+    List<KeyValuePair<string, GUIStyle>> BuildPanelItems(GUIStyle st, GUIStyle hd, out int nCue)
+    {
         var items = new List<KeyValuePair<string, GUIStyle>>();
         items.Add(new KeyValuePair<string, GUIStyle>($"場面 {clipIdx + 1}/{clips.Count}: {(clips.Count > 0 ? clips[clipIdx].Replace("/", " › ") : "なし")}", hd));
         items.Add(new KeyValuePair<string, GUIStyle>("通知の元: " + (cueSource == "" ? "(読込中)" : cueSource), st));
@@ -429,15 +451,16 @@ public class JoyconDemoPlayer : MonoBehaviour
         items.Add(new KeyValuePair<string, GUIStyle>("最後の通知: " + (lastFire == "" ? "—" : lastFire), st));
         items.Add(new KeyValuePair<string, GUIStyle>("この場面の通知一覧 (✓=済)  強=至近・4連打", st));
         items.Add(new KeyValuePair<string, GUIStyle>("中=注意・2発  警告=警告音・単発", st));
-        int nCue = Mathf.Min(cues.Count, 12);
+        nCue = Mathf.Min(cues.Count, 8);
         for (int i = 0; i < nCue; i++)
             items.Add(new KeyValuePair<string, GUIStyle>(
                 $"{(i < nextCue && src.isPlaying ? "✓" : "　")} {cues[i].t:F1} 秒  {(cues[i].side == "L" ? "左" : "右")}  {cues[i].tier}  {Jp(cues[i].cls)}", st));
-        if (cues.Count > 12) items.Add(new KeyValuePair<string, GUIStyle>($"… 他 {cues.Count - 12} 件", st));
-        float total = 12f;
-        var hs = new float[items.Count];
-        for (int i = 0; i < items.Count; i++) { hs[i] = items[i].Value.CalcHeight(new GUIContent(items[i].Key), tw) + 3f; total += hs[i]; }
-        if (gradedMode) total += 30f;
+        if (cues.Count > 8) items.Add(new KeyValuePair<string, GUIStyle>($"… 他 {cues.Count - 8} 件", st));
+        return items;
+    }
+
+    void DrawPanel(List<KeyValuePair<string, GUIStyle>> items, float[] hs, float total, float w, float tw, GUIStyle st)
+    {
         var old = GUI.color;
         GUI.color = new Color(0f, 0f, 0f, 0.55f);
         GUI.DrawTexture(new Rect(6, 6, w, total + 6f), Texture2D.whiteTexture);
