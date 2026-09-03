@@ -644,27 +644,32 @@ public class ScenarioVisualizer : MonoBehaviour
         if (player == null) return;
         var style = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true };
         style.normal.textColor = Color.white;
-        // 右上: 凡例（画面幅の 44% まで・行ごとに高さを計算して折り返す）
-        float w = Mathf.Min(440f, Screen.width * 0.44f);
+        // 凡例は右下（左上のパネルが広がっても重ならない）。「いまの判定」があればその上に置く
+        float w = Mathf.Min(440f, Screen.width * 0.40f);
         float tw = w - 16f;
         string[] legend = {
             "凡例  立体=実体(GT)  暗い円盤=検出層の出力(D)",
-            "薄い色=いるが聞こえていない (無音・ラベル無し) ",
-            "リング=通知 (赤=強 / 橙=中 / 水色=警告) ",
+            "薄い色=いるが聞こえていない (無音・ラベル無し)",
+            "リング=通知 (赤=強 / 橙=中 / 水色=警告)",
             "地面の矢印=歩く向き   街の飾り(V)は見た目だけ" };
         float total = 10f;
         var hs = new float[legend.Length];
         for (int i = 0; i < legend.Length; i++) { hs[i] = style.CalcHeight(new GUIContent(legend[i]), tw) + 2f; total += hs[i]; }
+        float bh = 0f; string txt = "";
+        if (stateLines.Length > 0)
+        {
+            int idx = Mathf.Clamp(Mathf.FloorToInt(player.PlayTime * 10f), 0, stateLines.Length - 1);
+            txt = player.IsPlaying ? stateLines[idx] : "(Space で再生すると判定が流れます)";
+            bh = style.CalcHeight(new GUIContent("いまの判定: " + txt), Screen.width - 28) + 8f;
+        }
         var old = GUI.color;
+        float ly = Screen.height - (total + 4f) - 6f - (bh > 0 ? bh + 10f : 0f);
         GUI.color = new Color(0f, 0f, 0f, 0.55f);
-        GUI.DrawTexture(new Rect(Screen.width - w - 6, 6, w, total + 4f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(Screen.width - w - 6, ly, w, total + 4f), Texture2D.whiteTexture);
         GUI.color = old;
-        float y = 10f;
+        float y = ly + 4f;
         for (int i = 0; i < legend.Length; i++) { GUI.Label(new Rect(Screen.width - w + 2, y, tw, hs[i]), legend[i], style); y += hs[i]; }
         if (stateLines.Length == 0) return;
-        int idx = Mathf.Clamp(Mathf.FloorToInt(player.PlayTime * 10f), 0, stateLines.Length - 1);
-        string txt = player.IsPlaying ? stateLines[idx] : " (Space で再生すると判定が流れます) ";
-        float bh = style.CalcHeight(new GUIContent("いまの判定: " + txt), Screen.width - 28) + 8f;
         GUI.color = new Color(0f, 0f, 0f, 0.55f);
         GUI.DrawTexture(new Rect(6, Screen.height - bh - 6, Screen.width - 12, bh), Texture2D.whiteTexture);
         GUI.color = old;
