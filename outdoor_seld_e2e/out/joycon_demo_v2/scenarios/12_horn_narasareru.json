@@ -1,0 +1,29 @@
+{
+  "name": "12_horn_narasareru",
+  "desc": "後ろの車（30km/h・横1.5m）に5秒でクラクションを鳴らされる",
+  "scene_type": "daily",
+  "motion": "walk",
+  "walk_speed_kmh": 4.3,
+  "noise_dba": 46,
+  "seed": 32,
+  "events": [
+    {
+      "class": "car",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 1.5,
+      "speed_kmh": 30,
+      "cpa_s": 7.0
+    },
+    {
+      "class": "horn",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 1.5,
+      "speed_kmh": 30,
+      "cpa_s": 7.0,
+      "t_on": 5.0,
+      "t_off": 5.6
+    }
+  ]
+}

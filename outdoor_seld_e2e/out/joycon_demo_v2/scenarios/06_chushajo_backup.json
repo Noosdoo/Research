@@ -1,0 +1,26 @@
+{
+  "name": "06_chushajo_backup",
+  "desc": "駐車場: 後ろからバック警告音の車がゆっくり（5km/h・横0.8m）",
+  "scene_type": "residential",
+  "motion": "static",
+  "noise_dba": 46,
+  "seed": 26,
+  "events": [
+    {
+      "class": "backup_beep",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 0.8,
+      "speed_kmh": 5,
+      "cpa_s": 7.0
+    },
+    {
+      "class": "car",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 0.8,
+      "speed_kmh": 5,
+      "cpa_s": 7.0
+    }
+  ]
+}

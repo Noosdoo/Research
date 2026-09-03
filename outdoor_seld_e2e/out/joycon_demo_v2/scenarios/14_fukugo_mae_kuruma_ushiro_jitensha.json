@@ -1,0 +1,29 @@
+{
+  "name": "14_fukugo_mae_kuruma_ushiro_jitensha",
+  "desc": "複合: 前から車（横2.5m）と後ろから自転車ベル（横1.0m）",
+  "scene_type": "residential",
+  "motion": "walk",
+  "walk_speed_kmh": 4.3,
+  "noise_dba": 44,
+  "seed": 34,
+  "events": [
+    {
+      "class": "car",
+      "from": "front",
+      "side": "left",
+      "lateral_m": 2.5,
+      "speed_kmh": 30,
+      "cpa_s": 5.0
+    },
+    {
+      "class": "bike_bell",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 1.0,
+      "speed_kmh": 15,
+      "cpa_s": 8.0,
+      "t_on": 6.0,
+      "t_off": 7.0
+    }
+  ]
+}

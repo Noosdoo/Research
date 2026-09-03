@@ -1,0 +1,42 @@
+{
+  "name": "15_kansen_shingo_machi",
+  "desc": "幹線の交差点で信号待ち（静止）: 目の前の車線を車が次々通る（横3m・50km/h）",
+  "scene_type": "arterial",
+  "motion": "static",
+  "noise_dba": 60,
+  "seed": 35,
+  "events": [
+    {
+      "class": "car",
+      "from": "front",
+      "side": "left",
+      "lateral_m": 3.0,
+      "speed_kmh": 50,
+      "cpa_s": 2.5
+    },
+    {
+      "class": "car",
+      "from": "front",
+      "side": "left",
+      "lateral_m": 3.0,
+      "speed_kmh": 50,
+      "cpa_s": 5.0
+    },
+    {
+      "class": "car",
+      "from": "behind",
+      "side": "left",
+      "lateral_m": 6.5,
+      "speed_kmh": 45,
+      "cpa_s": 6.5
+    },
+    {
+      "class": "car",
+      "from": "front",
+      "side": "left",
+      "lateral_m": 3.0,
+      "speed_kmh": 50,
+      "cpa_s": 8.0
+    }
+  ]
+}

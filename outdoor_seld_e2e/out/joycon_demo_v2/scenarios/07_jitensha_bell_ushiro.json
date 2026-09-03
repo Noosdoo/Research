@@ -1,0 +1,21 @@
+{
+  "name": "07_jitensha_bell_ushiro",
+  "desc": "後ろから自転車（15km/h・横1.0m）が接近時にベルを鳴らす",
+  "scene_type": "residential",
+  "motion": "walk",
+  "walk_speed_kmh": 4.3,
+  "noise_dba": 44,
+  "seed": 27,
+  "events": [
+    {
+      "class": "bike_bell",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 1.0,
+      "speed_kmh": 15,
+      "cpa_s": 6.5,
+      "t_on": 4.5,
+      "t_off": 5.5
+    }
+  ]
+}

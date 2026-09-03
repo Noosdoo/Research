@@ -1,0 +1,35 @@
+{
+  "name": "03_kansen_hodou_renzoku",
+  "desc": "幹線道路の歩道: 車が3台連続で横3〜4mを通る（抑制の連続）",
+  "scene_type": "arterial",
+  "motion": "walk",
+  "walk_speed_kmh": 4.3,
+  "noise_dba": 58,
+  "seed": 23,
+  "events": [
+    {
+      "class": "car",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 3.2,
+      "speed_kmh": 50,
+      "cpa_s": 3.0
+    },
+    {
+      "class": "car",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 3.8,
+      "speed_kmh": 50,
+      "cpa_s": 5.5
+    },
+    {
+      "class": "car",
+      "from": "front",
+      "side": "right",
+      "lateral_m": 6.5,
+      "speed_kmh": 45,
+      "cpa_s": 7.5
+    }
+  ]
+}

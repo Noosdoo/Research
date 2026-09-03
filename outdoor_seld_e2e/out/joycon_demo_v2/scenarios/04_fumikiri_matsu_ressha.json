@@ -1,0 +1,27 @@
+{
+  "name": "04_fumikiri_matsu_ressha",
+  "desc": "踏切で待つ: 警報が鳴り、列車（6両・60km/h・横5m）が目の前を通過",
+  "scene_type": "residential",
+  "motion": "static",
+  "noise_dba": 44,
+  "seed": 24,
+  "events": [
+    {
+      "class": "crossing",
+      "side": "left",
+      "lateral_m": 3.0,
+      "x_m": 2.0
+    },
+    {
+      "class": "train",
+      "from": "front",
+      "side": "left",
+      "lateral_m": 5.0,
+      "speed_kmh": 60,
+      "cpa_s": 6.0,
+      "n_cars": 6,
+      "horn": "long",
+      "horn_t": 1.5
+    }
+  ]
+}
