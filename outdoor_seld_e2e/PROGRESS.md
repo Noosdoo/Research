@@ -3338,3 +3338,15 @@ v2テンプレートを訂正: v1/v2 の確定値は同一採点器で直接比�
   至近で車体の広がりが効く → **D11 多点音源＋最近接点の距離**を候補に（10月の実録 AB 後に判断）
 - 長尺セット: 3〜6 台/分は同時でなく毎分の通過台数（同時は 2〜3・モデルは同クラス 3 系列まで）。交通量を 2〜4 / 4〜8 / 8〜12 台/分 の
   3 層に、場面は幹線歩道 70%・幹線静止 15%・住宅街 15%
+
+## 追記（2026-09-03 14:40）D10 至近・低速の層を実装（v14 plan/render）・Unity のコンパイルエラー修正
+
+- **D10 実装**: `scripts/step10_v14_plan.py`（v13 plan に close_slow 列。critical×住宅街/日常 1,240 本の 50%=640 本を
+  徐行 5〜15 km/h・最接近 0.6〜1.2 m・音量 −6〜−10 dB に）／`scripts/step11_v14_render.py`（v13 の sampler を差し替え、
+  track0 の車だけ書き換え。出力 out/dataset_outdoor_siren_v14/）／`scripts/_run_v14_gen.py`（--stats/--proto/--rows）。
+  描画なしの集計: 車ありクリップの全フレームで **≤1.5 m 1.88→2.95%・≤1.0 m 0.45→0.81%**（置換本は 3.9→12.2 フレーム/本）。
+  至近は物理的に短いので「6〜8%」は届かない（CLOSE_SLOW_FRAC=1.0 でも ≈4%）。音量補正は仮置き（出典なし）
+- 試聴 A/B: `scripts/_v14_proto_listen.py 12` → `out/v14_proto_listen/{before,after}/`（**本人の試聴待ち**。OK なら v2 の束に D10 として登録）
+- **Unity**: 「Enter Safe Mode?」の原因は JoyconDemoPlayer.cs の私のミス2件（パス区切りの文字リテラル `''` が
+  ツールのエスケープで壊れた／切替合図のコルーチンを Dictionary に Add）。Path.DirectorySeparatorChar に書き換え、
+  Unity 付属の Roslyn（DotNetSdk 8.0.318）で全スクリプトのコンパイル確認（エラー 0）。以後 .cs を書いたら同じ検査を通す
