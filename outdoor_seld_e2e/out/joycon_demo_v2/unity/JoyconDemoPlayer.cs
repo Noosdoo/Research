@@ -8,6 +8,7 @@
 //       毎フレーム連続に変える（安全→注意→至近で徐々に強くなる案）。警告音の単発パターンはそのまま
 //   P : パンニング ON/OFF — 連続モードで方位に応じて左右の振幅を配分（正面=両手半分、真横=片手のみ）。
 //       ⚠️ Joy-con 2本では前後が区別できない（首元4〜6方向デバイスでは隣接振動子の按分にする）
+//   H : 画面の黒い表示（左上・凡例・判定）を全部 ON/OFF
 //   R : Joy-con の役割割当（前左→前右→後左→後右 の順に、その役で持っている本のボタンを押す）  T : 役割順に1本ずつ震わせて確認
 //   B : （Joy-con 4本のとき）前ペア/後ペアの入れ替え
 //   4本構成: 接続順で 左1本目=前左(+45°) 右1本目=前右(−45°) 左2本目=後左(+135°) 右2本目=後右(−135°)。
@@ -47,6 +48,7 @@ public class JoyconDemoPlayer : MonoBehaviour
     int clipIdx = 0, nextCue = 0, urgIdx = 0;
     bool swapSides = false, mergeMode = true, gradedMode = true, panMode = true, swapFrontBack = false;   // G は既定 ON（本人採用 2026-09-03）
     string lastFire = "";
+    public bool ShowHud = true;      // H キー: 画面の黒い表示を全部 ON/OFF（振動・再生は変わらない）
     string cueSource = "";        // "正解の位置から（オラクル）" / "本物のモデルの検出から"
     static readonly Dictionary<string, string> CLS_JP2 = new Dictionary<string, string> {
         { "car", "車" }, { "siren", "救急車のサイレン" }, { "horn", "クラクション" }, { "backup_beep", "バック音" },
@@ -147,6 +149,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.P)) panMode = !panMode;
         if (Input.GetKeyDown(KeyCode.B)) swapFrontBack = !swapFrontBack;
         if (Input.GetKeyDown(KeyCode.J)) switchCue = !switchCue;
+        if (Input.GetKeyDown(KeyCode.H)) ShowHud = !ShowHud;
         if (Input.GetKeyDown(KeyCode.R)) { roleOf.Clear(); assignStep = joycons.Count > 0 ? 0 : -1; lastFire = joycons.Count > 0 ? "割当: 前左で持っている Joy-con のボタンを押してください" : "Joy-con が接続されていません"; }
         if (Input.GetKeyDown(KeyCode.T)) StartCoroutine(RoleTest());
         AssignTick();
@@ -404,6 +407,13 @@ public class JoyconDemoPlayer : MonoBehaviour
     float T { get { return (src != null && src.clip != null) ? src.time : 0f; } }
     void OnGUI()
     {
+        if (!ShowHud)
+        {
+            var tiny = new GUIStyle(GUI.skin.label) { fontSize = 12 };
+            tiny.normal.textColor = new Color(1f, 1f, 1f, 0.6f);
+            GUI.Label(new Rect(8, 6, 400, 20), $"H: 表示を戻す   場面 {clipIdx + 1}/{clips.Count}   再生 {T:F1} 秒", tiny);
+            return;
+        }
         // 左上の操作パネル: 行ごとに高さを計算して折り返す（画面幅の 52% まで。右上の凡例と重ならない）
         int fs = 14;
         GUIStyle st = null, hd = null;

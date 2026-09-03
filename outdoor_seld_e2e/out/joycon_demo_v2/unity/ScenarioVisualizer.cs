@@ -641,7 +641,7 @@ public class ScenarioVisualizer : MonoBehaviour
 
     void OnGUI()
     {
-        if (player == null) return;
+        if (player == null || !player.ShowHud) return;      // H キーで非表示
         var style = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true };
         style.normal.textColor = Color.white;
         // 凡例は右下（左上のパネルが広がっても重ならない）。「いまの判定」があればその上に置く
