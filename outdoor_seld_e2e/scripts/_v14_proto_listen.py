@@ -2,7 +2,9 @@
 """D10 至近・低速の試聴用 A/B（2026-09-03）: 同じクリップを v13（元）と v14（徐行・至近）で描画し、
 ステレオ wav（W±0.5Y の簡易ダウンミックス・デモと同じ）を out/v14_proto_listen/{before,after}/ に書く。
 
-使い方: python scripts/_v14_proto_listen.py [N=12]
+使い方: python scripts/_v14_proto_listen.py [N=12]      /  --remix（描画済み flac からステレオだけ作り直す）
+ステレオ化は before/after 共通のゲインでピーク 0.9 に合わせるだけ（圧縮しない。2026-09-03 14:30 修正:
+初版はデモと同じ平方根圧縮を掛けていて暗騒音が 15〜20 dB 持ち上がり「ノイズがすごい」状態だった）。
 描画先は一時フォルダ（out/v14_proto_listen/_ds_*）で、正式データセット（v13/v14）には書かない。
 """
 from __future__ import annotations
@@ -34,15 +36,28 @@ def render_to(row: dict, ds: Path) -> Path:
     return ds / "foa" / f"{row['clip_id']}.flac"
 
 
-def to_stereo(flac: Path, wav: Path) -> None:
+def _stereo(flac: Path):
     x, fs = sf.read(flac, dtype="float32", always_2d=True)      # (n, 4) W X Y Z
-    st = np.stack([x[:, 0] + 0.5 * x[:, 2], x[:, 0] - 0.5 * x[:, 2]], axis=1)
-    st = st / max(float(np.max(np.abs(st))), 1e-9)
-    st = np.sign(st) * np.abs(st) ** 0.5 * 0.7
-    sf.write(wav, st.astype(np.float32), fs, subtype="PCM_16")
+    return np.stack([x[:, 0] + 0.5 * x[:, 2], x[:, 0] - 0.5 * x[:, 2]], axis=1), fs
+
+
+def write_pair(flac_b: Path, flac_a: Path, wav_b: Path, wav_a: Path) -> None:
+    """before/after を同じゲインでステレオ化（音量差を保つ。圧縮・正規化で暗騒音を持ち上げない）。"""
+    sb, fs = _stereo(flac_b)
+    sa, _ = _stereo(flac_a)
+    g = 0.9 / max(float(np.max(np.abs(sb))), float(np.max(np.abs(sa))), 1e-9)
+    sf.write(wav_b, (sb * g).astype(np.float32), fs, subtype="PCM_16")
+    sf.write(wav_a, (sa * g).astype(np.float32), fs, subtype="PCM_16")
 
 
 def main() -> int:
+    if "--remix" in sys.argv:        # 描画済みの flac からステレオだけ作り直す
+        for fb in sorted((OUT / "_ds_before" / "foa").glob("*.flac")):
+            fa = OUT / "_ds_after" / "foa" / fb.name
+            if fa.exists():
+                write_pair(fb, fa, OUT / "before" / f"{fb.stem}.wav", OUT / "after" / f"{fb.stem}.wav")
+                print("remixed", fb.stem)
+        return 0
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 12
     rows = [r for r in v14.load_plan_v14() if r["close_slow"] == "1" and r["split"] == "fold2"][:n]
     for sub in ("before", "after"):
@@ -56,8 +71,7 @@ def main() -> int:
         v_before, cpa_before = car["speed_mps"] * 3.6, car["cpa_rel_target_m"]
         f_b = render_to(r13, OUT / "_ds_before")
         f_a = render_to(r, OUT / "_ds_after")
-        to_stereo(f_b, OUT / "before" / f"{r['clip_id']}.wav")
-        to_stereo(f_a, OUT / "after" / f"{r['clip_id']}.wav")
+        write_pair(f_b, f_a, OUT / "before" / f"{r['clip_id']}.wav", OUT / "after" / f"{r['clip_id']}.wav")
         lines.append(f"| {r['clip_id']} | {r['motion']} | {r['rain'] or 'なし'} | {v_before:.0f}→{float(r['cs_speed_kmh']):.0f} "
                      f"| {cpa_before:.2f}→{float(r['cs_cpa_m']):.2f} | {float(r['cs_level_adj_db']):.0f} |")
         print(lines[-1], flush=True)
