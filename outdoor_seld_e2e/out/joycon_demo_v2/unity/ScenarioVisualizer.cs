@@ -649,8 +649,8 @@ public class ScenarioVisualizer : MonoBehaviour
         float tw = w - 16f;
         string[] legend = {
             "凡例  立体=実体(GT)  暗い円盤=検出層の出力(D)",
-            "薄い色=いるが聞こえていない（無音・ラベル無し）",
-            "リング=通知（赤=強 / 橙=中 / 水色=警告）",
+            "薄い色=いるが聞こえていない (無音・ラベル無し) ",
+            "リング=通知 (赤=強 / 橙=中 / 水色=警告) ",
             "地面の矢印=歩く向き   街の飾り(V)は見た目だけ" };
         float total = 10f;
         var hs = new float[legend.Length];
@@ -663,7 +663,7 @@ public class ScenarioVisualizer : MonoBehaviour
         for (int i = 0; i < legend.Length; i++) { GUI.Label(new Rect(Screen.width - w + 2, y, tw, hs[i]), legend[i], style); y += hs[i]; }
         if (stateLines.Length == 0) return;
         int idx = Mathf.Clamp(Mathf.FloorToInt(player.PlayTime * 10f), 0, stateLines.Length - 1);
-        string txt = player.IsPlaying ? stateLines[idx] : "（Space で再生すると判定が流れます）";
+        string txt = player.IsPlaying ? stateLines[idx] : " (Space で再生すると判定が流れます) ";
         float bh = style.CalcHeight(new GUIContent("いまの判定: " + txt), Screen.width - 28) + 8f;
         GUI.color = new Color(0f, 0f, 0f, 0.55f);
         GUI.DrawTexture(new Rect(6, Screen.height - bh - 6, Screen.width - 12, bh), Texture2D.whiteTexture);
