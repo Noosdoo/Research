@@ -69,7 +69,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         // サブフォルダ（種類別・日本語名）も再帰的に拾う。clip = dataDir からの相対パス（区切りは /）
         foreach (var f in Directory.GetFiles(dataDir, "*_cues.csv", SearchOption.AllDirectories))
         {
-            string rel = f.Substring(dataDir.Length).TrimStart('\', '/').Replace("\\", "/");
+            string rel = f.Substring(dataDir.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar).Replace(Path.DirectorySeparatorChar, '/');
             clips.Add(rel.Substring(0, rel.Length - "_cues.csv".Length));
         }
         clips.Sort(System.StringComparer.Ordinal);
@@ -209,7 +209,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         {
             switchCount++; switchRampT0 = src.time;
             Joycon jn = HandFor((g.az > 0) ^ swapSides);
-            if (jn != null) runners.Add(StartCoroutine(SwitchPulse(jn)));
+            if (jn != null) StartCoroutine(SwitchPulse(jn));   // 0.2 秒の合図。束ねの Runner とは別管理
         }
         if (g.u < URG_MIN) return;
         if (src.time - switchRampT0 < 0.25f) return;           // 合図の間は連続振動を止める
