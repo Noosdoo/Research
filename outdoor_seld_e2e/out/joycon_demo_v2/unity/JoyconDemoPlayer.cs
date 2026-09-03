@@ -47,6 +47,12 @@ public class JoyconDemoPlayer : MonoBehaviour
     int clipIdx = 0, nextCue = 0, urgIdx = 0;
     bool swapSides = false, mergeMode = true, gradedMode = false, panMode = true, swapFrontBack = false;
     string lastFire = "";
+    string cueSource = "";        // "正解の位置から（オラクル）" / "本物のモデルの検出から"
+    static readonly Dictionary<string, string> CLS_JP2 = new Dictionary<string, string> {
+        { "car", "車" }, { "siren", "救急車のサイレン" }, { "horn", "クラクション" }, { "backup_beep", "バック音" },
+        { "bike_bell", "自転車のベル" }, { "crossing", "踏切" }, { "kick", "キックボード" }, { "bike", "バイク" }, { "train", "列車" } };
+    static string Jp(string cls) { string v; return CLS_JP2.TryGetValue(cls, out v) ? v : cls; }
+    static string TierJp(string tier) { return tier == "強" ? "強（至近・4連打）" : (tier == "中" ? "中（注意・2発）" : "警告（警告音・単発）"); }
     string dataDir;
     int firedCount = 0, mergedCount = 0;
 
@@ -90,12 +96,18 @@ public class JoyconDemoPlayer : MonoBehaviour
 
     IEnumerator LoadClip(int idx)
     {
-        clipIdx = idx; nextCue = 0; urgIdx = 0; src.Stop(); lastFire = ""; firedCount = 0; mergedCount = 0;
+        clipIdx = idx; nextCue = 0; urgIdx = 0; src.Stop(); lastFire = ""; firedCount = 0; mergedCount = 0; cueSource = "本物のモデルの検出から（検出層 → 通知規則）";
         cues.Clear(); urg.Clear();
         foreach (var line in File.ReadAllLines(Path.Combine(dataDir, clips[idx] + "_cues.csv")))
         {
             var p = line.Trim().Split(',');
-            if (p.Length < 5 || p[0] == "t_s" || p[0].StartsWith("#")) continue;
+            if (p.Length > 0 && p[0].StartsWith("#"))
+            {
+                if (line.Contains("本物")) cueSource = "本物のモデルの検出から（検出層 → 通知規則）";
+                else if (line.Contains("オラクル")) cueSource = "正解の位置から（モデル不使用・規則の動きの確認用）";
+                continue;
+            }
+            if (p.Length < 5 || p[0] == "t_s") continue;
             float tv, azv;
             if (!ParseF(p[0], out tv)) continue;
             ParseF(p[4], out azv);
@@ -179,7 +191,7 @@ public class JoyconDemoPlayer : MonoBehaviour
     {
         bool isDist = (c.tier == "強" || c.tier == "中");
         // 連続モードでは距離クラスの離散通知は出さない（緊急度で連続に振動する）。警告音は従来どおり
-        if (gradedMode && isDist) { lastFire = $"{c.t:F1}s {c.tier} → 連続モードのため離散通知は省略"; return; }
+        if (gradedMode && isDist) { lastFire = $"{c.t:F1} 秒 {TierJp(c.tier)} {Jp(c.cls)} → 連続モード中なので段階の振動は出さず、緊急度で震えます"; return; }
 
         // 通知の方位で担当の Joy-con を決める（4本: 前左/前右/後左/後右、2本: 左右）
         string role;
@@ -200,7 +212,7 @@ public class JoyconDemoPlayer : MonoBehaviour
                 {
                     prev.endTime = Mathf.Max(prev.endTime, src.time) + EXTEND_SEC;
                     prev.lastFireTime = src.time;
-                    lastFire = $"{c.t:F1}s {role} {c.tier} ({c.cls}) → 束ね（延長 +{EXTEND_SEC:F1}s）";
+                    lastFire = $"{c.t:F1} 秒 {role} {TierJp(c.tier)} {Jp(c.cls)} → 束ねた（同じ通知が続いたので +{EXTEND_SEC:F1} 秒伸ばしただけ）";
                 }
                 else
                 {
@@ -210,13 +222,13 @@ public class JoyconDemoPlayer : MonoBehaviour
                                           endTime = Mathf.Max(prev.endTime, src.time) + EXTEND_SEC, };
                     runners[jc] = mv;
                     mv.co = StartCoroutine(PatternUntil(jc, mv, true));
-                    lastFire = $"{c.t:F1}s {role} {c.tier} ({c.cls}) → 束ね（担当を移して延長）";
+                    lastFire = $"{c.t:F1} 秒 {role} {TierJp(c.tier)} {Jp(c.cls)} → 束ねた（担当の Joy-con を移して伸ばした）";
                 }
                 return;
             }
         }
         firedCount++;
-        lastFire = $"{c.t:F1}s {role} {c.tier} ({c.cls} az={c.az:F0}°)";
+        lastFire = $"{c.t:F1} 秒 {role} {TierJp(c.tier)} {Jp(c.cls)}（方位 {c.az:F0}°、0=前 +=左）";
         if (jc == null) return;                       // Joy-con未接続でも画面表示だけ動く
         if (!isDist) { jc.SetRumble(120f, 240f, 0.5f, 300); return; }   // 警告 = 単発
         if (runners.TryGetValue(jc, out r) && r.co != null) StopCoroutine(r.co);
@@ -399,21 +411,23 @@ public class JoyconDemoPlayer : MonoBehaviour
         float w = Mathf.Min(820f, Screen.width * 0.52f);
         float tw = w - 20f;
         var items = new List<KeyValuePair<string, GUIStyle>>();
-        items.Add(new KeyValuePair<string, GUIStyle>($"[{clipIdx + 1}/{clips.Count}] {(clips.Count > 0 ? clips[clipIdx].Replace("/", " › ") : "なし")}", hd));
+        items.Add(new KeyValuePair<string, GUIStyle>($"場面 {clipIdx + 1}/{clips.Count}: {(clips.Count > 0 ? clips[clipIdx].Replace("/", " › ") : "なし")}", hd));
+        items.Add(new KeyValuePair<string, GUIStyle>("通知の元: " + (cueSource == "" ? "（読込中）" : cueSource), st));
         items.Add(new KeyValuePair<string, GUIStyle>(
-            $"Joy-con {joycons.Count}本   束ね(M) {(mergeMode ? "ON" : "OFF")}   連続(G) {(gradedMode ? "ON" : "OFF")}   パン(P) {(panMode ? "ON" : "OFF")}   " +
-            $"切替合図(J) {(switchCue ? "ON" : "OFF")}   左右入替(S) {(swapSides ? "ON" : "OFF")}" +
-            (joycons.Count >= 4 ? $"   4本 {(swapFrontBack ? "後/前" : "前/後")}(B)   R=割当 T=テスト  [{RoleSummary()}]" : ""), st));
-        if (assignStep >= 0)
-            items.Add(new KeyValuePair<string, GUIStyle>($"★ 割当中: 「{RoleName(ROLE_ORDER[assignStep])}」で持っている Joy-con のボタン（ZL/ZR/SL/SR/十字/スティック押込）を押してください（{assignStep + 1}/{Mathf.Min(4, joycons.Count)}）", hd));
+            $"Joy-con: {joycons.Count}本" + (joycons.Count >= 4 ? $"  役割 [{RoleSummary()}]   R=役割を決め直す  T=順に震わせて確認" : (joycons.Count > 0 ? "（左=左手・右=右手）" : "（未接続。画面だけ動きます）")), st));
         items.Add(new KeyValuePair<string, GUIStyle>(
-            $"←/→ 切替   Space 再生/停止   再生 {T:F1}s   通知 {firedCount} 回 / 束ね {mergedCount} 回 / 切替合図 {switchCount} 回" +
-            (gradedMode ? $"   緊急度 {lastGradedU:F2}" : ""), st));
+            $"設定:  M 束ね={(mergeMode ? "ON" : "OFF")}（1秒以内の同じ通知は伸ばすだけ）   G 連続={(gradedMode ? "ON" : "OFF")}（近づくほど強く震える）   " +
+            $"P 方向按分={(panMode ? "ON" : "OFF")}   J 切替の合図={(switchCue ? "ON" : "OFF")}   S 左右入替={(swapSides ? "ON" : "OFF")}" +
+            (joycons.Count >= 4 ? $"   B 前後入替={(swapFrontBack ? "ON" : "OFF")}" : ""), st));
+        items.Add(new KeyValuePair<string, GUIStyle>(
+            $"操作: ←/→ 場面を変える   Space 再生/停止      再生 {T:F1} 秒   振動した回数 {firedCount}   束ねた回数 {mergedCount}   切替の合図 {switchCount} 回" +
+            (gradedMode ? $"   緊急度 {lastGradedU:F2}（0=安全 1=至近）" : ""), st));
         items.Add(new KeyValuePair<string, GUIStyle>("最後の通知: " + (lastFire == "" ? "—" : lastFire), st));
+        items.Add(new KeyValuePair<string, GUIStyle>("この場面の通知一覧（✓=済）  強=至近・4連打  中=注意・2発  警告=警告音・単発", st));
         int nCue = Mathf.Min(cues.Count, 12);
         for (int i = 0; i < nCue; i++)
             items.Add(new KeyValuePair<string, GUIStyle>(
-                $"{(i < nextCue && src.isPlaying ? "✓" : "　")} {cues[i].t:F1}s  {cues[i].side}  {cues[i].tier} ({cues[i].cls})", st));
+                $"{(i < nextCue && src.isPlaying ? "✓" : "　")} {cues[i].t:F1} 秒  {(cues[i].side == "L" ? "左" : "右")}  {cues[i].tier}  {Jp(cues[i].cls)}", st));
         if (cues.Count > 12) items.Add(new KeyValuePair<string, GUIStyle>($"… 他 {cues.Count - 12} 件", st));
         float total = 12f;
         var hs = new float[items.Count];
@@ -431,7 +445,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         }
         if (gradedMode)
         {
-            GUI.Label(new Rect(x, y, 200, 22), "緊急度バー（連続モード）", st);
+            GUI.Label(new Rect(x, y, 200, 22), "緊急度（連続モードの振動の強さ）", st);
             GUI.color = new Color(1f, 1f, 1f, 0.25f);
             GUI.DrawTexture(new Rect(x + 190, y + 4, 204, 14), Texture2D.whiteTexture);
             GUI.color = new Color(1f, 0.45f, 0.2f, 0.95f);
