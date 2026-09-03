@@ -472,16 +472,27 @@ public class ScenarioVisualizer : MonoBehaviour
     void OnGUI()
     {
         if (player == null) return;
-        var style = new GUIStyle(GUI.skin.label) { fontSize = 16, wordWrap = true };
+        var style = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true };
         style.normal.textColor = Color.white;
-        GUI.Label(new Rect(Screen.width - 420, 10, 410, 48),
-            "凡例: 立体=実体(GT)  暗い円盤=検出層の出力(D)  街の飾り(V)は見た目だけ\n" +
-            "リング=通知(赤=強/橙=中/水色=警告)  地面の矢印=歩く向き", style);
+        // 右上: 凡例（左上の操作パネルは画面の 55% までなので重ならない）
+        float w = Mathf.Min(400f, Screen.width * 0.40f);
+        var old = GUI.color;
+        GUI.color = new Color(0f, 0f, 0f, 0.55f);
+        GUI.DrawTexture(new Rect(Screen.width - w - 6, 6, w, 78), Texture2D.whiteTexture);
+        GUI.color = old;
+        string[] legend = {
+            "凡例  立体=実体(GT)  暗い円盤=検出層の出力(D)",
+            "リング=通知（赤=強 / 橙=中 / 水色=警告）",
+            "地面の矢印=歩く向き   街の飾り(V)は見た目だけ" };
+        for (int i = 0; i < legend.Length; i++)
+            GUI.Label(new Rect(Screen.width - w + 2, 10 + i * 22, w - 16, 22), legend[i], style);
         if (stateLines.Length == 0) return;
         int idx = Mathf.Clamp(Mathf.FloorToInt(player.PlayTime * 10f), 0, stateLines.Length - 1);
-        string txt = player.IsPlaying ? stateLines[idx] : "（Spaceで再生すると判定が流れます）";
-        GUI.Box(new Rect(5, Screen.height - 78, Screen.width - 10, 72), "");
-        GUI.Label(new Rect(12, Screen.height - 74, Screen.width - 24, 66), "いまの判定: " + txt, style);
+        string txt = player.IsPlaying ? stateLines[idx] : "（Space で再生すると判定が流れます）";
+        GUI.color = new Color(0f, 0f, 0f, 0.55f);
+        GUI.DrawTexture(new Rect(6, Screen.height - 62, Screen.width - 12, 56), Texture2D.whiteTexture);
+        GUI.color = old;
+        GUI.Label(new Rect(14, Screen.height - 58, Screen.width - 28, 50), "いまの判定: " + txt, style);
     }
 
     // ---- 8クラスの見た目 --------------------------------------------------------------

@@ -55,7 +55,7 @@ public class JoyconDemoPlayer : MonoBehaviour
 
     // 可視化(ScenarioVisualizer)から読むための公開プロパティ（v1 と同じ名前）
     public string CurrentClip { get { return clips.Count > 0 ? clips[clipIdx] : null; } }
-    public float PlayTime { get { return src != null ? src.time : 0f; } }
+    public float PlayTime { get { return (src != null && src.clip != null) ? src.time : 0f; } }
     public bool IsPlaying { get { return src != null && src.isPlaying; } }
     public string DataDir { get { return dataDir; } }
     public string LastFire { get { return lastFire; } }
@@ -275,27 +275,45 @@ public class JoyconDemoPlayer : MonoBehaviour
         return roles;
     }
 
+    // 画面の文字: 左上に半透明の箱をひとつ（幅は画面の 55% まで・折り返し）。右上は ScenarioVisualizer の凡例が使う
+    float T { get { return (src != null && src.clip != null) ? src.time : 0f; } }
     void OnGUI()
     {
-        GUI.Label(new Rect(10, 10, 1000, 30),
-            $"クリップ [{clipIdx + 1}/{clips.Count}] {(clips.Count > 0 ? clips[clipIdx].Replace("/", " › ") : "なし")}  " +
-            $"Joy-con接続: {joycons.Count}本  左右入替: {(swapSides ? "ON" : "OFF")}  " +
-            $"束ね(M): {(mergeMode ? "ON" : "OFF")}  連続(G): {(gradedMode ? "ON" : "OFF")}  パン(P): {(panMode ? "ON" : "OFF")}" +
-            (joycons.Count >= 4 ? $"  4本={(swapFrontBack ? "後/前" : "前/後")}(B)" : ""));
-        GUI.Label(new Rect(10, 35, 1000, 30),
-            $"←/→=切替  Space=再生/停止  S=左右入替  M=束ね  G=連続  P=パン   再生位置 {src.time:F1}s   " +
-            $"通知 {firedCount} 回 / 束ねた再トリガ {mergedCount} 回 / 系列切替の合図 {switchCount} 回 (J:{(switchCue ? "ON" : "OFF")})" +
-            (gradedMode ? $"   緊急度 {lastGradedU:F2}" : ""));
-        GUI.Label(new Rect(10, 60, 1000, 30), "最後の通知: " + lastFire);
-        for (int i = 0; i < cues.Count; i++)
-            GUI.Label(new Rect(10, 90 + i * 22, 900, 22),
-                $"{(i < nextCue && src.isPlaying ? "✓" : "  ")} {cues[i].t:F1}s " +
-                $"{cues[i].side} {cues[i].tier} ({cues[i].cls})");
+        var st = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true, richText = true };
+        st.normal.textColor = Color.white;
+        var hd = new GUIStyle(st) { fontSize = 16, fontStyle = FontStyle.Bold };
+        float w = Mathf.Min(760f, Screen.width * 0.55f);
+        int nCue = Mathf.Min(cues.Count, 12);
+        float h = 118f + nCue * 20f + (gradedMode ? 34f : 0f) + (cues.Count > 12 ? 20f : 0f);
+        var old = GUI.color;
+        GUI.color = new Color(0f, 0f, 0f, 0.55f);
+        GUI.DrawTexture(new Rect(6, 6, w, h), Texture2D.whiteTexture);
+        GUI.color = old;
+        float x = 14f, y = 10f;
+        GUI.Label(new Rect(x, y, w - 16, 22), $"[{clipIdx + 1}/{clips.Count}] {(clips.Count > 0 ? clips[clipIdx].Replace("/", " › ") : "なし")}", hd); y += 24;
+        GUI.Label(new Rect(x, y, w - 16, 20),
+            $"Joy-con {joycons.Count}本   束ね(M) {(mergeMode ? "ON" : "OFF")}   連続(G) {(gradedMode ? "ON" : "OFF")}   パン(P) {(panMode ? "ON" : "OFF")}   " +
+            $"切替合図(J) {(switchCue ? "ON" : "OFF")}   左右入替(S) {(swapSides ? "ON" : "OFF")}" +
+            (joycons.Count >= 4 ? $"   4本 {(swapFrontBack ? "後/前" : "前/後")}(B)" : ""), st); y += 20;
+        GUI.Label(new Rect(x, y, w - 16, 20),
+            $"←/→ 切替   Space 再生/停止   再生 {T:F1}s   通知 {firedCount} 回 / 束ね {mergedCount} 回 / 切替合図 {switchCount} 回" +
+            (gradedMode ? $"   緊急度 {lastGradedU:F2}" : ""), st); y += 20;
+        GUI.Label(new Rect(x, y, w - 16, 20), "最後の通知: " + (lastFire == "" ? "—" : lastFire), st); y += 24;
+        for (int i = 0; i < nCue; i++)
+        {
+            GUI.Label(new Rect(x, y, w - 16, 20),
+                $"{(i < nextCue && src.isPlaying ? "✓" : "　")} {cues[i].t:F1}s  {cues[i].side}  {cues[i].tier} ({cues[i].cls})", st);
+            y += 20;
+        }
+        if (cues.Count > 12) { GUI.Label(new Rect(x, y, w - 16, 20), $"… 他 {cues.Count - 12} 件", st); y += 20; }
         if (gradedMode)
         {
-            GUI.Box(new Rect(700, 90, 204, 24), "");
-            GUI.Box(new Rect(702, 92, 200f * Mathf.Clamp01(lastGradedU), 20), "");
-            GUI.Label(new Rect(700, 116, 300, 22), "緊急度バー（連続モード）");
+            GUI.Label(new Rect(x, y, 200, 20), "緊急度バー（連続モード）", st);
+            GUI.color = new Color(1f, 1f, 1f, 0.25f);
+            GUI.DrawTexture(new Rect(x + 190, y + 3, 204, 14), Texture2D.whiteTexture);
+            GUI.color = new Color(1f, 0.45f, 0.2f, 0.95f);
+            GUI.DrawTexture(new Rect(x + 192, y + 5, 200f * Mathf.Clamp01(lastGradedU), 10), Texture2D.whiteTexture);
+            GUI.color = old;
         }
     }
 }
