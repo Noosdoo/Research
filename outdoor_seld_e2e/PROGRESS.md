@@ -3350,3 +3350,17 @@ v2テンプレートを訂正: v1/v2 の確定値は同一採点器で直接比�
 - **Unity**: 「Enter Safe Mode?」の原因は JoyconDemoPlayer.cs の私のミス2件（パス区切りの文字リテラル `''` が
   ツールのエスケープで壊れた／切替合図のコルーチンを Dictionary に Add）。Path.DirectorySeparatorChar に書き換え、
   Unity 付属の Roslyn（DotNetSdk 8.0.318）で全スクリプトのコンパイル確認（エラー 0）。以後 .cs を書いたら同じ検査を通す
+
+## 追記（2026-09-03 15:10）デモ v2: 文字の途切れ・対象物の消失・実地図（理科大野田 正門前）
+
+- **文字の途切れ**: 左上/右上/下のパネルを行ごとに高さ計算（CalcHeight）して折り返す方式に。Unity付属Roslynでコンパイル確認
+- **対象物が途中で消える**: 原因は `_scene.csv` がラベル（可聴ゲート済み）だけだったこと。軌道から全 100 フレームを書き、`vis` 列
+  （1=鳴っている/ラベルあり、0=いるが無音）を追加。ScenarioVisualizer は vis=0 を薄い色で描く（消さない）。
+  本物のモデル出力 A〜D は work/scene.json の軌道から再構成（`_make_joycon_demo_v43.py` に scene_rows_full）、自作場面は v3 ツール側で対応
+- **実地図**: Overpass API で OSM を取得（`out/joycon_demo_v2/map/osm_tus_noda.json`、© OpenStreetMap contributors, ODbL）。
+  東京理科大学（relation 10288627）の南西角の 4 差路（横断歩道 3・門 9298381845 が 10 m 先）を「正門前の交差点」と**仮定**
+  （公式ページに門の位置の記述なし。運河駅から徒歩 5 分・運河を渡って数十 m という案内と整合）。
+  `scripts/_osm_map_layout.py` → 配置図 csv（road/bldg/water/rail/poi 行）＋道路折れ線 json＋PNG。
+  v3 ツールに `geom: path`（route = 道路 id の並び、map_offset で歩行者の立ち位置）と `map_layout` の取り込みを追加。
+  ScenarioVisualizer に map 行の描画（道路の帯・建物の直方体・水面・線路・横断歩道・信号・門・バス停）を追加。場面 24〜26 を生成中
+- 罠: Bash ツール経由の heredoc はバックスラッシュを半減させる → C#/Python のエスケープを含む書き込みは Write ツールか chr(92) で
