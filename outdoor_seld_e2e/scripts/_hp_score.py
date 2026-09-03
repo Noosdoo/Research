@@ -69,8 +69,13 @@ def row(label, csv):
 
 
 def main() -> int:
-    out_md = Path(sys.argv[1])
-    items = [a.split("=", 1) for a in sys.argv[2:]]
+    global META
+    argv = list(sys.argv[1:])
+    if "--meta" in argv:                       # 2026-09-04: 別の GT（例: 水平距離ラベル metadata_dist_h / v15）で採点
+        i = argv.index("--meta"); META = ROOT / argv[i + 1] if not Path(argv[i + 1]).is_absolute() else Path(argv[i + 1])
+        del argv[i:i + 2]
+    out_md = Path(argv[0])
+    items = [a.split("=", 1) for a in argv[1:]]
     R = [f"# ④ハイパラ感度 採点表 — {out_md.stem}", "",
          "val 1,800（fold2）。通知= v4.2採用構成。捕捉率/誤捕捉/推定距離= ft2選定と同一定義"
          "（GT≤1.5m を 1.5m しきい値で捕まえる率 / GT>3.2m を ≤1.5m と出す率 / フレーム40以降）。"
