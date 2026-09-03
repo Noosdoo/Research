@@ -1,0 +1,45 @@
+{
+  "name": "28_rikadai_seimon_aruite_usetsu_ushiro",
+  "desc": "理科大正門前（実地図・歩行）: 南北の道を渡り切った直後、東の道から来た車が交差点で右折して北へ向かい、背中側 2 m を横切る",
+  "scene_type": "arterial",
+  "motion": "walk",
+  "noise_dba": 50,
+  "seed": 55,
+  "map_layout": "out/joycon_demo_v2/map/tus_noda_seimon_layout.csv",
+  "map_roads": "out/joycon_demo_v2/map/tus_noda_seimon_roads.json",
+  "map_offset": [
+    -2.7,
+    -10.0
+  ],
+  "map_offset_note": "歩行者は東の道の北側歩道を西へ歩き、5秒で南北の道（正門前の交差点の北側）を横切る（地図座標 m: x=前(西) y=左(南)。原点は正門前の交差点ノード）",
+  "events": [
+    {
+      "class": "car",
+      "geom": "path",
+      "route": [
+        "25584888r",
+        "1337112287"
+      ],
+      "cpa_s": 6.5,
+      "speed_kmh": 25,
+      "speed_knots": [
+        [
+          0,
+          25
+        ],
+        [
+          3,
+          25
+        ],
+        [
+          5,
+          12
+        ],
+        [
+          10,
+          18
+        ]
+      ]
+    }
+  ]
+}

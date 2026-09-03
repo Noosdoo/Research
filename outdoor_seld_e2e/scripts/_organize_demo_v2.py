@@ -49,6 +49,8 @@ MAP = [
     ("custom_24_rikadai_seimon_matsu_sasetsu", "7_実地図_理科大正門前", "正門前で待つ_北から車が左折_南西からも車"),
     ("custom_25_rikadai_seimon_deru_wataru", "7_実地図_理科大正門前", "正門から出て交差点を渡る_東から車"),
     ("custom_26_rikadai_seimon_nansei_kara", "7_実地図_理科大正門前", "南西から車が交差点を抜ける_後ろから自転車ベル"),
+    ("custom_27_rikadai_seimon_aruite_sasetsu_mae", "7_実地図_理科大正門前", "歩行_渡る瞬間に北からの車が目の前を左折"),
+    ("custom_28_rikadai_seimon_aruite_usetsu_ushiro", "7_実地図_理科大正門前", "歩行_渡った直後に東からの車が背中側を右折"),
     ("fold32_room1_mix0007", "6_本物のモデル出力", "A_同じ車に強が再発火_束ね確認"),
     ("fold32_room1_mix0067", "6_本物のモデル出力", "B_中から強へ昇格_段階と連続"),
     ("fold32_room1_mix0128", "6_本物のモデル出力", "C_幹線歩行_車3台の連続通知"),
