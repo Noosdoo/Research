@@ -1,0 +1,94 @@
+{
+ "spec": {
+  "name": "long_fold40_0170",
+  "clip_s": 60.0,
+  "scene_type": "residential",
+  "scene": "residential",
+  "motion": "walk",
+  "walk_speed_kmh": 4.19,
+  "noise_dba": 47.7,
+  "seed": 2025097064,
+  "stratum": "high",
+  "lam_per_min": 0.8,
+  "events": [
+   {
+    "class": "car",
+    "from": "front",
+    "side": "right",
+    "lateral_m": 2.07,
+    "speed_kmh": 29.4,
+    "cpa_s": 0.95,
+    "level_db": 84.4,
+    "f0": 46.77
+   },
+   {
+    "class": "car",
+    "from": "behind",
+    "side": "right",
+    "lateral_m": 1.17,
+    "speed_kmh": 11.2,
+    "cpa_s": 10.05,
+    "level_db": 84.0,
+    "f0": 48.06
+   }
+  ]
+ },
+ "mic": {
+  "motion": "walk",
+  "walk_speed_mps": 1.163888888888889
+ },
+ "sources": [
+  {
+   "class": "car",
+   "wp": [
+    [
+     0.0,
+     3.044583333333332,
+     -2.07,
+     1.5
+    ],
+    [
+     60.0,
+     -486.9554166666666,
+     -2.07,
+     1.5
+    ]
+   ],
+   "t_on": 0.0,
+   "t_off": 60.0,
+   "l1m_db": 84.4,
+   "min_dist_m": 2.12,
+   "t_min_dist_s": 0.9,
+   "geom": "straight"
+  },
+  {
+   "class": "car",
+   "wp": [
+    [
+     0.0,
+     -25.389027777777777,
+     -1.17,
+     1.5
+    ],
+    [
+     60.0,
+     161.27763888888884,
+     -1.17,
+     1.5
+    ]
+   ],
+   "t_on": 0.0,
+   "t_off": 60.0,
+   "l1m_db": 84.0,
+   "min_dist_m": 1.17,
+   "t_min_dist_s": 10.1,
+   "geom": "straight"
+  }
+ ],
+ "tracks": [
+  0,
+  1
+ ],
+ "peak_scale": 1.0,
+ "noise_dba": 47.7
+}

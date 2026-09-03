@@ -1,0 +1,129 @@
+{
+ "spec": {
+  "name": "long_fold40_0115",
+  "clip_s": 60.0,
+  "scene_type": "residential",
+  "scene": "residential",
+  "motion": "walk",
+  "walk_speed_kmh": 4.74,
+  "noise_dba": 48.5,
+  "seed": 457428783,
+  "stratum": "mid",
+  "lam_per_min": 0.54,
+  "events": [
+   {
+    "class": "car",
+    "from": "behind",
+    "side": "right",
+    "lateral_m": 2.55,
+    "speed_kmh": 18.5,
+    "cpa_s": 17.78,
+    "level_db": 83.9,
+    "f0": 40.55
+   },
+   {
+    "class": "car",
+    "from": "behind",
+    "side": "right",
+    "lateral_m": 1.17,
+    "speed_kmh": 19.6,
+    "cpa_s": 11.29,
+    "level_db": 83.3,
+    "f0": 49.91
+   },
+   {
+    "class": "bike_bell",
+    "from": "behind",
+    "side": "right",
+    "lateral_m": 1.0,
+    "speed_kmh": 15.0,
+    "cpa_s": 56.21,
+    "t_on": 54.21,
+    "t_off": 56.21,
+    "level_db": 84.6
+   }
+  ]
+ },
+ "mic": {
+  "motion": "walk",
+  "walk_speed_mps": 1.3166666666666667
+ },
+ "sources": [
+  {
+   "class": "car",
+   "wp": [
+    [
+     0.0,
+     -74.54244444444444,
+     -2.55,
+     1.5
+    ],
+    [
+     60.0,
+     233.79088888888887,
+     -2.55,
+     1.5
+    ]
+   ],
+   "t_on": 0.0,
+   "t_off": 60.0,
+   "l1m_db": 83.9,
+   "min_dist_m": 2.55,
+   "t_min_dist_s": 17.8,
+   "geom": "straight"
+  },
+  {
+   "class": "car",
+   "wp": [
+    [
+     0.0,
+     -53.185944444444445,
+     -1.17,
+     1.5
+    ],
+    [
+     60.0,
+     273.48072222222225,
+     -1.17,
+     1.5
+    ]
+   ],
+   "t_on": 0.0,
+   "t_off": 60.0,
+   "l1m_db": 83.3,
+   "min_dist_m": 1.17,
+   "t_min_dist_s": 11.3,
+   "geom": "straight"
+  },
+  {
+   "class": "bike_bell",
+   "wp": [
+    [
+     0.0,
+     -166.78183333333334,
+     -1.0,
+     1.5
+    ],
+    [
+     60.0,
+     83.21816666666669,
+     -1.0,
+     1.5
+    ]
+   ],
+   "t_on": 54.21,
+   "t_off": 56.21,
+   "l1m_db": 84.6,
+   "min_dist_m": 1.0,
+   "t_min_dist_s": 56.2,
+   "geom": "straight"
+  }
+ ],
+ "tracks": [
+  0,
+  1,
+  0
+ ],
+ "peak_scale": 1.0,
+ "noise_dba": 48.5
+}

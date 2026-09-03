@@ -1,0 +1,150 @@
+{
+ "spec": {
+  "name": "long_fold40_0135",
+  "clip_s": 60.0,
+  "scene_type": "arterial",
+  "scene": "arterial_walk",
+  "motion": "walk",
+  "walk_speed_kmh": 4.19,
+  "noise_dba": 59.4,
+  "seed": 72638093,
+  "stratum": "low",
+  "lam_per_min": 3.0,
+  "events": [
+   {
+    "class": "car",
+    "from": "front",
+    "side": "right",
+    "lateral_m": 7.71,
+    "speed_kmh": 35.6,
+    "cpa_s": 43.39,
+    "level_db": 85.8,
+    "f0": 47.89
+   },
+   {
+    "class": "car",
+    "from": "behind",
+    "side": "right",
+    "lateral_m": 3.66,
+    "speed_kmh": 32.9,
+    "cpa_s": 46.89,
+    "level_db": 85.9,
+    "f0": 39.4
+   },
+   {
+    "class": "car",
+    "from": "behind",
+    "side": "right",
+    "lateral_m": 3.66,
+    "speed_kmh": 35.0,
+    "level_db": 86.6,
+    "f0": 47.95,
+    "geom": "turn",
+    "turn": "left",
+    "radius_m": 4.0,
+    "ahead_m": 1.0,
+    "t_turn": 27.91,
+    "speed_knots": [
+     [
+      0,
+      35
+     ],
+     [
+      25.41,
+      35
+     ],
+     [
+      27.91,
+      15
+     ],
+     [
+      60.0,
+      15
+     ]
+    ]
+   }
+  ]
+ },
+ "mic": {
+  "motion": "walk",
+  "walk_speed_mps": 1.163888888888889
+ },
+ "sources": [
+  {
+   "class": "car",
+   "wp": [
+    [
+     0.0,
+     473.7605833333334,
+     -7.71,
+     1.5
+    ],
+    [
+     60.0,
+     -119.57274999999998,
+     -7.71,
+     1.5
+    ]
+   ],
+   "t_on": 0.0,
+   "t_off": 60.0,
+   "l1m_db": 85.8,
+   "min_dist_m": 7.71,
+   "t_min_dist_s": 43.4,
+   "geom": "straight"
+  },
+  {
+   "class": "car",
+   "wp": [
+    [
+     0.0,
+     -379.7671944444444,
+     -3.66,
+     1.5
+    ],
+    [
+     60.0,
+     168.56613888888887,
+     -3.66,
+     1.5
+    ]
+   ],
+   "t_on": 0.0,
+   "t_off": 60.0,
+   "l1m_db": 85.9,
+   "min_dist_m": 3.66,
+   "t_min_dist_s": 46.9,
+   "geom": "straight"
+  },
+  {
+   "class": "car",
+   "wp": [
+    [
+     0.0,
+     -236.7380833333264,
+     -3.66,
+     1.5
+    ],
+    [
+     28.5,
+     29.971167044215356,
+     -2.928055101510078,
+     1.5
+    ]
+   ],
+   "t_on": 0.0,
+   "t_off": 60.0,
+   "l1m_db": 86.6,
+   "min_dist_m": 3.22,
+   "t_min_dist_s": 29.5,
+   "geom": "turn"
+  }
+ ],
+ "tracks": [
+  0,
+  1,
+  0
+ ],
+ "peak_scale": 1.0,
+ "noise_dba": 59.4
+}

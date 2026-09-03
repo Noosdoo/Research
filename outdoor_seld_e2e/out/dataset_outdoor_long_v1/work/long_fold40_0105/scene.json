@@ -1,0 +1,95 @@
+{
+ "spec": {
+  "name": "long_fold40_0105",
+  "clip_s": 60.0,
+  "scene_type": "arterial",
+  "scene": "arterial_walk",
+  "motion": "walk",
+  "walk_speed_kmh": 4.89,
+  "noise_dba": 56.8,
+  "seed": 1618595772,
+  "stratum": "low",
+  "lam_per_min": 2.83,
+  "events": [
+   {
+    "class": "car",
+    "from": "behind",
+    "side": "right",
+    "lateral_m": 3.06,
+    "speed_kmh": 41.0,
+    "cpa_s": 6.57,
+    "level_db": 84.9,
+    "f0": 37.84
+   },
+   {
+    "class": "bike_bell",
+    "from": "behind",
+    "side": "right",
+    "lateral_m": 1.0,
+    "speed_kmh": 15.0,
+    "cpa_s": 56.34,
+    "t_on": 54.34,
+    "t_off": 56.34,
+    "level_db": 84.7
+   }
+  ]
+ },
+ "mic": {
+  "motion": "walk",
+  "walk_speed_mps": 1.3583333333333332
+ },
+ "sources": [
+  {
+   "class": "car",
+   "wp": [
+    [
+     0.0,
+     -72.69241666666667,
+     -3.06,
+     1.5
+    ],
+    [
+     60.0,
+     610.6409166666667,
+     -3.06,
+     1.5
+    ]
+   ],
+   "t_on": 0.0,
+   "t_off": 60.0,
+   "l1m_db": 84.9,
+   "min_dist_m": 3.07,
+   "t_min_dist_s": 6.6,
+   "geom": "straight"
+  },
+  {
+   "class": "bike_bell",
+   "wp": [
+    [
+     0.0,
+     -165.0131666666667,
+     -1.0,
+     1.5
+    ],
+    [
+     60.0,
+     84.98683333333332,
+     -1.0,
+     1.5
+    ]
+   ],
+   "t_on": 54.34,
+   "t_off": 56.34,
+   "l1m_db": 84.7,
+   "min_dist_m": 1.01,
+   "t_min_dist_s": 56.3,
+   "geom": "straight"
+  }
+ ],
+ "tracks": [
+  0,
+  0
+ ],
+ "peak_scale": 1.0,
+ "noise_dba": 56.8
+}

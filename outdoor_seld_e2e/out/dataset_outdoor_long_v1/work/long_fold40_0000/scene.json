@@ -1,0 +1,129 @@
+{
+ "spec": {
+  "name": "long_fold40_0000",
+  "clip_s": 60.0,
+  "scene_type": "arterial",
+  "scene": "arterial_walk",
+  "motion": "walk",
+  "walk_speed_kmh": 4.17,
+  "noise_dba": 52.1,
+  "seed": 492185132,
+  "stratum": "low",
+  "lam_per_min": 2.73,
+  "events": [
+   {
+    "class": "car",
+    "from": "behind",
+    "side": "right",
+    "lateral_m": 3.78,
+    "speed_kmh": 37.5,
+    "cpa_s": 29.78,
+    "level_db": 83.5,
+    "f0": 33.75
+   },
+   {
+    "class": "car",
+    "from": "behind",
+    "side": "right",
+    "lateral_m": 3.78,
+    "speed_kmh": 33.7,
+    "cpa_s": 25.46,
+    "level_db": 85.4,
+    "f0": 33.89
+   },
+   {
+    "class": "bike_bell",
+    "from": "behind",
+    "side": "right",
+    "lateral_m": 1.0,
+    "speed_kmh": 15.0,
+    "cpa_s": 42.65,
+    "t_on": 40.65,
+    "t_off": 42.65,
+    "level_db": 81.3
+   }
+  ]
+ },
+ "mic": {
+  "motion": "walk",
+  "walk_speed_mps": 1.1583333333333332
+ },
+ "sources": [
+  {
+   "class": "car",
+   "wp": [
+    [
+     0.0,
+     -281.5048333333333,
+     -3.78,
+     1.5
+    ],
+    [
+     60.0,
+     343.4951666666667,
+     -3.78,
+     1.5
+    ]
+   ],
+   "t_on": 0.0,
+   "t_off": 60.0,
+   "l1m_db": 83.5,
+   "min_dist_m": 3.78,
+   "t_min_dist_s": 29.8,
+   "geom": "straight"
+  },
+  {
+   "class": "car",
+   "wp": [
+    [
+     0.0,
+     -214.63438888888894,
+     -3.78,
+     1.5
+    ],
+    [
+     60.0,
+     347.03227777777784,
+     -3.78,
+     1.5
+    ]
+   ],
+   "t_on": 0.0,
+   "t_off": 60.0,
+   "l1m_db": 85.4,
+   "min_dist_m": 3.79,
+   "t_min_dist_s": 25.5,
+   "geom": "straight"
+  },
+  {
+   "class": "bike_bell",
+   "wp": [
+    [
+     0.0,
+     -134.09708333333333,
+     -1.0,
+     1.5
+    ],
+    [
+     60.0,
+     115.9029166666667,
+     -1.0,
+     1.5
+    ]
+   ],
+   "t_on": 40.65,
+   "t_off": 42.65,
+   "l1m_db": 81.3,
+   "min_dist_m": 1.01,
+   "t_min_dist_s": 42.6,
+   "geom": "straight"
+  }
+ ],
+ "tracks": [
+  0,
+  1,
+  0
+ ],
+ "peak_scale": 1.0,
+ "noise_dba": 52.1
+}
