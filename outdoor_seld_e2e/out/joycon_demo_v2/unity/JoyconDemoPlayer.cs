@@ -13,7 +13,8 @@
 //
 // 使い方: README_v2.md を参照。←/→ クリップ切替  Space 再生/停止  S 左右入替  M 束ね  G 連続
 // 前提: JoyconLib (Looking-Glass)、シーンに JoyconManager が1つ、
-//       Assets/StreamingAssets/joycon_demo_v2/ に <clip>.wav / _cues.csv / _urgency.csv / _scene.csv
+//       Assets/StreamingAssets/joycon_demo_v2/<種類別フォルダ>/<日本語名>.wav / _cues.csv / _urgency.csv / _scene.csv
+//       （サブフォルダは再帰的に読む。日本語のフォルダ名・ファイル名は Uri エスケープで対応）
 //
 // 振動の対応（本研究の「危険度=鳴り方」・v1と同じ）:
 //   強   = 速い連打 ぶっぶっぶっぶっ（4発・強く・高め）
@@ -64,9 +65,13 @@ public class JoyconDemoPlayer : MonoBehaviour
         joycons = JoyconManager.Instance != null ? JoyconManager.Instance.j : new List<Joycon>();
         dataDir = Path.Combine(Application.streamingAssetsPath, "joycon_demo_v2");
         if (!Directory.Exists(dataDir)) dataDir = Path.Combine(Application.streamingAssetsPath, "joycon_demo");
-        foreach (var f in Directory.GetFiles(dataDir, "*_cues.csv"))
-            clips.Add(Path.GetFileName(f).Replace("_cues.csv", ""));
-        clips.Sort();
+        // サブフォルダ（種類別・日本語名）も再帰的に拾う。clip = dataDir からの相対パス（区切りは /）
+        foreach (var f in Directory.GetFiles(dataDir, "*_cues.csv", SearchOption.AllDirectories))
+        {
+            string rel = f.Substring(dataDir.Length).TrimStart('\', '/').Replace("\\", "/");
+            clips.Add(rel.Substring(0, rel.Length - "_cues.csv".Length));
+        }
+        clips.Sort(System.StringComparer.Ordinal);
         if (clips.Count > 0) StartCoroutine(LoadClip(0));
     }
 
@@ -99,7 +104,8 @@ public class JoyconDemoPlayer : MonoBehaviour
                 ParseF(p[2], out azv);
                 urg.Add(new Urg { t = tv, u = uv, az = azv });
             }
-        string url = "file:///" + Path.Combine(dataDir, clips[idx] + ".wav").Replace("\\", "/");
+        // 日本語・空白を含むパスでも読めるよう Uri でエスケープする
+        string url = new System.Uri(Path.Combine(dataDir, clips[idx] + ".wav")).AbsoluteUri;
         using (var req = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.WAV))
         {
             yield return req.SendWebRequest();
@@ -248,7 +254,7 @@ public class JoyconDemoPlayer : MonoBehaviour
     void OnGUI()
     {
         GUI.Label(new Rect(10, 10, 1000, 30),
-            $"クリップ [{clipIdx + 1}/{clips.Count}] {(clips.Count > 0 ? clips[clipIdx] : "なし")}  " +
+            $"クリップ [{clipIdx + 1}/{clips.Count}] {(clips.Count > 0 ? clips[clipIdx].Replace("/", " › ") : "なし")}  " +
             $"Joy-con接続: {joycons.Count}本  左右入替: {(swapSides ? "ON" : "OFF")}  " +
             $"束ね(M): {(mergeMode ? "ON" : "OFF")}  連続(G): {(gradedMode ? "ON" : "OFF")}  パン(P): {(panMode ? "ON" : "OFF")}" +
             (joycons.Count >= 4 ? $"  4本={(swapFrontBack ? "後/前" : "前/後")}(B)" : ""));

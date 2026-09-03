@@ -1,0 +1,27 @@
+{
+  "name": "20_basutei_basu_teisha_hasshin",
+  "desc": "バス停で待つ: 後ろから来たバスが減速して真横2.5m（少し前）に停車し、3秒後に発進して走り去る（幹線・静止）",
+  "scene_type": "arterial",
+  "motion": "static",
+  "noise_dba": 50,
+  "seed": 44,
+  "events": [
+    {
+      "class": "car",
+      "profile": "stop",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 2.5,
+      "ahead_m": 1.0,
+      "t_stop": 5.0,
+      "t_go": 8.0,
+      "speed_kmh": 30,
+      "decel_mps2": 1.5,
+      "accel_mps2": 1.2,
+      "level_db": 82,
+      "f0": 28.0,
+      "idle_db": -6,
+      "speed_kmh_after": 20
+    }
+  ]
+}

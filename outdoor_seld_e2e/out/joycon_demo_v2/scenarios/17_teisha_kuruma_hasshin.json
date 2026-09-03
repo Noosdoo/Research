@@ -1,0 +1,22 @@
+{
+  "name": "17_teisha_kuruma_hasshin",
+  "desc": "停車中の車が発進: 前方6mの路肩に停まっていた車がエンジンをかけて発進し、同じ向きに走り去る（住宅街・歩行）",
+  "scene_type": "residential",
+  "motion": "walk",
+  "noise_dba": 44,
+  "seed": 41,
+  "events": [
+    {
+      "class": "car",
+      "profile": "start",
+      "travel": "same",
+      "side": "right",
+      "lateral_m": 1.5,
+      "ahead_m": 6.0,
+      "t_go": 3.0,
+      "speed_kmh": 30,
+      "accel_mps2": 1.5,
+      "engine_off": true
+    }
+  ]
+}

@@ -38,6 +38,7 @@ public class ScenarioVisualizer : MonoBehaviour
     GameObject pedestrian, flashRing, walkArrow;
     bool showDet = true, showDeco = true;
     string sceneType = "";
+    float realCrossZ = float.NaN;   // _layout.csv に本物の交差道路（xlane）があればその前方距離。飾りの交差点はそこに合わせる
     const float WARN_RING_M = 15f;
     readonly List<GameObject> decoGos = new List<GameObject>();
     readonly List<Renderer> signalLamps = new List<Renderer>();   // [赤,黄,青] × 灯器
@@ -145,6 +146,7 @@ public class ScenarioVisualizer : MonoBehaviour
         if (!File.Exists(lp)) return;
         var laneYs = new List<float>();
         var laneDirs = new List<float>();
+        var xl = new List<float[]>(); var xlKind = new List<string>();   // 横切る道路・線路（v3: xlane,x,dir,kind,height）
         foreach (var line in File.ReadAllLines(lp))
         {
             var p = line.Trim().Split(',');
@@ -163,6 +165,11 @@ public class ScenarioVisualizer : MonoBehaviour
             {
                 float y, dir; PF(p[1], out y); PF(p[2], out dir);
                 laneYs.Add(y); laneDirs.Add(dir);
+            }
+            else if (p[0] == "xlane")
+            {
+                float x, dir, h = 0f; PF(p[1], out x); PF(p[2], out dir); if (p.Length > 4) PF(p[4], out h);
+                xl.Add(new float[] { x, dir, h }); xlKind.Add(p[3]);
             }
             else if (p[0] == "static" && p[3] == "crossing")
             {
@@ -197,6 +204,65 @@ public class ScenarioVisualizer : MonoBehaviour
             arrow.GetComponent<Renderer>().material.color = laneDirs[i] > 0 ? new Color(0.6f, 0.9f, 1f) : new Color(1f, 0.7f, 0.6f);
             layoutGos.Add(arrow);
         }
+        // 横切る道路・線路（v3 の場面: 交差点を横切る車・横断歩道・左折・高架）。Unity z = 前方距離 x
+        realCrossZ = float.NaN;
+        for (int i = 0; i < xl.Count; i++)
+        {
+            float x = xl[i][0], dir = xl[i][1], h = xl[i][2]; string kind = xlKind[i];
+            if (h > 2f)
+            {   // 高架（頭上）: 2本のレールと橋脚だけ描き、下の道路や車が隠れないようにする
+                for (int sgn = -1; sgn <= 1; sgn += 2)
+                {
+                    var rail = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    rail.transform.localScale = new Vector3(80f, 0.15f, 0.2f);
+                    rail.transform.position = new Vector3(0, h, x + sgn * 0.75f);
+                    rail.GetComponent<Renderer>().material.color = new Color(0.35f, 0.35f, 0.4f);
+                    layoutGos.Add(rail);
+                }
+                for (int k = -3; k <= 3; k++)
+                {
+                    var pier = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    pier.transform.localScale = new Vector3(0.8f, h, 2.4f);
+                    pier.transform.position = new Vector3(k * 12f + 6f, h / 2f, x);
+                    pier.GetComponent<Renderer>().material.color = new Color(0.5f, 0.5f, 0.52f);
+                    layoutGos.Add(pier);
+                }
+                continue;
+            }
+            if (float.IsNaN(realCrossZ)) realCrossZ = x;
+            var band = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            band.transform.localScale = new Vector3(80f, 0.01f, kind == "train" ? 4f : 6.5f);
+            band.transform.position = new Vector3(0, 0.006f, x);
+            band.GetComponent<Renderer>().material.color = kind == "train" ? new Color(0.3f, 0.28f, 0.25f) : new Color(0.22f, 0.22f, 0.24f);
+            layoutGos.Add(band);
+            if (kind == "train")
+            {
+                for (int sgn = -1; sgn <= 1; sgn += 2)
+                {
+                    var r = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    r.transform.localScale = new Vector3(80f, 0.012f, 0.12f);
+                    r.transform.position = new Vector3(0, 0.014f, x + sgn * 0.72f);
+                    r.GetComponent<Renderer>().material.color = new Color(0.6f, 0.6f, 0.62f);
+                    layoutGos.Add(r);
+                }
+            }
+            else
+            {
+                for (int k = -12; k <= 12; k++)
+                {
+                    var dash = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                    dash.transform.localScale = new Vector3(1.5f, 0.01f, 0.12f);
+                    dash.transform.position = new Vector3(k * 3.2f, 0.012f, x);
+                    dash.GetComponent<Renderer>().material.color = new Color(0.9f, 0.9f, 0.85f);
+                    layoutGos.Add(dash);
+                }
+                var arrow = GameObject.CreatePrimitive(PrimitiveType.Cube);   // 進行方向（+y=歩行者の左へ → Unity −x）
+                arrow.transform.localScale = new Vector3(2.4f, 0.012f, 0.25f);
+                arrow.transform.position = new Vector3(dir > 0 ? -6f : 6f, 0.013f, x + (dir > 0 ? 1.5f : -1.5f));
+                arrow.GetComponent<Renderer>().material.color = dir > 0 ? new Color(0.6f, 0.9f, 1f) : new Color(1f, 0.7f, 0.6f);
+                layoutGos.Add(arrow);
+            }
+        }
         BuildDecoration(used);
     }
 
@@ -216,11 +282,13 @@ public class ScenarioVisualizer : MonoBehaviour
         float roadMinX = -0.6f, roadMaxX = 0.6f;           // Unity x = −y
         foreach (var y in laneYs) { float x = -y; roadMinX = Mathf.Min(roadMinX, x - 1.5f); roadMaxX = Mathf.Max(roadMaxX, x + 1.5f); }
         bool urban = sceneType == "arterial" || sceneType == "daily";
-        float zX = 25f;                                    // 交差点の位置（前方25m・飾り）
+        bool realCross = !float.IsNaN(realCrossZ);
+        float zX = realCross ? realCrossZ : 25f;           // 交差点の位置（本物の横切る道路があればそこ。無ければ前方25m・飾り）
         if (urban)
         {
             // 交差道路（画面横方向の帯）＋横断歩道＋停止線
-            Deco(PrimitiveType.Cube, new Vector3(0, 0.004f, zX), new Vector3(80f, 0.01f, 6.5f), new Color(0.22f, 0.22f, 0.24f));
+            if (!realCross)
+                Deco(PrimitiveType.Cube, new Vector3(0, 0.004f, zX), new Vector3(80f, 0.01f, 6.5f), new Color(0.22f, 0.22f, 0.24f));
             for (int k = -9; k <= 9; k++)
                 Deco(PrimitiveType.Cube, new Vector3(k * 0.9f, 0.011f, zX - 4.4f), new Vector3(0.45f, 0.01f, 2.0f), new Color(0.92f, 0.92f, 0.9f));
             Deco(PrimitiveType.Cube, new Vector3(0, 0.011f, zX - 5.8f), new Vector3(12f, 0.01f, 0.25f), new Color(0.92f, 0.92f, 0.9f));

@@ -1,0 +1,40 @@
+{
+  "name": "23_sasetsu_makikomi",
+  "desc": "左折巻き込み: 後ろから来た車が目の前の交差点で減速して左に曲がり、歩道の進路を横切る（幹線・歩行）",
+  "scene_type": "arterial",
+  "motion": "walk",
+  "noise_dba": 52,
+  "seed": 47,
+  "events": [
+    {
+      "class": "car",
+      "geom": "turn",
+      "turn": "left",
+      "radius_m": 4.0,
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 2.5,
+      "ahead_m": 1.0,
+      "t_turn": 5.0,
+      "speed_kmh": 35,
+      "speed_knots": [
+        [
+          0,
+          35
+        ],
+        [
+          3,
+          35
+        ],
+        [
+          5,
+          15
+        ],
+        [
+          10,
+          15
+        ]
+      ]
+    }
+  ]
+}

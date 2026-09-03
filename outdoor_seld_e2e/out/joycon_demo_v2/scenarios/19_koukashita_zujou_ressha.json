@@ -1,0 +1,29 @@
+{
+  "name": "19_koukashita_zujou_ressha",
+  "desc": "高架下: 頭上7mの高架を列車が横切り、同時に後ろから車が来る（幹線・歩行）※反響は非対応",
+  "scene_type": "arterial",
+  "motion": "walk",
+  "noise_dba": 52,
+  "seed": 43,
+  "events": [
+    {
+      "class": "train",
+      "geom": "cross",
+      "from": "right",
+      "ahead_m": 2.0,
+      "height_m": 7.0,
+      "cpa_s": 4.0,
+      "speed_kmh": 60,
+      "n_cars": 6,
+      "horn": null
+    },
+    {
+      "class": "car",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 2.5,
+      "speed_kmh": 40,
+      "cpa_s": 7.0
+    }
+  ]
+}

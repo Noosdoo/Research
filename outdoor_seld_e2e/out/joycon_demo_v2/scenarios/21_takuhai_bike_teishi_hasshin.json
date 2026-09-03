@@ -1,0 +1,24 @@
+{
+  "name": "21_takuhai_bike_teishi_hasshin",
+  "desc": "宅配バイク: 後ろから来て真横1.2mで停止（配達）、3秒後に発進して走り去る（住宅街・歩行）",
+  "scene_type": "residential",
+  "motion": "walk",
+  "noise_dba": 44,
+  "seed": 45,
+  "events": [
+    {
+      "class": "bike",
+      "profile": "stop",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 1.2,
+      "ahead_m": 0.5,
+      "t_stop": 4.0,
+      "t_go": 7.0,
+      "speed_kmh": 30,
+      "decel_mps2": 2.0,
+      "accel_mps2": 2.0,
+      "idle_db": -10
+    }
+  ]
+}

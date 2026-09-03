@@ -1,0 +1,36 @@
+{
+  "name": "18_oudan_migi_kara_kuruma",
+  "desc": "横断歩道を渡っている途中: 右から来た車が減速しながら目の前3mを横切る（止まらない）（幹線・歩行）",
+  "scene_type": "arterial",
+  "motion": "walk",
+  "noise_dba": 52,
+  "seed": 42,
+  "events": [
+    {
+      "class": "car",
+      "geom": "cross",
+      "from": "right",
+      "ahead_m": 3.0,
+      "cpa_s": 6.0,
+      "speed_kmh": 30,
+      "speed_knots": [
+        [
+          0,
+          30
+        ],
+        [
+          3,
+          30
+        ],
+        [
+          5,
+          12
+        ],
+        [
+          10,
+          12
+        ]
+      ]
+    }
+  ]
+}

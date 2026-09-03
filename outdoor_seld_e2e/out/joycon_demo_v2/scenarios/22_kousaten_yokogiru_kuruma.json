@@ -1,0 +1,26 @@
+{
+  "name": "22_kousaten_yokogiru_kuruma",
+  "desc": "交差点の角で待つ: 前方8mの交差道路を車が右から左へ50km/hで横切り、続いて11m先を左から右へもう1台（幹線・静止）",
+  "scene_type": "arterial",
+  "motion": "static",
+  "noise_dba": 52,
+  "seed": 46,
+  "events": [
+    {
+      "class": "car",
+      "geom": "cross",
+      "from": "right",
+      "ahead_m": 8.0,
+      "cpa_s": 4.0,
+      "speed_kmh": 50
+    },
+    {
+      "class": "car",
+      "geom": "cross",
+      "from": "left",
+      "ahead_m": 11.0,
+      "cpa_s": 7.5,
+      "speed_kmh": 45
+    }
+  ]
+}
