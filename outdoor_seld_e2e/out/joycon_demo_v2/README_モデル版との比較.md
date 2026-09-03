@@ -30,3 +30,4 @@
 | 26_rikadai_seimon_nansei_kara | 5.8 R 警告(bike_bell) / 7.4 R 警告(bike_bell) | 5.8 L 警告(bike_bell) / 6.1 R 警告(bike_bell) / 7.5 R 警告(bike_bell) |
 | 27_rikadai_seimon_aruite_sasetsu_mae | 0.9 L 強(car) / 3.0 R 中(car) | 2.2 L 強(car) / 3.1 R 中(car) / 5.7 R 強(car) |
 | 28_rikadai_seimon_aruite_usetsu_ushiro | 3.9 R 強(car) / 6.0 R 中(car) | 0.5 R 警告(bike_bell) |
+| 29_taikou_to_toorisugi | 3.0 L 強(car) / 5.1 L 強(car) / 5.2 L 中(car) | 4.2 L 強(car) / 5.0 L 中(car) / 5.1 L 中(car) |

@@ -42,6 +42,9 @@ def main() -> int:
     pred_cars = DEMO.v4.load_pred(pred)
     pred_warn = DEMO.H.load_pred7(pred)
     clips = sorted(p.stem for p in (MI / "foa").glob("custom_*.flac"))
+    if "--only" in sys.argv:                       # 指定した場面だけ書く（既存の出力には触れない）
+        keep = set(sys.argv[sys.argv.index("--only") + 1].split(","))
+        clips = [c for c in clips if c in keep or c.replace("custom_", "") in keep]
     lines = ["# 自作場面 × 本物の検出層（ft2 e099 因果推論 → v4.3＋hold）", "",
              "| 場面 | オラクル（正解→規則） | モデル（検出→規則） |", "| --- | --- | --- |"]
     n = 0
@@ -81,7 +84,12 @@ def main() -> int:
                      f"{' / '.join(f'{t:.1f} {side} {tier}({cls})' for t, side, tier, cls, _ in cues) or 'なし'} |")
         print(f"{clip}: モデル {len(cues)} 件 / オラクル {len(orc)} 件")
         n += 1
-    (OUT / "README_モデル版との比較.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    if "--only" not in sys.argv:
+        (OUT / "README_モデル版との比較.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+    else:                                          # 部分実行: 既存の比較表の末尾に行を足すだけ
+        rp = OUT / "README_モデル版との比較.md"
+        old = rp.read_text(encoding="utf-8").rstrip("\n") if rp.exists() else "\n".join(lines[:4])
+        rp.write_text(old + "\n" + "\n".join(lines[4:]) + "\n", encoding="utf-8")
     print(f"-> {n} 場面, {OUT / 'README_モデル版との比較.md'}")
     return 0
 

@@ -26,6 +26,7 @@ MAP = [
     ("custom_01_roji_ushiro_kuruma", "1_路地・住宅街", "路地_後ろからゆっくり車_至近"),
     ("custom_02_roji_taikou_kuruma", "1_路地・住宅街", "路地_前から対向車"),
     ("custom_16_ushiro_kuruma_yukkuri_tsuika", "1_路地・住宅街", "路地_ゆっくり抜けていく車"),
+    ("custom_29_taikou_to_toorisugi", "1_路地・住宅街", "前から対向車と、遠くを追い越す車"),
     ("custom_14_fukugo_mae_kuruma_ushiro_jitensha", "1_路地・住宅街", "複合_前から車と後ろから自転車ベル"),
     ("custom_13_shizuka_nanimonai", "1_路地・住宅街", "静かな住宅街_何も来ない"),
     ("custom_03_kansen_hodou_renzoku", "2_幹線道路・交差点・歩道", "幹線歩道_車3台が連続"),

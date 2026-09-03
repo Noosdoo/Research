@@ -1,0 +1,26 @@
+{
+  "name": "29_taikou_to_toorisugi",
+  "desc": "住宅街の路地: 前から対向車（横1.2m・30km/h・最接近5.0秒＝危ない）と、後ろから遠くを追い越す車（横4.5m・50km/h・最接近8.5秒＝安全）。夏ゼミ指摘「すり抜けと対向が同じ至近警告になるのでは」への実演",
+  "scene_type": "residential",
+  "motion": "walk",
+  "noise_dba": 44,
+  "seed": 61,
+  "events": [
+    {
+      "class": "car",
+      "from": "front",
+      "side": "left",
+      "lateral_m": 1.2,
+      "speed_kmh": 30,
+      "cpa_s": 5.0
+    },
+    {
+      "class": "car",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 4.5,
+      "speed_kmh": 50,
+      "cpa_s": 8.5
+    }
+  ]
+}
