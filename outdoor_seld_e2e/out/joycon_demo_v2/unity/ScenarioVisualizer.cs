@@ -23,7 +23,9 @@ using UnityEngine;
 
 public class ScenarioVisualizer : MonoBehaviour
 {
-    struct Sample { public float t, az, d; }
+    struct Sample { public float t, az, d; public int vis; }   // vis: 1=鳴っている/ラベルあり, 0=いるが無音・ラベル無し（薄く描く）
+    readonly Dictionary<Renderer, Color> baseColor = new Dictionary<Renderer, Color>();
+    readonly Dictionary<string, int> dimState = new Dictionary<string, int>();
     struct Det { public float t, az, d; public string cls; public bool hasD; }
 
     JoyconDemoPlayer player;
@@ -38,7 +40,8 @@ public class ScenarioVisualizer : MonoBehaviour
     GameObject pedestrian, flashRing, walkArrow;
     bool showDet = true, showDeco = true;
     string sceneType = "";
-    float realCrossZ = float.NaN;   // _layout.csv に本物の交差道路（xlane）があればその前方距離。飾りの交差点はそこに合わせる
+    float realCrossZ = float.NaN;
+    bool mapMode = false;            // _layout.csv に map 行があれば実地図（OSM）を描き、合成の車線・飾りは出さない   // _layout.csv に本物の交差道路（xlane）があればその前方距離。飾りの交差点はそこに合わせる
     const float WARN_RING_M = 15f;
     readonly List<GameObject> decoGos = new List<GameObject>();
     readonly List<Renderer> signalLamps = new List<Renderer>();   // [赤,黄,青] × 灯器
@@ -98,7 +101,7 @@ public class ScenarioVisualizer : MonoBehaviour
         foreach (var go in gos.Values) Destroy(go);
         foreach (var go in layoutGos) Destroy(go);
         foreach (var go in decoGos) Destroy(go);
-        gos.Clear(); tracks.Clear(); objClass.Clear(); layoutGos.Clear(); dets.Clear(); decoGos.Clear(); signalLamps.Clear();
+        gos.Clear(); tracks.Clear(); objClass.Clear(); layoutGos.Clear(); dets.Clear(); decoGos.Clear(); signalLamps.Clear(); baseColor.Clear(); dimState.Clear();
 
         stateLines = new string[0];
         string sp = Path.Combine(player.DataDir, clip + "_state.csv");
@@ -118,11 +121,12 @@ public class ScenarioVisualizer : MonoBehaviour
             {
                 var p = line.Trim().Split(',');
                 if (p.Length < 5 || p[0] == "t_s" || p[0].StartsWith("#")) continue;
-                float t, az, d;
+                float t, az, d, vv = 1f;
                 if (!PF(p[0], out t)) continue;
                 PF(p[3], out az); PF(p[4], out d);
+                if (p.Length >= 6 && p[5] != "") PF(p[5], out vv);
                 if (!tracks.ContainsKey(p[1])) { tracks[p[1]] = new List<Sample>(); objClass[p[1]] = p[2]; }
-                tracks[p[1]].Add(new Sample { t = t, az = az, d = d });
+                tracks[p[1]].Add(new Sample { t = t, az = az, d = d, vis = vv >= 0.5f ? 1 : 0 });
             }
         string dp = Path.Combine(player.DataDir, clip + "_detect.csv");
         if (File.Exists(dp))
@@ -143,6 +147,7 @@ public class ScenarioVisualizer : MonoBehaviour
     void BuildLayout(string lp)
     {
         walkArrow.SetActive(false);
+        mapMode = false;
         if (!File.Exists(lp)) return;
         var laneYs = new List<float>();
         var laneDirs = new List<float>();
@@ -166,6 +171,25 @@ public class ScenarioVisualizer : MonoBehaviour
                 float y, dir; PF(p[1], out y); PF(p[2], out dir);
                 laneYs.Add(y); laneDirs.Add(dir);
             }
+            else if (p[0] == "map") { mapMode = true; }
+            else if (p[0] == "road" || p[0] == "water" || p[0] == "rail")
+            {
+                float x1, y1, x2, y2, wd = 3f; PF(p[1], out x1); PF(p[2], out y1); PF(p[3], out x2); PF(p[4], out y2);
+                if (p.Length > 5 && p[5] != "") PF(p[5], out wd);
+                string kind = p.Length > 6 ? p[6] : "";
+                AddSegment(p[0], x1, y1, x2, y2, wd, kind);
+            }
+            else if (p[0] == "bldg")
+            {
+                float cx, cy, bw, bd, ang, bh = 6f; PF(p[1], out cx); PF(p[2], out cy); PF(p[3], out bw); PF(p[4], out bd); PF(p[5], out ang);
+                if (p.Length > 6 && p[6] != "") PF(p[6], out bh);
+                AddBuilding(cx, cy, bw, bd, ang, bh, p.Length > 7 ? p[7] : "");
+            }
+            else if (p[0] == "poi")
+            {
+                float px, py; PF(p[1], out px); PF(p[2], out py);
+                AddPoi(px, py, p[3], p.Length > 4 ? p[4] : "");
+            }
             else if (p[0] == "xlane")
             {
                 float x, dir, h = 0f; PF(p[1], out x); PF(p[2], out dir); if (p.Length > 4) PF(p[4], out h);
@@ -177,6 +201,7 @@ public class ScenarioVisualizer : MonoBehaviour
                 BuildCrossing(x, y);
             }
         }
+        if (mapMode) return;   // 実地図: 合成の歩道帯・車線・飾りは描かない（道路は road 行で描いてある）
         // 歩道（歩行者の足元・幅1.2m）
         var sw = Band(0f, 1.2f, new Color(0.62f, 0.62f, 0.58f), 0.01f);
         layoutGos.Add(sw);
@@ -264,6 +289,98 @@ public class ScenarioVisualizer : MonoBehaviour
             }
         }
         BuildDecoration(used);
+    }
+
+    // ---- 実地図（OpenStreetMap → _osm_map_layout.py）の描画。FOA座標 x=前 y=左 → Unity (−y, 0, x) ----
+    static readonly HashSet<string> CAR_ROADS = new HashSet<string> { "tertiary", "secondary", "primary", "unclassified", "residential", "living_street", "service", "car" };
+    void AddSegment(string type, float x1, float y1, float x2, float y2, float wd, string kind)
+    {
+        var a = new Vector3(-y1, 0f, x1); var b = new Vector3(-y2, 0f, x2);
+        var dvec = b - a; float len = dvec.magnitude; if (len < 0.05f) return;
+        float h = type == "water" ? 0.002f : (type == "rail" ? 0.006f : (CAR_ROADS.Contains(kind) ? 0.004f : 0.005f));
+        var g = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        g.transform.position = (a + b) * 0.5f + new Vector3(0, h, 0);
+        g.transform.rotation = Quaternion.LookRotation(dvec.normalized, Vector3.up);
+        g.transform.localScale = new Vector3(wd, 0.01f, len + wd * 0.9f);
+        Color c;
+        if (type == "water") c = new Color(0.45f, 0.65f, 0.95f);
+        else if (type == "rail") { c = new Color(0.3f, 0.28f, 0.25f); g.transform.localScale = new Vector3(3.2f, 0.01f, len + 1f); }
+        else if (CAR_ROADS.Contains(kind)) c = new Color(0.22f, 0.22f, 0.24f);
+        else if (kind == "steps") c = new Color(0.7f, 0.68f, 0.62f);
+        else c = new Color(0.62f, 0.62f, 0.58f);       // 歩道・小道
+        g.GetComponent<Renderer>().material.color = c;
+        layoutGos.Add(g);
+        if (type == "rail")
+        {
+            for (int sgn = -1; sgn <= 1; sgn += 2)
+            {
+                var r = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                r.transform.position = g.transform.position + g.transform.right * (sgn * 0.72f) + new Vector3(0, 0.008f, 0);
+                r.transform.rotation = g.transform.rotation;
+                r.transform.localScale = new Vector3(0.12f, 0.012f, len + 1f);
+                r.GetComponent<Renderer>().material.color = new Color(0.6f, 0.6f, 0.62f);
+                layoutGos.Add(r);
+            }
+        }
+    }
+
+    void AddBuilding(float cx, float cy, float bw, float bd, float angDeg, float bh, string name)
+    {
+        var g = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        float rad = angDeg * Mathf.Deg2Rad;
+        var axis = new Vector3(-Mathf.Sin(rad), 0f, Mathf.Cos(rad));      // 長軸（FOA (cos,sin) → Unity (−sin, 0, cos)）
+        g.transform.position = new Vector3(-cy, bh * 0.5f, cx);
+        g.transform.rotation = Quaternion.LookRotation(axis, Vector3.up);
+        g.transform.localScale = new Vector3(Mathf.Max(bd, 1f), bh, Mathf.Max(bw, 1f));
+        g.GetComponent<Renderer>().material.color = name != "" ? new Color(0.72f, 0.62f, 0.55f) : new Color(0.6f, 0.58f, 0.6f);
+        layoutGos.Add(g);
+        if (name != "") AddLabel(g, name, bh + 1.5f);
+    }
+
+    void AddPoi(float px, float py, string kind, string name)
+    {
+        var pos = new Vector3(-py, 0f, px);
+        if (kind == "crossing")
+        {
+            for (int k = -2; k <= 2; k++)
+            {
+                var z = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                z.transform.position = pos + new Vector3(k * 0.9f, 0.011f, 0);
+                z.transform.localScale = new Vector3(0.45f, 0.01f, 3.0f);
+                z.GetComponent<Renderer>().material.color = new Color(0.92f, 0.92f, 0.9f);
+                layoutGos.Add(z);
+            }
+        }
+        else if (kind == "signal")
+        {
+            var pole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            pole.transform.position = pos + new Vector3(0, 2.5f, 0); pole.transform.localScale = new Vector3(0.18f, 2.5f, 0.18f);
+            pole.GetComponent<Renderer>().material.color = new Color(0.35f, 0.35f, 0.38f); layoutGos.Add(pole);
+            var lamp = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            lamp.transform.position = pos + new Vector3(0, 5.2f, 0); lamp.transform.localScale = Vector3.one * 0.9f;
+            lamp.GetComponent<Renderer>().material.color = new Color(1f, 0.25f, 0.2f); layoutGos.Add(lamp);
+        }
+        else if (kind == "gate")
+        {
+            GameObject last = null;
+            for (int sgn = -1; sgn <= 1; sgn += 2)
+            {
+                var post = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                post.transform.position = pos + new Vector3(sgn * 1.6f, 1.2f, 0); post.transform.localScale = new Vector3(0.4f, 2.4f, 0.4f);
+                post.GetComponent<Renderer>().material.color = new Color(0.95f, 0.6f, 0.2f); layoutGos.Add(post); last = post;
+            }
+            if (name != "" && last != null) AddLabel(last, name, 3.5f);
+        }
+        else if (kind == "bus_stop")
+        {
+            var pole = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            pole.transform.position = pos + new Vector3(0, 1.4f, 0); pole.transform.localScale = new Vector3(0.12f, 1.4f, 0.12f);
+            pole.GetComponent<Renderer>().material.color = new Color(0.2f, 0.4f, 0.9f); layoutGos.Add(pole);
+            var sign = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            sign.transform.position = pos + new Vector3(0, 2.9f, 0); sign.transform.localScale = new Vector3(0.9f, 0.6f, 0.08f);
+            sign.GetComponent<Renderer>().material.color = new Color(0.2f, 0.4f, 0.9f); layoutGos.Add(sign);
+            if (name != "") AddLabel(sign, name, 1.0f);
+        }
     }
 
     // ---- 街の飾り（見た目だけ・音や通知には無関係） ------------------------------------
@@ -389,6 +506,19 @@ public class ScenarioVisualizer : MonoBehaviour
     }
 
     // ---- 毎フレーム ---------------------------------------------------------------
+    // 無音・ラベル無しの間は色を落として「そこにいるが聞こえていない」ことを示す（消さない）
+    void ApplyDim(string key, GameObject go, int vis)
+    {
+        int cur; if (dimState.TryGetValue(key, out cur) && cur == vis) return;
+        dimState[key] = vis;
+        foreach (var r in go.GetComponentsInChildren<Renderer>())
+        {
+            Color c0;
+            if (!baseColor.TryGetValue(r, out c0)) { c0 = r.material.color; baseColor[r] = c0; }
+            r.material.color = vis == 1 ? c0 : new Color(c0.r * 0.45f, c0.g * 0.45f, c0.b * 0.45f, c0.a);
+        }
+    }
+
     void Update()
     {
         if (player == null) return;
@@ -411,6 +541,7 @@ public class ScenarioVisualizer : MonoBehaviour
             var go = GetOrCreate(kv.Key);
             go.SetActive(show);
             if (!show) continue;
+            ApplyDim(kv.Key, go, s.vis);
             float rad = s.az * Mathf.Deg2Rad;             // DCASE: 0°=前, +=左
             var pos = new Vector3(-s.d * Mathf.Sin(rad), go.transform.position.y, s.d * Mathf.Cos(rad));
             var prev = go.transform.position;
@@ -474,25 +605,31 @@ public class ScenarioVisualizer : MonoBehaviour
         if (player == null) return;
         var style = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true };
         style.normal.textColor = Color.white;
-        // 右上: 凡例（左上の操作パネルは画面の 55% までなので重ならない）
-        float w = Mathf.Min(400f, Screen.width * 0.40f);
-        var old = GUI.color;
-        GUI.color = new Color(0f, 0f, 0f, 0.55f);
-        GUI.DrawTexture(new Rect(Screen.width - w - 6, 6, w, 78), Texture2D.whiteTexture);
-        GUI.color = old;
+        // 右上: 凡例（画面幅の 44% まで・行ごとに高さを計算して折り返す）
+        float w = Mathf.Min(440f, Screen.width * 0.44f);
+        float tw = w - 16f;
         string[] legend = {
             "凡例  立体=実体(GT)  暗い円盤=検出層の出力(D)",
+            "薄い色=いるが聞こえていない（無音・ラベル無し）",
             "リング=通知（赤=強 / 橙=中 / 水色=警告）",
             "地面の矢印=歩く向き   街の飾り(V)は見た目だけ" };
-        for (int i = 0; i < legend.Length; i++)
-            GUI.Label(new Rect(Screen.width - w + 2, 10 + i * 22, w - 16, 22), legend[i], style);
+        float total = 10f;
+        var hs = new float[legend.Length];
+        for (int i = 0; i < legend.Length; i++) { hs[i] = style.CalcHeight(new GUIContent(legend[i]), tw) + 2f; total += hs[i]; }
+        var old = GUI.color;
+        GUI.color = new Color(0f, 0f, 0f, 0.55f);
+        GUI.DrawTexture(new Rect(Screen.width - w - 6, 6, w, total + 4f), Texture2D.whiteTexture);
+        GUI.color = old;
+        float y = 10f;
+        for (int i = 0; i < legend.Length; i++) { GUI.Label(new Rect(Screen.width - w + 2, y, tw, hs[i]), legend[i], style); y += hs[i]; }
         if (stateLines.Length == 0) return;
         int idx = Mathf.Clamp(Mathf.FloorToInt(player.PlayTime * 10f), 0, stateLines.Length - 1);
         string txt = player.IsPlaying ? stateLines[idx] : "（Space で再生すると判定が流れます）";
+        float bh = style.CalcHeight(new GUIContent("いまの判定: " + txt), Screen.width - 28) + 8f;
         GUI.color = new Color(0f, 0f, 0f, 0.55f);
-        GUI.DrawTexture(new Rect(6, Screen.height - 62, Screen.width - 12, 56), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(6, Screen.height - bh - 6, Screen.width - 12, bh), Texture2D.whiteTexture);
         GUI.color = old;
-        GUI.Label(new Rect(14, Screen.height - 58, Screen.width - 28, 50), "いまの判定: " + txt, style);
+        GUI.Label(new Rect(14, Screen.height - bh - 2, Screen.width - 28, bh - 4), "いまの判定: " + txt, style);
     }
 
     // ---- 8クラスの見た目 --------------------------------------------------------------

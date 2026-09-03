@@ -158,6 +158,52 @@ def layout_rows(clip):
     return rows
 
 
+def scene_rows_full(clip):
+    """scene.json の軌道から全 100 フレームの位置を出す（2026-09-03「途中で対象物が消えないように」）。
+
+    従来はラベル（可聴ゲート済み）だけを描いていたので、遠い・静かな間は車が画面から消えていた。
+    vis=1 はそのフレームにラベルがある（鳴っていて模型が見るべき）、0 は「いるが無音・ラベル無し」。
+    """
+    import step11_v12_render as v12r
+    from outdoor_seld.geometry import apparent_azel_deg
+    m9 = v12r.m9
+    sj = DS / "work" / clip / "scene.json"
+    if not sj.exists():
+        return None
+    sc = json.loads(sj.read_text(encoding="utf-8"))
+    mr = sc["mic"]; mo = mr.get("motion", "static"); Z = 1.5
+    if mo == "walk":
+        v = float(mr["walk_speed_mps"]); dx = float(mr.get("walk_dir_x", 1.0)); x0 = -dx * v * 5.0
+        mic = np.array([[0.0, x0, 0.0, Z], [10.0, x0 + dx * v * 10.0, 0.0, Z]])
+    elif mo == "walk_cross_y":
+        v = float(mr["walk_speed_mps"]); ts = float(mr["t_stop_s"]); y0 = -0.5 - v * ts
+        mic = np.array([[0.0, 0.0, y0, Z], [ts, 0.0, -0.5, Z], [10.0, 0.0, -0.5, Z]])
+    else:
+        mic = np.array([0.0, 0.0, Z])
+    labeled = set()
+    for line in open(DS / "metadata_dist" / f"{clip}.csv", encoding="utf-8"):
+        g = line.strip().split(",")
+        if len(g) == 6:
+            labeled.add((int(g[0]), int(g[1]), int(g[2])))
+    CLS_IDX = {n: i for i, n in CLS_NAME.items()}
+    NAME = {"car_drive": "car"}
+    tk = np.arange(100) * 0.1
+    c = m9.sound_speed(m9.TEMP_C)
+    rows = []
+    for src in sc["sources"]:
+        cls = NAME.get(src["class"], src["class"])
+        if cls not in CLS_IDX:
+            continue
+        ci = CLS_IDX[cls]; tr = int(src.get("track", 0))
+        wp = np.array(src["wp"], float)
+        az, _e, _a, _b = apparent_azel_deg(tk, wp, mic, c)
+        dist = m9._dist_series(wp, mic, tk)
+        for k in range(100):
+            if np.isfinite(az[k]) and np.isfinite(dist[k]):
+                rows.append((k / 10.0, f"{ci}_{tr}", cls, float(az[k]), float(dist[k]), 1 if (k, ci, tr) in labeled else 0))
+    return rows
+
+
 def write_clip(clip, cues, urg, outdir: Path, det=None, lay=None):
     foa = DS / "foa" / f"{clip}.flac"
     if not foa.exists():
@@ -173,11 +219,16 @@ def write_clip(clip, cues, urg, outdir: Path, det=None, lay=None):
         for t, side, tier, cls, az in cues:
             f.write(f"{t:.1f},{side},{tier},{cls},{az:.0f}\n")
     with open(outdir / f"{clip}_scene.csv", "w", encoding="utf-8", newline="\n") as f:
-        f.write("t_s,obj,class,az_deg,dist_m\n")
-        for line in open(DS / "metadata_dist" / f"{clip}.csv", encoding="utf-8"):
-            g = line.strip().split(",")
-            if len(g) == 6:
-                f.write(f"{int(g[0])/10.0:.1f},{g[1]}_{g[2]},{CLS_NAME[int(g[1])]},{float(g[3]):.1f},{float(g[5]):.2f}\n")
+        f.write("t_s,obj,class,az_deg,dist_m,vis\n")
+        full = scene_rows_full(clip)
+        if full is None:      # 軌道が無ければ従来どおりラベルから（vis=1）
+            for line in open(DS / "metadata_dist" / f"{clip}.csv", encoding="utf-8"):
+                g = line.strip().split(",")
+                if len(g) == 6:
+                    f.write(f"{int(g[0])/10.0:.1f},{g[1]}_{g[2]},{CLS_NAME[int(g[1])]},{float(g[3]):.1f},{float(g[5]):.2f},1\n")
+        else:
+            for t, obj, cls, az, dist, vis in full:
+                f.write(f"{t:.1f},{obj},{cls},{az:.1f},{dist:.2f},{vis}\n")
     with open(outdir / f"{clip}_urgency.csv", "w", encoding="utf-8", newline="\n") as f:
         f.write("t_s,urgency,az_deg\n")
         for t, u, az in urg:

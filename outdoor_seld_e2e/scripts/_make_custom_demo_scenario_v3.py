@@ -186,7 +186,48 @@ def arc_len(ev):
     return tg, sg
 
 
-def build_path(ev, mic_x, shift_m=0.0):
+def route_points(ev, S):
+    """geom=path の折れ線 [(x,y),...]（歩行者座標）。points 直書き、または route（地図の道路 id を並べる）。
+
+    route の要素は "<way id>" か "<way id>r"（r = 逆向き）。map_roads（_osm_map_layout.py の *_roads.json）から
+    折れ線をつなぎ、map_offset（歩行者が立つ位置＝地図座標）を引いて歩行者座標にする。
+    """
+    off = S.get("map_offset", [0.0, 0.0])
+    if "points" in ev:
+        P = [(float(x) - off[0], float(y) - off[1]) for x, y in ev["points"]]
+    else:
+        rj = json.loads((ROOT / S["map_roads"]).read_text(encoding="utf-8"))
+        by_id = {str(r["id"]): r["points"] for r in rj["roads"]}
+        P = []
+        for tag in ev["route"]:
+            tag = str(tag)
+            rev = tag.endswith("r")
+            pts = list(by_id[tag[:-1] if rev else tag])
+            if rev:
+                pts = pts[::-1]
+            for x, y in pts:
+                q = (float(x) - off[0], float(y) - off[1])
+                if P and abs(P[-1][0] - q[0]) < 0.05 and abs(P[-1][1] - q[1]) < 0.05:
+                    continue
+                P.append(q)
+    assert len(P) >= 2, "path には 2 点以上要る"
+    return P
+
+
+def path_xy(P, s_arr):
+    """折れ線 P 上の弧長 s の位置（両端の外は端の線分を延長）。"""
+    P = np.asarray(P, float)
+    seg = np.linalg.norm(np.diff(P, axis=0), axis=1)
+    S_ = np.concatenate([[0.0], np.cumsum(seg)])
+    xs = np.interp(s_arr, S_, P[:, 0]); ys = np.interp(s_arr, S_, P[:, 1])
+    u0 = (P[1] - P[0]) / max(seg[0], 1e-6); u1 = (P[-1] - P[-2]) / max(seg[-1], 1e-6)
+    lo = s_arr < 0; hi = s_arr > S_[-1]
+    xs[lo] = P[0, 0] + s_arr[lo] * u0[0]; ys[lo] = P[0, 1] + s_arr[lo] * u0[1]
+    xs[hi] = P[-1, 0] + (s_arr[hi] - S_[-1]) * u1[0]; ys[hi] = P[-1, 1] + (s_arr[hi] - S_[-1]) * u1[1]
+    return xs, ys, S_
+
+
+def build_path(ev, mic_x, shift_m=0.0, S=None):
     """(M,4) の折れ線軌道と、layout 用の行を返す。u = 基準点からの走行距離（負=手前）。"""
     cls = ev["class"]
     z = float(ev.get("height_m", 1.5))
@@ -198,6 +239,8 @@ def build_path(ev, mic_x, shift_m=0.0):
     prof = ev.get("profile", "pass")
     simple = geom == "straight" and prof == "pass" and "speed_knots" not in ev
     t_ref = t_ref_of(ev)
+    if geom == "path" and "t_ref" not in ev:
+        t_ref = float(ev.get("cpa_s", t_ref))
     if simple:
         # v2 と同一（2点の等速直線）
         v = ev.get("speed_kmh", 30) / 3.6
@@ -228,6 +271,18 @@ def build_path(ev, mic_x, shift_m=0.0):
         xs = np.full_like(us, x_ref)
         ys = y_ref + dy * us
         rows.append(("xlane", x_ref, dy, "train" if cls == "train" else "car", z))
+    elif geom == "path":
+        # 実地図の道路など任意の折れ線。基準点 = t_ref にマイクへ最も近づく折れ線上の点（s_ref_m で上書き可）
+        P = route_points(ev, S or {})
+        total_len = float(np.sum(np.linalg.norm(np.diff(np.asarray(P, float), axis=0), axis=1)))
+        dense = np.linspace(-50.0, total_len + 50.0, 4000)
+        px, py, _ = path_xy(P, dense)
+        mx = mic_x(t_ref)
+        s_ref = float(ev["s_ref_m"]) if "s_ref_m" in ev else float(dense[np.argmin((px - mx) ** 2 + py ** 2)])
+        xs, ys, _ = path_xy(P, us + s_ref)
+        if not (S or {}).get("map_layout"):
+            for (x1, y1), (x2, y2) in zip(P[:-1], P[1:]):
+                rows.append(("road", x1, y1, x2, y2, float(ev.get("road_width_m", 5.5))))
     elif geom == "turn":
         # 車線 y=lat を d 向きに走り、基準点で半径 R の 90° の弧を曲がって直進
         d = -1.0 if ev.get("from", "front") == "front" else 1.0
@@ -331,7 +386,7 @@ def run(spec_path: Path) -> None:
 
     stems, gt, layout_rows = [], [], []
     for i, ev in enumerate(events):
-        wp, rows = build_path(ev, mic_x, ev.get("_shift", 0.0))
+        wp, rows = build_path(ev, mic_x, ev.get("_shift", 0.0), S)
         for r in rows:
             if r not in layout_rows:
                 layout_rows.append(r)
@@ -406,12 +461,12 @@ def run(spec_path: Path) -> None:
     base = OUT / f"custom_{name}"
     sf.write(f"{base}.wav", st.astype(np.float32), m9.FS_OUT, subtype="PCM_16")
     with open(f"{base}_scene.csv", "w", encoding="utf-8", newline="\n") as f:
-        f.write("t_s,obj,class,az_deg,dist_m\n")
+        f.write("t_s,obj,class,az_deg,dist_m,vis\n")        # vis: 1=鳴っている, 0=いるが無音（薄く描く。消さない）
         for ci, az, dist, act, ev, oi in gt:
             cname = "train" if ev["class"] == "train" else ev["class"]
             for k in range(100):
-                if act[k] and np.isfinite(az[k]) and np.isfinite(dist[k]):
-                    f.write(f"{k/10.0:.1f},{oi},{cname},{az[k]:.1f},{dist[k]:.2f}\n")
+                if np.isfinite(az[k]) and np.isfinite(dist[k]):
+                    f.write(f"{k/10.0:.1f},{oi},{cname},{az[k]:.1f},{dist[k]:.2f},{1 if act[k] else 0}\n")
     with open(f"{base}_detect.csv", "w", encoding="utf-8", newline="\n") as f:
         f.write("t_s,class,az_deg,dist_m\n")
         for k in sorted(frames_dist):
@@ -428,13 +483,33 @@ def run(spec_path: Path) -> None:
     with open(f"{base}_layout.csv", "w", encoding="utf-8", newline="\n") as f:
         f.write("type,a,b,c,d\n")
         f.write(f"scene,{S.get('scene_type', 'residential')},{S.get('motion', 'static')},{1.0 if S.get('motion') == 'walk' else 0.0},\n")
-        for kind, a, b, cc, dd in layout_rows:
+        for r in layout_rows:
+            kind = r[0]
             if kind == "static":
-                f.write(f"static,{a},{b},{cc},\n")
+                f.write(f"static,{r[1]},{r[2]},{r[3]},\n")
             elif kind == "lane":
-                f.write(f"lane,{a},{b},{cc},\n")
+                f.write(f"lane,{r[1]},{r[2]},{r[3]},\n")
+            elif kind == "road":
+                f.write(f"road,{r[1]:.1f},{r[2]:.1f},{r[3]:.1f},{r[4]:.1f},{r[5]:.1f},car,\n")
             else:
-                f.write(f"xlane,{a:.2f},{b},{cc},{dd}\n")
+                f.write(f"xlane,{r[1]:.2f},{r[2]},{r[3]},{r[4]}\n")
+        if S.get("map_layout"):
+            # 実地図（_osm_map_layout.py の出力）を歩行者座標に平行移動して丸ごと足す
+            off = S.get("map_offset", [0.0, 0.0])
+            for line in (ROOT / S["map_layout"]).read_text(encoding="utf-8").splitlines():
+                q = line.split(",")
+                if len(q) < 2 or q[0] == "type":
+                    continue
+                kind = q[0]
+                try:
+                    if kind in ("road", "water", "rail"):
+                        q[1] = f"{float(q[1]) - off[0]:.1f}"; q[2] = f"{float(q[2]) - off[1]:.1f}"
+                        q[3] = f"{float(q[3]) - off[0]:.1f}"; q[4] = f"{float(q[4]) - off[1]:.1f}"
+                    elif kind in ("bldg", "poi"):
+                        q[1] = f"{float(q[1]) - off[0]:.1f}"; q[2] = f"{float(q[2]) - off[1]:.1f}"
+                except ValueError:
+                    continue
+                f.write(",".join(q) + "\n")
     with open(f"{base}_cues.csv", "w", encoding="utf-8", newline="\n") as f:
         f.write("t_s,side,tier,class,az_deg\n")
         for t, side, tier, cls, azv in cues:

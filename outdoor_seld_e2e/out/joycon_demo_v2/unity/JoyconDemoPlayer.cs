@@ -279,40 +279,48 @@ public class JoyconDemoPlayer : MonoBehaviour
     float T { get { return (src != null && src.clip != null) ? src.time : 0f; } }
     void OnGUI()
     {
+        // 左上の操作パネル: 行ごとに高さを計算して折り返す（画面幅の 52% まで。右上の凡例と重ならない）
         var st = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true, richText = true };
         st.normal.textColor = Color.white;
         var hd = new GUIStyle(st) { fontSize = 16, fontStyle = FontStyle.Bold };
-        float w = Mathf.Min(760f, Screen.width * 0.55f);
-        int nCue = Mathf.Min(cues.Count, 12);
-        float h = 118f + nCue * 20f + (gradedMode ? 34f : 0f) + (cues.Count > 12 ? 20f : 0f);
-        var old = GUI.color;
-        GUI.color = new Color(0f, 0f, 0f, 0.55f);
-        GUI.DrawTexture(new Rect(6, 6, w, h), Texture2D.whiteTexture);
-        GUI.color = old;
-        float x = 14f, y = 10f;
-        GUI.Label(new Rect(x, y, w - 16, 22), $"[{clipIdx + 1}/{clips.Count}] {(clips.Count > 0 ? clips[clipIdx].Replace("/", " › ") : "なし")}", hd); y += 24;
-        GUI.Label(new Rect(x, y, w - 16, 20),
+        float w = Mathf.Min(820f, Screen.width * 0.52f);
+        float tw = w - 20f;
+        var items = new List<KeyValuePair<string, GUIStyle>>();
+        items.Add(new KeyValuePair<string, GUIStyle>($"[{clipIdx + 1}/{clips.Count}] {(clips.Count > 0 ? clips[clipIdx].Replace("/", " › ") : "なし")}", hd));
+        items.Add(new KeyValuePair<string, GUIStyle>(
             $"Joy-con {joycons.Count}本   束ね(M) {(mergeMode ? "ON" : "OFF")}   連続(G) {(gradedMode ? "ON" : "OFF")}   パン(P) {(panMode ? "ON" : "OFF")}   " +
             $"切替合図(J) {(switchCue ? "ON" : "OFF")}   左右入替(S) {(swapSides ? "ON" : "OFF")}" +
-            (joycons.Count >= 4 ? $"   4本 {(swapFrontBack ? "後/前" : "前/後")}(B)" : ""), st); y += 20;
-        GUI.Label(new Rect(x, y, w - 16, 20),
+            (joycons.Count >= 4 ? $"   4本 {(swapFrontBack ? "後/前" : "前/後")}(B)" : ""), st));
+        items.Add(new KeyValuePair<string, GUIStyle>(
             $"←/→ 切替   Space 再生/停止   再生 {T:F1}s   通知 {firedCount} 回 / 束ね {mergedCount} 回 / 切替合図 {switchCount} 回" +
-            (gradedMode ? $"   緊急度 {lastGradedU:F2}" : ""), st); y += 20;
-        GUI.Label(new Rect(x, y, w - 16, 20), "最後の通知: " + (lastFire == "" ? "—" : lastFire), st); y += 24;
+            (gradedMode ? $"   緊急度 {lastGradedU:F2}" : ""), st));
+        items.Add(new KeyValuePair<string, GUIStyle>("最後の通知: " + (lastFire == "" ? "—" : lastFire), st));
+        int nCue = Mathf.Min(cues.Count, 12);
         for (int i = 0; i < nCue; i++)
+            items.Add(new KeyValuePair<string, GUIStyle>(
+                $"{(i < nextCue && src.isPlaying ? "✓" : "　")} {cues[i].t:F1}s  {cues[i].side}  {cues[i].tier} ({cues[i].cls})", st));
+        if (cues.Count > 12) items.Add(new KeyValuePair<string, GUIStyle>($"… 他 {cues.Count - 12} 件", st));
+        float total = 12f;
+        var hs = new float[items.Count];
+        for (int i = 0; i < items.Count; i++) { hs[i] = items[i].Value.CalcHeight(new GUIContent(items[i].Key), tw) + 3f; total += hs[i]; }
+        if (gradedMode) total += 30f;
+        var old = GUI.color;
+        GUI.color = new Color(0f, 0f, 0f, 0.55f);
+        GUI.DrawTexture(new Rect(6, 6, w, total + 6f), Texture2D.whiteTexture);
+        GUI.color = old;
+        float x = 14f, y = 12f;
+        for (int i = 0; i < items.Count; i++)
         {
-            GUI.Label(new Rect(x, y, w - 16, 20),
-                $"{(i < nextCue && src.isPlaying ? "✓" : "　")} {cues[i].t:F1}s  {cues[i].side}  {cues[i].tier} ({cues[i].cls})", st);
-            y += 20;
+            GUI.Label(new Rect(x, y, tw, hs[i]), items[i].Key, items[i].Value);
+            y += hs[i];
         }
-        if (cues.Count > 12) { GUI.Label(new Rect(x, y, w - 16, 20), $"… 他 {cues.Count - 12} 件", st); y += 20; }
         if (gradedMode)
         {
-            GUI.Label(new Rect(x, y, 200, 20), "緊急度バー（連続モード）", st);
+            GUI.Label(new Rect(x, y, 200, 22), "緊急度バー（連続モード）", st);
             GUI.color = new Color(1f, 1f, 1f, 0.25f);
-            GUI.DrawTexture(new Rect(x + 190, y + 3, 204, 14), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(x + 190, y + 4, 204, 14), Texture2D.whiteTexture);
             GUI.color = new Color(1f, 0.45f, 0.2f, 0.95f);
-            GUI.DrawTexture(new Rect(x + 192, y + 5, 200f * Mathf.Clamp01(lastGradedU), 10), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(x + 192, y + 6, 200f * Mathf.Clamp01(lastGradedU), 10), Texture2D.whiteTexture);
             GUI.color = old;
         }
     }

@@ -1,0 +1,37 @@
+{
+  "name": "26_rikadai_seimon_nansei_kara",
+  "desc": "理科大正門前（実地図）: 南西（流山街道側）から来た車が交差点を抜けて東の道へ。後ろから自転車ベルも（歩行）",
+  "scene_type": "arterial",
+  "motion": "walk",
+  "noise_dba": 50,
+  "seed": 53,
+  "map_layout": "out/joycon_demo_v2/map/tus_noda_seimon_layout.csv",
+  "map_roads": "out/joycon_demo_v2/map/tus_noda_seimon_roads.json",
+  "map_offset": [
+    -4.5,
+    -4.5
+  ],
+  "events": [
+    {
+      "class": "car",
+      "geom": "path",
+      "route": [
+        "25584855r",
+        "627323766r",
+        "25584888"
+      ],
+      "cpa_s": 5.5,
+      "speed_kmh": 25
+    },
+    {
+      "class": "bike_bell",
+      "from": "behind",
+      "side": "right",
+      "lateral_m": 1.0,
+      "speed_kmh": 15,
+      "cpa_s": 7.5,
+      "t_on": 5.5,
+      "t_off": 7.5
+    }
+  ]
+}
