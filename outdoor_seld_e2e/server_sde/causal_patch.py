@@ -21,7 +21,9 @@
 ## 代償（正直に）
 
 1窓あたり教師フレームが1つだけなので、勾配の信号は通常学習の 1/100 になる。
-そのぶん REPEATS で1クリップを複数回サンプルして補う（既定8）。
+そのぶん REPEATS で1クリップを複数回サンプルして補う（**既定2**。ft1/ft2 の実運用値。
+2026-09-03 に docstring と既定値を実運用に揃えた＝第11回監査 論点7。REPEAT=8 は ④感度測定で
+「減衰後に安定・強到達+2.9pt」を確認済みで、v2 の束の設計で採否を決める）。
 学習済み ckpt からの微調整前提であり、ゼロから学習する用途ではない。
 
 ## 使い方
@@ -30,7 +32,7 @@
 
 環境変数:
   CAUSAL_KMIN   窓の終端フレームの下限（既定40。先頭は実音が少なくノイズになる）
-  CAUSAL_REPEAT 1クリップを1エポックで何回サンプルするか（既定8）
+  CAUSAL_REPEAT 1クリップを1エポックで何回サンプルするか（既定2）
 """
 from __future__ import annotations
 
@@ -41,7 +43,7 @@ import torch
 import torch.utils.data
 
 KMIN = int(os.environ.get("CAUSAL_KMIN", "40"))
-REPEAT = int(os.environ.get("CAUSAL_REPEAT", "8"))
+REPEAT = int(os.environ.get("CAUSAL_REPEAT", "2"))   # 実運用の既定（sbatch と同値）
 NFRAME = 100                      # 10秒 / 0.1秒
 SEED = int(os.environ.get("CAUSAL_SEED", "0"))
 

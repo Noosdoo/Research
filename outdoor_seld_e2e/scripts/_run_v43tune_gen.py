@@ -1,0 +1,57 @@
+# -*- coding: utf-8 -*-
+"""fold32（v4.3チューニングval・1,800本）の生成ドライバ。
+
+出力先は **out/dataset_outdoor_siren_v43tune/**（新規）。既存データセットには書かない。
+
+使い方:
+  PYTHONPATH=scripts:src python scripts/_run_v43tune_gen.py --rows 0-149
+  PYTHONPATH=scripts:src python scripts/_run_v43tune_gen.py --list
+決定論なので中断・再実行は同一ビットに収束（既存foaはスキップ）。
+"""
+from __future__ import annotations
+
+import sys
+import time
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
+sys.path.insert(0, str(ROOT / "src"))
+
+import step10_v43tune_plan as plan  # noqa: E402
+import step11_v12_render as v12  # noqa: E402
+
+m9 = v12.m9
+
+
+def main() -> None:
+    rows = plan.v43tune_rows()         # m9.DS 付け替え前に呼ぶ
+    assert len(rows) == 1800, len(rows)
+    m9.DS = ROOT / "out" / "dataset_outdoor_siren_v43tune"
+    m9.WORK = m9.DS / "work"
+    if "--list" in sys.argv:
+        print(f"total rows: {len(rows)} -> {m9.DS}")
+        return
+    lo, hi = 0, len(rows) - 1
+    if "--rows" in sys.argv:
+        a, b = sys.argv[sys.argv.index("--rows") + 1].split("-")
+        lo, hi = int(a), int(b)
+    part = rows[lo:hi + 1]
+    t0 = time.time()
+    done = skip = 0
+    for i, row in enumerate(part):
+        if (m9.DS / "foa" / f"{row['clip_id']}.flac").exists():
+            skip += 1
+            continue
+        v12.generate_clip_v12(row)
+        done += 1
+        if done % 50 == 0:
+            el = time.time() - t0
+            print(f"[{lo}-{hi}] {i+1}/{len(part)} done={done} skip={skip} "
+                  f"{el/max(done,1):.1f}s/clip", flush=True)
+    print(f"[{lo}-{hi}] FINISHED done={done} skip={skip} {time.time()-t0:.0f}s",
+          flush=True)
+
+
+if __name__ == "__main__":
+    main()
