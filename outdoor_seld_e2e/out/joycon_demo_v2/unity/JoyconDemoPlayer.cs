@@ -3,6 +3,7 @@
 // v1（2026-09-01）からの追加:
 //   M : 束ねモード ON/OFF — 同じ手・同じ段の再トリガが MERGE_SEC(1.0s) 以内なら「振動を延長」するだけで
 //       新しい通知にしない（機器側で束ねる案。規則は無変更＝cues.csv は生の出力のまま）
+//   J : 系列切替の合図 ON/OFF（連続モード時。方位が跳んだら短い2連＋弱いところから立ち上げ直す）
 //   G : 連続モード ON/OFF — 車・キック・バイクは <clip>_urgency.csv（予測からの緊急度 0..1）で振動の強さを
 //       毎フレーム連続に変える（安全→注意→至近で徐々に強くなる案）。警告音の単発パターンはそのまま
 //   P : パンニング ON/OFF — 連続モードで方位に応じて左右の振幅を配分（正面=両手半分、真横=片手のみ）。
@@ -127,10 +128,11 @@ public class JoyconDemoPlayer : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.G)) gradedMode = !gradedMode;
         if (Input.GetKeyDown(KeyCode.P)) panMode = !panMode;
         if (Input.GetKeyDown(KeyCode.B)) swapFrontBack = !swapFrontBack;
+        if (Input.GetKeyDown(KeyCode.J)) switchCue = !switchCue;
         if (Input.GetKeyDown(KeyCode.Space))
         {
             if (src.isPlaying) { src.Stop(); StopAllRunners(); }
-            else if (src.clip != null) { nextCue = 0; urgIdx = 0; lastFire = ""; firedCount = 0; mergedCount = 0; src.Play(); }
+            else if (src.clip != null) { nextCue = 0; urgIdx = 0; lastFire = ""; firedCount = 0; mergedCount = 0; switchCount = 0; switchRampT0 = -10f; lastGradedT = -1f; src.Play(); }
         }
         while (src.isPlaying && nextCue < cues.Count && src.time >= cues[nextCue].t)
             Fire(cues[nextCue++]);
@@ -192,14 +194,27 @@ public class JoyconDemoPlayer : MonoBehaviour
 
     // 連続モード: 緊急度 0..1 で振幅・周波数を毎フレーム更新（安全→注意→至近で徐々に強く）
     float lastGradedU = 0f;
+    // 系列切替の合図（J キー・既定ON）: 緊急度が続いているのに方位が 0.3 秒以内に 60° 以上跳んだ＝追跡が別の車に乗り移った
+    // → 新しい側で短い2連の合図を出し、連続振動を弱いところから立ち上げ直す（「別の車が来た」と伝える）
+    bool switchCue = true; int switchCount = 0; float switchRampT0 = -10f; float lastGradedAz = 0f, lastGradedT = -1f;
     void GradedTick()
     {
         while (urgIdx + 1 < urg.Count && urg[urgIdx + 1].t <= src.time) urgIdx++;
         if (urg.Count == 0) return;
         var g = urg[urgIdx];
-        lastGradedU = g.u;
+        bool jumped = g.u >= URG_MIN && lastGradedU >= URG_MIN && lastGradedT >= 0f && src.time - lastGradedT < 0.3f
+                      && Mathf.Abs(Mathf.DeltaAngle(g.az, lastGradedAz)) > 60f;
+        lastGradedU = g.u; lastGradedAz = g.az; lastGradedT = src.time;
+        if (jumped && switchCue)
+        {
+            switchCount++; switchRampT0 = src.time;
+            Joycon jn = HandFor((g.az > 0) ^ swapSides);
+            if (jn != null) runners.Add(StartCoroutine(SwitchPulse(jn)));
+        }
         if (g.u < URG_MIN) return;
-        float amp = 0.25f + 0.75f * g.u;                 // 0.25(注意の入口)〜1.0(至近)
+        if (src.time - switchRampT0 < 0.25f) return;           // 合図の間は連続振動を止める
+        float ramp = Mathf.Clamp01((src.time - switchRampT0 - 0.25f) / 0.6f);   // 切替後 0.6 秒で立ち上げ直す
+        float amp = (0.25f + 0.75f * g.u) * Mathf.Lerp(0.3f, 1f, ramp);   // 0.25(注意の入口)〜1.0(至近)
         float lo = Mathf.Lerp(80f, 320f, g.u), hi = Mathf.Lerp(160f, 640f, g.u);
         if (!panMode)
         {
@@ -235,6 +250,15 @@ public class JoyconDemoPlayer : MonoBehaviour
         }
     }
 
+    IEnumerator SwitchPulse(Joycon jc)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            jc.SetRumble(400f, 800f, 1.0f, 70);
+            yield return new WaitForSeconds(0.11f);
+        }
+    }
+
     // 4本の役割割当（接続順・isLeft から）。B で前後ペアを入れ替え
     List<KeyValuePair<Joycon, float>> Roles4()
     {
@@ -260,7 +284,7 @@ public class JoyconDemoPlayer : MonoBehaviour
             (joycons.Count >= 4 ? $"  4本={(swapFrontBack ? "後/前" : "前/後")}(B)" : ""));
         GUI.Label(new Rect(10, 35, 1000, 30),
             $"←/→=切替  Space=再生/停止  S=左右入替  M=束ね  G=連続  P=パン   再生位置 {src.time:F1}s   " +
-            $"通知 {firedCount} 回 / 束ねた再トリガ {mergedCount} 回" +
+            $"通知 {firedCount} 回 / 束ねた再トリガ {mergedCount} 回 / 系列切替の合図 {switchCount} 回 (J:{(switchCue ? "ON" : "OFF")})" +
             (gradedMode ? $"   緊急度 {lastGradedU:F2}" : ""));
         GUI.Label(new Rect(10, 60, 1000, 30), "最後の通知: " + lastFire);
         for (int i = 0; i < cues.Count; i++)
