@@ -539,6 +539,8 @@ def main() -> int:
             run(p)
     else:
         for a in sys.argv[1:]:
+            if a.startswith("--"):
+                continue
             print(f"== {Path(a).name}")
             run(Path(a))
     print("->", OUT)

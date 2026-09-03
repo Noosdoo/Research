@@ -69,9 +69,18 @@ def copy_set(src_base: Path, dst_base: Path) -> int:
     return n
 
 
+def with_model_versions(entries):
+    """custom_<name>_model_cues.csv があれば「8_自作場面_本物のモデル出力/<日本語名>_モデル」を足す。"""
+    out = list(entries)
+    for src, cat, jp in entries:
+        if src.startswith("custom_") and (SRC / f"{src}_model_cues.csv").exists():
+            out.append((f"{src}_model", "8_自作場面_本物のモデル出力", f"{jp}_モデル"))
+    return out
+
+
 def main() -> int:
     total = 0
-    for src, cat, jp in MAP:
+    for src, cat, jp in with_model_versions(MAP):
         n = copy_set(SRC / src, DST / cat / jp)
         total += n
         print(f"  {cat}/{jp}: {n} files")
