@@ -51,11 +51,39 @@ MAP = [
     ("custom_26_rikadai_seimon_nansei_kara", "7_実地図_理科大正門前", "南西から車が交差点を抜ける_後ろから自転車ベル"),
     ("custom_27_rikadai_seimon_aruite_sasetsu_mae", "7_実地図_理科大正門前", "歩行_渡る瞬間に北からの車が目の前を左折"),
     ("custom_28_rikadai_seimon_aruite_usetsu_ushiro", "7_実地図_理科大正門前", "歩行_渡った直後に東からの車が背中側を右折"),
-    ("fold32_room1_mix0007", "6_本物のモデル出力", "A_同じ車に強が再発火_束ね確認"),
-    ("fold32_room1_mix0067", "6_本物のモデル出力", "B_中から強へ昇格_段階と連続"),
-    ("fold32_room1_mix0128", "6_本物のモデル出力", "C_幹線歩行_車3台の連続通知"),
-    ("fold32_room1_mix0120", "6_本物のモデル出力", "D_安全な車だけ_抑制"),
+    ("fold32_room1_mix0007", "6_評価用データの場面_A〜D", "A_同じ車に強が再発火_束ね確認"),
+    ("fold32_room1_mix0067", "6_評価用データの場面_A〜D", "B_中から強へ昇格_段階と連続"),
+    ("fold32_room1_mix0128", "6_評価用データの場面_A〜D", "C_幹線歩行_車3台の連続通知"),
+    ("fold32_room1_mix0120", "6_評価用データの場面_A〜D", "D_安全な車だけ_抑制"),
 ]
+
+
+def copy_set(src_base: Path, dst_base: Path) -> int:
+    n = 0
+    dst_base.parent.mkdir(parents=True, exist_ok=True)
+    for ext in EXTS:
+        s = Path(str(src_base) + ext)
+        if s.exists():
+            shutil.copy2(s, Path(str(dst_base) + ext))
+            n += 1
+    return n
+
+
+ORACLE_CAT = "9_参考_正解の位置から_モデル不使用"
+
+
+def resolve_entries(entries):
+    """2026-09-03 本人「すべてのフォルダを本物のモデル出力にしてほしい」:
+    自作場面は custom_<name>_model_*（本物の検出層 → 通知）を 1〜7 の正とし、正解から作ったオラクル版は参考フォルダへ。
+    """
+    out = []
+    for src, cat, jp in entries:
+        if src.startswith("custom_") and (SRC / f"{src}_model_cues.csv").exists():
+            out.append((f"{src}_model", cat, jp))
+            out.append((src, ORACLE_CAT, jp))
+        else:
+            out.append((src, cat, jp))
+    return out
 
 
 def copy_set(src_base: Path, dst_base: Path) -> int:
@@ -80,7 +108,7 @@ def with_model_versions(entries):
 
 def main() -> int:
     total = 0
-    for src, cat, jp in with_model_versions(MAP):
+    for src, cat, jp in resolve_entries(MAP):
         n = copy_set(SRC / src, DST / cat / jp)
         total += n
         print(f"  {cat}/{jp}: {n} files")
