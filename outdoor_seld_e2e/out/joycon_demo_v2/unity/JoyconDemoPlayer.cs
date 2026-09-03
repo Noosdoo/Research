@@ -51,7 +51,7 @@ public class JoyconDemoPlayer : MonoBehaviour
 
     // 束ね用: 手ごとの実行中パターン
     class Runner { public string tier; public float endTime, lastFireTime; public Coroutine co; }
-    readonly Dictionary<bool, Runner> runners = new Dictionary<bool, Runner>();
+    readonly Dictionary<Joycon, Runner> runners = new Dictionary<Joycon, Runner>();
 
     // 可視化(ScenarioVisualizer)から読むための公開プロパティ（v1 と同じ名前）
     public string CurrentClip { get { return clips.Count > 0 ? clips[clipIdx] : null; } }
@@ -145,33 +145,55 @@ public class JoyconDemoPlayer : MonoBehaviour
         return joycons.Count > 0 ? joycons[0] : null;
     }
 
+    // 方位 az（DCASE: 0°=前, +=左）に一番近い役割の Joy-con を返す。4本なら前左/前右/後左/後右、2本なら左右
+    Joycon HandForAz(float az, out string roleName)
+    {
+        if (joycons.Count >= 4)
+        {
+            var roles = Roles4();
+            Joycon best = null; float bestD = 999f, bestAng = 0f;
+            foreach (var kv in roles)
+            {
+                float d = Mathf.Abs(Mathf.DeltaAngle(az, kv.Value));
+                if (d < bestD) { bestD = d; best = kv.Key; bestAng = kv.Value; }
+            }
+            float a = swapSides ? -bestAng : bestAng;
+            roleName = (Mathf.Abs(a) < 90f ? "前" : "後") + (a > 0 ? "左" : "右");
+            return best;
+        }
+        bool wantLeft = (az > 0) ^ swapSides;
+        roleName = wantLeft ? "左手" : "右手";
+        return HandFor(wantLeft);
+    }
+
     void Fire(Cue c)
     {
-        bool wantLeft = (c.side == "L") ^ swapSides;
         bool isDist = (c.tier == "強" || c.tier == "中");
         // 連続モードでは距離クラスの離散通知は出さない（緊急度で連続に振動する）。警告音は従来どおり
         if (gradedMode && isDist) { lastFire = $"{c.t:F1}s {c.tier} → 連続モードのため離散通知は省略"; return; }
 
-        // 束ね: 同じ手・同じ段の再トリガが MERGE_SEC 以内 → 延長だけ
+        // 通知の方位で担当の Joy-con を決める（4本: 前左/前右/後左/後右、2本: 左右）
+        string role;
+        Joycon jc = HandForAz(c.az, out role);
+        // 束ね: 同じ Joy-con・同じ段の再トリガが MERGE_SEC 以内 → 延長だけ
         Runner r;
-        if (mergeMode && isDist && runners.TryGetValue(wantLeft, out r) && r.tier == c.tier
+        if (mergeMode && isDist && jc != null && runners.TryGetValue(jc, out r) && r.tier == c.tier
             && (src.time - r.lastFireTime) < MERGE_SEC)
         {
             r.endTime = Mathf.Max(r.endTime, src.time) + EXTEND_SEC;
             r.lastFireTime = src.time;
             mergedCount++;
-            lastFire = $"{c.t:F1}s {(wantLeft ? "左手" : "右手")} {c.tier} ({c.cls}) → 束ね（延長 +{EXTEND_SEC:F1}s）";
+            lastFire = $"{c.t:F1}s {role} {c.tier} ({c.cls}) → 束ね（延長 +{EXTEND_SEC:F1}s）";
             return;
         }
         firedCount++;
-        lastFire = $"{c.t:F1}s {(wantLeft ? "左手" : "右手")} {c.tier} ({c.cls} az={c.az:F0}°)";
-        Joycon jc = HandFor(wantLeft);
+        lastFire = $"{c.t:F1}s {role} {c.tier} ({c.cls} az={c.az:F0}°)";
         if (jc == null) return;                       // Joy-con未接続でも画面表示だけ動く
         if (!isDist) { jc.SetRumble(120f, 240f, 0.5f, 300); return; }   // 警告 = 単発
-        if (runners.TryGetValue(wantLeft, out r) && r.co != null) StopCoroutine(r.co);
+        if (runners.TryGetValue(jc, out r) && r.co != null) StopCoroutine(r.co);
         r = new Runner { tier = c.tier, lastFireTime = src.time,
                          endTime = src.time + (c.tier == "強" ? 0.72f : 0.78f) };
-        runners[wantLeft] = r;
+        runners[jc] = r;
         r.co = StartCoroutine(PatternUntil(jc, r));
     }
 
@@ -208,7 +230,8 @@ public class JoyconDemoPlayer : MonoBehaviour
         if (jumped && switchCue)
         {
             switchCount++; switchRampT0 = src.time;
-            Joycon jn = HandFor((g.az > 0) ^ swapSides);
+            string roleN;
+            Joycon jn = HandForAz(g.az, out roleN);
             if (jn != null) StartCoroutine(SwitchPulse(jn));   // 0.2 秒の合図。束ねの Runner とは別管理
         }
         if (g.u < URG_MIN) return;
@@ -218,7 +241,8 @@ public class JoyconDemoPlayer : MonoBehaviour
         float lo = Mathf.Lerp(80f, 320f, g.u), hi = Mathf.Lerp(160f, 640f, g.u);
         if (!panMode)
         {
-            Joycon jc = HandFor((g.az > 0) ^ swapSides);
+            string roleC;
+            Joycon jc = HandForAz(g.az, out roleC);
             if (jc != null) jc.SetRumble(lo, hi, amp, 120);   // 毎フレーム上書き＝連続振動
             return;
         }
