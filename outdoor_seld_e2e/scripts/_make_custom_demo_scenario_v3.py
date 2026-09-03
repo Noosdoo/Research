@@ -306,8 +306,35 @@ def build_path(ev, mic_x, shift_m=0.0, S=None):
         rows.append(("xlane", x_ref + d * R, sy, "car", 0.0))
     else:
         raise SystemExit(f"未対応geom: {geom}")
-    wp = np.stack([ts, xs, ys, np.full_like(xs, z)], axis=1)
+    wp = simplify_wp(np.stack([ts, xs, ys, np.full_like(xs, z)], axis=1))
     return wp, rows
+
+
+def simplify_wp(wp: np.ndarray, tol: float = 0.05) -> np.ndarray:
+    """折れ線軌道の間引き（描画の速度対策・2026-09-03）。等速直線の区間は 2 点に潰す。
+
+    区間 [a, b] の中の各点について「時刻で線形補間した位置」との差が tol [m] 以内なら中間点を捨てる（再帰の Douglas–Peucker）。
+    render_mono / solve_emission_times は区間ごとに全サンプルを走査するので、60 秒 × 600 点だと桁違いに遅くなる。
+    """
+    wp = np.asarray(wp, float)
+    if len(wp) <= 2:
+        return wp
+    keep = np.zeros(len(wp), dtype=bool)
+    keep[0] = keep[-1] = True
+    stack = [(0, len(wp) - 1)]
+    while stack:
+        a, b = stack.pop()
+        if b - a < 2:
+            continue
+        ta, tb = wp[a, 0], wp[b, 0]
+        f = (wp[a + 1:b, 0] - ta) / max(tb - ta, 1e-9)
+        interp = wp[a, 1:4][None, :] + f[:, None] * (wp[b, 1:4] - wp[a, 1:4])[None, :]
+        dev = np.linalg.norm(wp[a + 1:b, 1:4] - interp, axis=1)
+        i = int(np.argmax(dev))
+        if dev[i] > tol:
+            keep[a + 1 + i] = True
+            stack.append((a, a + 1 + i)); stack.append((a + 1 + i, b))
+    return wp[keep]
 
 
 def speed_envelope(ev, n):

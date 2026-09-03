@@ -87,7 +87,10 @@ def render(spec: dict, listen: bool = False) -> dict:
     tk = np.arange(FRAMES) * 0.1
     noise_dba = float(spec["noise_dba"])
 
-    stems, gts, scene_srcs = [], [], []
+    gts, scene_srcs = [], []
+    rng_n = np.random.default_rng(seed0 * 7919 + 13)
+    mix = m9.diffuse_foa_noise(n24, m9.FS_OUT, rng_n)          # 暗騒音から始めて音源を順に足す（メモリ節約: ステムを溜めない）
+    mix *= m9.gain_for_spl_a(mix[0], m9.FS_OUT, noise_dba)
     for i, ev in enumerate(events):
         wp, _rows = V3.build_path(ev, mic_x, ev.get("_shift", 0.0), S)
         t_on = float(ev.get("t_on", 0.0)); t_off = float(ev.get("t_off", m9.CLIP))
@@ -105,7 +108,8 @@ def render(spec: dict, listen: bool = False) -> dict:
                 ref = dry[a0:a1][sel]
         g = m9.gain_for_spl_a(ref, m9.FS_SIM, l1m)
         _, stem = m9._render_stem(dry * g, wp, mic, c)
-        stems.append(stem)
+        mix += stem
+        del stem, dry, ref
         az, _el, _a, _b = apparent_azel_deg(tk, wp, mic, c)
         dist = m9._dist_series(wp, mic, tk)
         recv = l1m - 20.0 * np.log10(np.maximum(dist, 1.0))
@@ -116,12 +120,6 @@ def render(spec: dict, listen: bool = False) -> dict:
         scene_srcs.append({"class": ev["class"], "wp": np.asarray(wp, float).tolist() if len(wp) <= 4 else np.asarray(wp, float)[::10].tolist(),
                            "t_on": t_on, "t_off": t_off, "l1m_db": l1m, "min_dist_m": round(float(np.nanmin(dist)), 2),
                            "t_min_dist_s": round(float(tk[int(np.nanargmin(dist))]), 1), "geom": ev.get("geom", "straight")})
-    rng_n = np.random.default_rng(seed0 * 7919 + 13)
-    noise = m9.diffuse_foa_noise(n24, m9.FS_OUT, rng_n)
-    noise *= m9.gain_for_spl_a(noise[0], m9.FS_OUT, noise_dba)
-    mix = noise.copy()
-    for st in stems:
-        mix = mix + st
     peak = float(np.max(np.abs(mix)))
     scaled = 1.0
     if peak >= m9.PEAK_MAX:
