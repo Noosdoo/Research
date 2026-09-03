@@ -62,7 +62,7 @@ def main() -> int:
                      f"| {cpa_before:.2f}→{float(r['cs_cpa_m']):.2f} | {float(r['cs_level_adj_db']):.0f} |")
         print(lines[-1], flush=True)
     lines += ["", "聞きどころ: after は車がゆっくり（5〜15 km/h）真横 1 m 前後を通る。エンジン音の高さは同じで音量だけ下げている（近似）。",
-              "before は同じ場面を 18〜54 km/h で通る元の版。"]
+              "before は同じ場面を 11〜36 km/h（v10 で生活道路 30 km/h に合わせた範囲） で通る元の版。"]
     (OUT / "README_試聴.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
     for sub in ("_ds_before", "_ds_after"):
         shutil.rmtree(OUT / sub / "work", ignore_errors=True)
