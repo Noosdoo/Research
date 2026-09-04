@@ -5,6 +5,7 @@
 //       新しい通知にしない（機器側で束ねる案。規則は無変更＝cues.csv は生の出力のまま）
 //   J : 系列切替の合図 ON/OFF（連続モード時。方位が跳んだら短い2連＋弱いところから立ち上げ直す）
 //   G : 連続モード ON/OFF — 車・キック・バイクは <clip>_urgency.csv（予測からの緊急度 0..1）で振動の強さを
+//       （機器層の仕様 = README_機器層の仕様.md: 確認 4 フレーム中 2・保持 0.3 秒・方位の跳び 60° は 2 フレームで受け入れ・按分 cos⁴）
 //       毎フレーム連続に変える（安全→注意→至近で徐々に強くなる案）。警告音の単発パターンはそのまま
 //   P : パンニング ON/OFF — 連続モードで方位に応じて左右の振幅を配分（正面=両手半分、真横=片手のみ）。
 //       ⚠️ Joy-con 2本では前後が区別できない（首元4〜6方向デバイスでは隣接振動子の按分にする）
@@ -270,19 +271,38 @@ public class JoyconDemoPlayer : MonoBehaviour
     const int CONFIRM_WIN = 4, CONFIRM_NEED = 2; const float HOLD_S = 0.3f;
     readonly List<float> recentU = new List<float>();
     int lastUrgIdx = -1; float heldU = 0f, heldAz = 0f, heldT = -10f;
+    // 方位の安定化（2026-09-05 本人「右なのに左」「前なのに後ろ」）: 検出層の方位が 60° 以上跳んだら、**2 フレーム続いたときだけ**受け入れる。
+    //   全場面の突き合わせでは前後・左右の取り違え 49 フレーム中 40 が 1 フレームだけの単発（検出層の一瞬の迷い）。
+    //   1 フレームの跳びは前の方位のまま震え、切替の合図（J）も受け入れたときだけ出す（跳びが本物＝別の車に乗り移ったとき）
+    const float JUMP_DEG = 60f; const int JUMP_NEED = 2;
+    float stableAz = 0f; int jumpFrames = 0; bool haveStable = false;
     void GradedTick()
     {
         while (urgIdx + 1 < urg.Count && urg[urgIdx + 1].t <= src.time) urgIdx++;
         if (urg.Count == 0) return;
         var g0 = urg[urgIdx];
-        if (urgIdx < lastUrgIdx) { recentU.Clear(); heldT = -10f; }   // 場面の切替・巻き戻し
-        if (urgIdx != lastUrgIdx) { recentU.Add(g0.u); while (recentU.Count > CONFIRM_WIN) recentU.RemoveAt(0); lastUrgIdx = urgIdx; }
+        if (urgIdx < lastUrgIdx) { recentU.Clear(); heldT = -10f; haveStable = false; jumpFrames = 0; }   // 場面の切替・巻き戻し
+        bool newFrame = urgIdx != lastUrgIdx;
+        if (newFrame) { recentU.Add(g0.u); while (recentU.Count > CONFIRM_WIN) recentU.RemoveAt(0); lastUrgIdx = urgIdx; }
         int nOk = 0; foreach (var uu in recentU) if (uu >= URG_MIN) nOk++;
         bool confirmed = g0.u >= URG_MIN && nOk >= CONFIRM_NEED;
         if (confirmed) { heldU = g0.u; heldAz = g0.az; heldT = src.time; }
         var g = confirmed ? g0 : new Urg { t = g0.t, u = (src.time - heldT < HOLD_S) ? heldU : 0f, az = heldAz };
-        bool jumped = g.u >= URG_MIN && lastGradedU >= URG_MIN && lastGradedT >= 0f && src.time - lastGradedT < 0.3f
-                      && Mathf.Abs(Mathf.DeltaAngle(g.az, lastGradedAz)) > 60f;
+        // 方位の安定化: 受け入れた方位 stableAz を使う。跳びは JUMP_NEED フレーム続いたら受け入れ（＝切替の合図）
+        bool acceptedJump = false;
+        if (g.u >= URG_MIN)
+        {
+            if (!haveStable) { stableAz = g.az; haveStable = true; jumpFrames = 0; }
+            else if (Mathf.Abs(Mathf.DeltaAngle(g.az, stableAz)) <= JUMP_DEG) { stableAz = g.az; jumpFrames = 0; }
+            else if (newFrame && confirmed)
+            {
+                jumpFrames++;
+                if (jumpFrames >= JUMP_NEED) { stableAz = g.az; jumpFrames = 0; acceptedJump = true; }
+            }
+            g.az = stableAz;
+        }
+        else if (src.time - heldT >= 1.0f) { haveStable = false; jumpFrames = 0; }   // 1 秒以上静かなら次は新規扱い
+        bool jumped = acceptedJump && lastGradedU >= URG_MIN;
         lastGradedU = g.u; lastGradedAz = g.az; lastGradedT = src.time;
         if (jumped && switchCue)
         {
