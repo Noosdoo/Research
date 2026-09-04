@@ -264,11 +264,23 @@ public class JoyconDemoPlayer : MonoBehaviour
     // 系列切替の合図（J キー・既定ON）: 緊急度が続いているのに方位が 0.3 秒以内に 60° 以上跳んだ＝追跡が別の車に乗り移った
     // → 新しい側で短い2連の合図を出し、連続振動を弱いところから立ち上げ直す（「別の車が来た」と伝える）
     bool switchCue = true; int switchCount = 0; float switchRampT0 = -10f; float lastGradedAz = 0f, lastGradedT = -1f;
+    // 確認と保持（2026-09-05 本人「安全圏なのに後右が震えた」= 検出層が 1 フレームだけ出した緊急度 0.24 で 0.12 秒震えた）:
+    //   立ち上がり = 直近 4 フレーム（0.4 秒）のうち 2 フレーム以上で緊急度 ≥ URG_MIN（離散の通知にある「4/4 確認」の軽い版）
+    //   保持 = 確認できた最後の値を 0.3 秒だけ保つ（検出層の 1 フレーム抜けで振動が途切れない）
+    const int CONFIRM_WIN = 4, CONFIRM_NEED = 2; const float HOLD_S = 0.3f;
+    readonly List<float> recentU = new List<float>();
+    int lastUrgIdx = -1; float heldU = 0f, heldAz = 0f, heldT = -10f;
     void GradedTick()
     {
         while (urgIdx + 1 < urg.Count && urg[urgIdx + 1].t <= src.time) urgIdx++;
         if (urg.Count == 0) return;
-        var g = urg[urgIdx];
+        var g0 = urg[urgIdx];
+        if (urgIdx < lastUrgIdx) { recentU.Clear(); heldT = -10f; }   // 場面の切替・巻き戻し
+        if (urgIdx != lastUrgIdx) { recentU.Add(g0.u); while (recentU.Count > CONFIRM_WIN) recentU.RemoveAt(0); lastUrgIdx = urgIdx; }
+        int nOk = 0; foreach (var uu in recentU) if (uu >= URG_MIN) nOk++;
+        bool confirmed = g0.u >= URG_MIN && nOk >= CONFIRM_NEED;
+        if (confirmed) { heldU = g0.u; heldAz = g0.az; heldT = src.time; }
+        var g = confirmed ? g0 : new Urg { t = g0.t, u = (src.time - heldT < HOLD_S) ? heldU : 0f, az = heldAz };
         bool jumped = g.u >= URG_MIN && lastGradedU >= URG_MIN && lastGradedT >= 0f && src.time - lastGradedT < 0.3f
                       && Mathf.Abs(Mathf.DeltaAngle(g.az, lastGradedAz)) > 60f;
         lastGradedU = g.u; lastGradedAz = g.az; lastGradedT = src.time;
@@ -293,13 +305,14 @@ public class JoyconDemoPlayer : MonoBehaviour
         }
         if (joycons.Count >= 4)
         {
-            // 4方向按分: 各振動子の角度 θk（前左+45/前右−45/後左+135/後右−135）に cos²(az−θk) の重み
+            // 4方向按分: 各振動子の角度 θk（前左+45/前右−45/後左+135/後右−135）に cos⁴(az−θk) の重み
+            //   （cos² → cos⁴ 2026-09-05 本人「右の振動子がよく震える」: 左 8° で前右が 0.58 → 0.39、左 15° で 0.40 → 0.16。真正面は両方のまま）
             var roles = Roles4();
             float sum = 0f; var w = new float[roles.Count];
             for (int k = 0; k < roles.Count; k++)
             {
                 float c = Mathf.Cos((g.az - roles[k].Value) * Mathf.Deg2Rad);
-                w[k] = c > 0 ? c * c : 0f; sum += w[k];
+                w[k] = c > 0 ? c * c * c * c : 0f; sum += w[k];
             }
             for (int k = 0; k < roles.Count; k++)
             {
@@ -386,7 +399,7 @@ public class JoyconDemoPlayer : MonoBehaviour
     {
         var parts = new List<string>();
         foreach (var kv in Roles4()) parts.Add($"{RoleName(kv.Value)}={(kv.Key.isLeft ? "L" : "R")}");
-        return string.Join(" ", parts);
+        return (roleOf.Count >= 4 ? "R割当済 " : "接続順・未割当(Rで割当) ") + string.Join(" ", parts);
     }
 
     // T: 役割の順に 1 本ずつ震わせる（前左→前右→後左→後右）。どれがどれか手で確かめる
