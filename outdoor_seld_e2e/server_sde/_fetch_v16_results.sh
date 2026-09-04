@@ -2,7 +2,7 @@
 # v16 候補学習（高さ増強）の因果推論結果を取得して採点する（2026-09-05）。ローカルで実行:
 #   bash server_sde/_fetch_v16_results.sh
 # 取得: infer_v16ft_e<NNN>_selfcausal（v16 fold2 val 3,600 本）/ infer_v16ft_e<NNN>_v12causal（v12 fold2 val）の val_all_causal.csv
-# 採点:
+# 採点（⚠️ 以下は旧採点器 _hp_score/_band_score の値＝履歴用。判定は server_sde/_rescore_v16_unified.sh（統一採点器）で行う）:
 #   score_self_all.md   = v16 fold2 全 3,600 本（GT= v16 metadata_dist・水平距離）
 #   score_on_v15val.md  = そのうち mix≤9000 の 1,800 本 = v15 val そのもの（主指標）＋ 高さ 3 帯（副指標）。v15/v15b/v15c と同じ土俵
 #   score_cross_v12h.md = v12 fold2 val（水平距離ラベル metadata_dist_h。ft2 も同じラベルで再採点）
@@ -12,7 +12,11 @@ for d in $(ssh is-server "ls -d ~/PSELDNets_logs/outdoor_siren_v12/runs/infer_v1
   n=$(basename $d); scp -q is-server:$d/val_all_causal.csv out/v16/C/${n}.csv && echo "fetched $n"
 done
 ls out/v16/C
-[ -d out/dataset_outdoor_siren_v16/metadata_dist ] || { mkdir -p out/dataset_outdoor_siren_v16; scp -q -r is-server:research/outdoor_seld_e2e/out/dataset_outdoor_siren_v16/metadata_dist out/dataset_outdoor_siren_v16/; }
+# ラベルは tar ストリームで取る（scp -r は 18,000 ファイルの途中で欠けることがあった: 2026-09-05 に 8,936 本で止まった）
+if [ "$(ls out/dataset_outdoor_siren_v16/metadata_dist 2>/dev/null | wc -l)" != "18000" ]; then
+  mkdir -p out/dataset_outdoor_siren_v16
+  ssh is-server "cd ~/research/outdoor_seld_e2e/out/dataset_outdoor_siren_v16 && tar cf - metadata_dist" | tar xf - -C out/dataset_outdoor_siren_v16
+fi
 ls out/dataset_outdoor_siren_v16/metadata_dist | wc -l
 PY=/c/Users/satos/research/DynamicSound/.venv/Scripts/python.exe
 args_self=""; args_cross=""
