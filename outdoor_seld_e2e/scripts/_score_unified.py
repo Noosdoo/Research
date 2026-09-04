@@ -13,7 +13,7 @@
   python scripts/_score_unified.py <出力md> --plan <assignment.csv> [--split fold2] [--clip-max N] --meta <GTディレクトリ>
       [--minframe 40] [--bands 1.4,1.6,1.85,2.1] <ラベル>=<val_all_causal.csv>[@h] ...
   --minframe 0 で「起動直後を含む」値を出す（既定 40 = 因果推論の暖機 4 秒を除く。宣言と同じ）。
-  --bands を付けると plan の mic_z で帯ごとの行も出す。
+  --bands を付けると plan の mic_z で帯ごとの行も出す（クリップごとの集計を 1 回だけ計算して帯で足し合わせる）。
 """
 from __future__ import annotations
 
@@ -113,82 +113,86 @@ def fires_of(frames):
     return sorted(fires)
 
 
-def score_clips(pred, meta: Path, clips, minframe: int):
-    stat = defaultdict(lambda: [0, 0]); n_strong = 0; leads = []; n_fire = 0; n_pred_clips = 0
-    n_close_gt = n_close_det = n_close_cap = 0
-    n_safe_pairs = n_safe_fp = 0
-    rel = []; close_est = []; n_pairs = 0
-    n_cond_close = n_cond_cap = 0
-    for clip in clips:
-        frames = pred.get(clip, {})
-        if frames:
-            n_pred_clips += 1
-        gt = load_gt(meta, clip)
-        # --- 通知（v4.3＋hold・方位帰属） ---
-        evs = [DG.mk_event(c, t, fr) for c, t, fr in DG.gt_tracks(meta, clip)]
-        fires = fires_of(frames) if frames else []
-        n_fire += len(fires)
-        att = A.attribute(fires, evs) if fires else []
-        got = defaultdict(set); first = {}
-        for f, i in zip(fires, att):
-            if i is not None and f[0] <= evs[i]["cpa"] + FPS:
-                got[i].add(f[2])
-                first[i] = min(first.get(i, 10**9), f[0])
-        for i, ev in enumerate(evs):
-            hit = bool(got[i])
-            if ev["tier"] == "safe":
-                stat["safe"][1] += 1; stat["safe"][0] += int(not hit); continue
-            stat[ev["tier"]][1] += 1; stat[ev["tier"]][0] += int(hit)
-            if hit:
-                leads.append((ev["cpa"] - first[i]) / FPS)
-            if ev["tier"] == "critical" and "強" in got[i]:
-                n_strong += 1
-        # --- 距離（1 対 1・全 GT 分母） ---
-        for k, gts in gt.items():
-            if k < minframe:
+def clip_stats(pred, meta: Path, clip: str, minframe: int) -> dict:
+    """1 クリップ分の集計（数える・リストに溜める）。帯や全体はこれを足し合わせるだけ。"""
+    s = dict(n_pred=0, crit=[0, 0], caut=[0, 0], safe=[0, 0], n_strong=0, leads=[], n_fire=0,
+             n_close_gt=0, n_close_det=0, n_close_cap=0, n_safe_pairs=0, n_safe_fp=0, rel=[], close_est=[], n_pairs=0)
+    frames = pred.get(clip, {})
+    if frames:
+        s["n_pred"] = 1
+    gt = load_gt(meta, clip)
+    # --- 通知（v4.3＋hold・方位帰属） ---
+    evs = [DG.mk_event(c, t, fr) for c, t, fr in DG.gt_tracks(meta, clip)]
+    fires = fires_of(frames) if frames else []
+    s["n_fire"] = len(fires)
+    att = A.attribute(fires, evs) if fires else []
+    got = defaultdict(set); first = {}
+    for f, i in zip(fires, att):
+        if i is not None and f[0] <= evs[i]["cpa"] + FPS:
+            got[i].add(f[2]); first[i] = min(first.get(i, 10**9), f[0])
+    for i, ev in enumerate(evs):
+        hit = bool(got[i])
+        if ev["tier"] == "safe":
+            s["safe"][1] += 1; s["safe"][0] += int(not hit); continue
+        key = "crit" if ev["tier"] == "critical" else "caut"
+        s[key][1] += 1; s[key][0] += int(hit)
+        if hit:
+            s["leads"].append((ev["cpa"] - first[i]) / FPS)
+        if ev["tier"] == "critical" and "強" in got[i]:
+            s["n_strong"] += 1
+    # --- 距離（1 対 1・全 GT 分母） ---
+    for k, gts in gt.items():
+        if k < minframe:
+            continue
+        preds = [(c, az, d) for c, az, el, d in frames.get(k, []) if c in DIST_CLS and math.isfinite(d)]
+        cand = []
+        for gi, (gc, _t, gaz, gd) in enumerate(gts):
+            for pi, (pc, paz, pd) in enumerate(preds):
+                if pc == gc:
+                    e = dang(paz, gaz)
+                    if e <= AZ_PAIR:
+                        cand.append((e, gi, pi))
+        cand.sort()
+        used_g, used_p, match = set(), set(), {}
+        for e, gi, pi in cand:
+            if gi in used_g or pi in used_p:
                 continue
-            preds = [(c, az, d) for c, az, el, d in frames.get(k, []) if c in DIST_CLS and math.isfinite(d)]
-            cand = []
-            for gi, (gc, gt_trk, gaz, gd) in enumerate(gts):
-                for pi, (pc, paz, pd) in enumerate(preds):
-                    if pc == gc:
-                        e = dang(paz, gaz)
-                        if e <= AZ_PAIR:
-                            cand.append((e, gi, pi))
-            cand.sort()
-            used_g, used_p = set(), set()
-            match = {}
-            for e, gi, pi in cand:
-                if gi in used_g or pi in used_p:
-                    continue
-                used_g.add(gi); used_p.add(pi); match[gi] = pi
-            for gi, (gc, gt_trk, gaz, gd) in enumerate(gts):
+            used_g.add(gi); used_p.add(pi); match[gi] = pi
+        for gi, (gc, _t, gaz, gd) in enumerate(gts):
+            if gd <= TH_CLOSE:
+                s["n_close_gt"] += 1
+            if gi in match:
+                pd = preds[match[gi]][2]
+                s["n_pairs"] += 1
+                s["rel"].append(abs(pd - gd) / max(gd, 0.1))
                 if gd <= TH_CLOSE:
-                    n_close_gt += 1
-                if gi in match:
-                    pd = preds[match[gi]][2]
-                    n_pairs += 1
-                    rel.append(abs(pd - gd) / max(gd, 0.1))
-                    if gd <= TH_CLOSE:
-                        n_close_det += 1; n_cond_close += 1
-                        close_est.append(pd)
-                        if pd <= TH_CLOSE:
-                            n_close_cap += 1; n_cond_cap += 1
-                    elif gd > TH_SAFE:
-                        n_safe_pairs += 1
-                        if pd <= TH_CLOSE:
-                            n_safe_fp += 1
-    g = lambda t: 100 * stat[t][0] / max(stat[t][1], 1)
-    leads = np.array(leads) if leads else np.array([np.nan])
+                    s["n_close_det"] += 1; s["close_est"].append(pd)
+                    if pd <= TH_CLOSE:
+                        s["n_close_cap"] += 1
+                elif gd > TH_SAFE:
+                    s["n_safe_pairs"] += 1
+                    if pd <= TH_CLOSE:
+                        s["n_safe_fp"] += 1
+    return s
+
+
+def aggregate(stats: list) -> dict:
+    T = lambda key, idx: sum(x[key][idx] for x in stats)
+    N = lambda key: sum(x[key] for x in stats)
+    leads = np.array([v for x in stats for v in x["leads"]]) if any(x["leads"] for x in stats) else np.array([np.nan])
+    rel = [v for x in stats for v in x["rel"]]
+    close_est = [v for x in stats for v in x["close_est"]]
+    n_crit, n_caut, n_safe = T("crit", 1), T("caut", 1), T("safe", 1)
     return dict(
-        crit=g("critical"), strong=100 * n_strong / max(stat["critical"][1], 1), caut=g("caution"), safe=g("safe"),
-        n_crit=stat["critical"][1], n_caut=stat["caution"][1], n_safe=stat["safe"][1],
-        lead=float(np.nanmedian(leads)), lead25=float(100 * np.nanmean(leads >= 2.5)), n_fire=n_fire,
-        det_close=100 * n_close_det / max(n_close_gt, 1), cap_all=100 * n_close_cap / max(n_close_gt, 1),
-        cap_cond=100 * n_cond_cap / max(n_cond_close, 1), n_close_gt=n_close_gt,
-        fp=100 * n_safe_fp / max(n_safe_pairs, 1), close_med=float(np.median(close_est)) if close_est else float("nan"),
-        dist_err=float(100 * np.median(rel)) if rel else float("nan"), n_pairs=n_pairs,
-        n_clips=len(clips), n_pred_clips=n_pred_clips)
+        crit=100 * T("crit", 0) / max(n_crit, 1), strong=100 * N("n_strong") / max(n_crit, 1),
+        caut=100 * T("caut", 0) / max(n_caut, 1), safe=100 * T("safe", 0) / max(n_safe, 1),
+        n_crit=n_crit, n_caut=n_caut, n_safe=n_safe,
+        lead=float(np.nanmedian(leads)), lead25=float(100 * np.nanmean(leads >= 2.5)), n_fire=N("n_fire"),
+        det_close=100 * N("n_close_det") / max(N("n_close_gt"), 1), cap_all=100 * N("n_close_cap") / max(N("n_close_gt"), 1),
+        cap_cond=100 * N("n_close_cap") / max(N("n_close_det"), 1), n_close_gt=N("n_close_gt"),
+        fp=100 * N("n_safe_fp") / max(N("n_safe_pairs"), 1), close_med=float(np.median(close_est)) if close_est else float("nan"),
+        dist_err=float(100 * np.median(rel)) if rel else float("nan"), n_pairs=N("n_pairs"),
+        n_clips=len(stats), n_pred_clips=N("n_pred"))
 
 
 HEADER = ("| 予測 | 本数(予測あり) | 至近到達 | **強到達** | 注意到達 | 安全抑制 | リード中央 | ≥2.5s | 発火数 "
@@ -245,16 +249,15 @@ def main() -> int:
         if not p.exists():
             R.append(f"| {label} | （未着: {p.name}） |"); print(R[-1], flush=True); continue
         pred = load_pred_rows(p, horiz)
-        s = score_clips(pred, meta, clips, minframe)
+        per_clip = {c: clip_stats(pred, meta, c, minframe) for c in clips}
+        s = aggregate(list(per_clip.values()))
         R.append(fmt(label + (" (予測を水平変換)" if horiz else ""), s)); print(R[-1], flush=True)
-        if bands:
-            for i in range(len(bands) - 1):
-                lo, hi = bands[i], bands[i + 1]
-                sub = [c for c in clips if c in mic_z and (lo <= mic_z[c] < hi or (i == len(bands) - 2 and mic_z[c] == hi))]
-                if not sub:
-                    continue
-                sb = score_clips(pred, meta, sub, minframe)
-                per_band_rows.append(fmt(f"{label} {lo}〜{hi} m", sb)); print(per_band_rows[-1], flush=True)
+        for i in range(len(bands) - 1):
+            lo, hi = bands[i], bands[i + 1]
+            sub = [c for c in clips if c in mic_z and (lo <= mic_z[c] < hi or (i == len(bands) - 2 and mic_z[c] == hi))]
+            if not sub:
+                continue
+            per_band_rows.append(fmt(f"{label} {lo}〜{hi} m", aggregate([per_clip[c] for c in sub]))); print(per_band_rows[-1], flush=True)
     if per_band_rows:
         R += ["", "## 高さの帯ごと（plan の mic_z）", "", HEADER, SEP] + per_band_rows
     out_md.parent.mkdir(parents=True, exist_ok=True)
