@@ -3478,3 +3478,10 @@ v2テンプレートを訂正: v1/v2 の確定値は同一採点器で直接比�
 - v15b（高さ 2.0〜2.1 m 固定寄り・他は v15 と同じ）を job 3943→3944→3945 で投入。朝に `bash server_sde/_fetch_v15b_results.sh`
   （v15b の metadata_dist fold2 を先に scp すること: `ssh is-server 'cd ~/research/outdoor_seld_e2e/out/dataset_outdoor_siren_v15b && tar czf - metadata_dist' | tar xzf - -C out/dataset_outdoor_siren_v15b/`）
 - 宣言 §5 に結果と判断（v15 は土台にしない。高さは実測値に固定して学習）
+
+## 追記（2026-09-04 12:50）本人「高さが変わっても当てられるモデルを目指す」→ 方針訂正、v15c を投入
+
+- v15（幅）を土台にしない判断は取り下げ、**高さに頑健なモデルが目標**。v15b は固定の天井（参考）
+- v15c = v15 と同じ音・高さ 1.4〜2.1 m、ラベルだけ 3D。水平距離は後段で d×cos(仰角)。job 3946→3947→3948。
+  頑健性の評価 = 高さ 3 帯ごとの水平距離誤差・至近捕捉・強到達（目標: 全帯で 9.6% 以下）。取り込み `_fetch_v15c_results.sh`
+- 次の手の候補: 学習データ増量、装着高さの入力（モデル改造）
