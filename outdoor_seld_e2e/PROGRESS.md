@@ -3469,3 +3469,12 @@ v2テンプレートを訂正: v1/v2 の確定値は同一採点器で直接比�
 - サーバ: job 3923（生成 24 シャード）→ 3924（基準学習）→ 3925（因果ft＋推論）を afterok で連結。朝に `bash server_sde/_fetch_v15_results.sh`
 - 交差 val の基準: ft2 e079 を水平距離ラベルで再採点 `out/hp_sweep/ref_ft2_h.md`
 - v15 の音は未試聴（D13 は高さだけ。高さ固定版を作るとき 6 本試聴）
+
+## 追記（2026-09-04 12:45）v15 候補学習の結果 → 高さの幅（1.4〜2.1 m）は距離推定を薄める。v15b（2.0〜2.1 m）を投入
+
+- v15ft: 自己 val 距離誤差 10.6〜11.0%・至近捕捉 66〜69%。交差 val（v12・水平距離）では距離誤差 13.0〜14.3%（ft2 9.6%）・捕捉 −3〜−5pt
+  → 強到達/抑制の形式基準は満たすが距離で明確に悪化。高さ別に見ると 1.85〜2.1 m 帯は捕捉 78%・0.5〜1 m バイアス 0%（狙いどおり）、
+  1.4〜1.6 m 帯は 12.9%（ft2 より 3pt 悪い）→ 主因は「高さの幅」。水平距離ラベルは維持
+- v15b（高さ 2.0〜2.1 m 固定寄り・他は v15 と同じ）を job 3943→3944→3945 で投入。朝に `bash server_sde/_fetch_v15b_results.sh`
+  （v15b の metadata_dist fold2 を先に scp すること: `ssh is-server 'cd ~/research/outdoor_seld_e2e/out/dataset_outdoor_siren_v15b && tar czf - metadata_dist' | tar xzf - -C out/dataset_outdoor_siren_v15b/`）
+- 宣言 §5 に結果と判断（v15 は土台にしない。高さは実測値に固定して学習）
