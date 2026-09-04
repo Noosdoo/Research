@@ -24,7 +24,7 @@
   python scripts/step19c_ann_validate.py --ann out/realsmoke/ann_all.csv --cut
   python scripts/step19c_ann_validate.py --ann ann_orig.csv          # 原録音注釈
   python scripts/step19c_ann_validate.py --ann ann_all.csv --cut --strict  # 収録完了後
-  （--plan で区分ごとの計画本数を上書き。既定は 2026-08-20 改訂案の A〜E各20＋歩行100＝計200本。
+  （--plan で区分ごとの計画本数を上書き。既定は 2026-08-22 改訂の A〜E各20＋Fバイク10＋歩行100＝計210本。
     --strict は本数不足などの警告も不合格にする＝全収録完了後の最終ゲート用）
 """
 from __future__ import annotations
@@ -46,7 +46,7 @@ CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "car_drive", "crossing",
 DIST_CLASSES = {"car_drive", "kick", "bike"}
 QUADS = {"F", "B", "L", "R"}
 LATERAL_KEYS = ("横距離m", "横距離", "lateral_m")
-PLAN_DEFAULT = {"A": 20, "B": 20, "C": 20, "D": 20, "E": 20, "歩行": 100}
+PLAN_DEFAULT = {"A": 20, "B": 20, "C": 20, "D": 20, "E": 20, "F": 10, "歩行": 100}   # 2026-09-05: F バイク 10 本を追加（ハンドブック 2026-08-22 改訂の計 210 本）
 EXPOSURE_KIND = "負例露出"
 STATES = {"静止", "歩行"}
 EPS = 1e-6
@@ -111,7 +111,7 @@ def validate(rows, cut: bool, dur: float, plan: dict):
         if not take_id:
             err(f"S1 {tag}: take_id が空です（物理的な収録テイクを識別できません）")
         if kind not in set(plan) | {EXPOSURE_KIND}:
-            err(f"S8 {tag}: 区分は A〜E/歩行/{EXPOSURE_KIND} "
+            err(f"S8 {tag}: 区分は A〜F/歩行/{EXPOSURE_KIND} "
                 f"（現在 '{kind}'）")
         if state not in STATES:
             err(f"S8 {tag}: 状態は 静止/歩行（現在 '{state}'）")

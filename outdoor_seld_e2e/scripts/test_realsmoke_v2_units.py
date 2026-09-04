@@ -34,7 +34,7 @@ T32: orig_duration_sとの照合で負例末尾欠落を検出
 T33: 歩行対比は件数だけでなくpair_idごとに静止1・歩行1
 T34: イベント別CSVへ対応キーと検出F率を保存
 T35: 96kHz原本直切りは較正ゲイン・3軸角の明示指定を必須化
-T36: 計画120テイク＋別枠負例100分が最終ゲートを通る
+T36: 現行計画210テイク（A〜E各20＋Fバイク10＋歩行対比100）＋別枠負例100分が最終ゲートを通る
 T37: C負例の時間を別枠100分へ流用できない
 """
 from __future__ import annotations
@@ -600,10 +600,12 @@ except ValueError:
 check("T35 96kHz原本はgain/pitch/roll/yawの明示指定が必須（0値は可）",
       raw_missing and raw_explicit_ok)
 
-# ---------------- T36: 完全な120テイク＋負例100分はstrict相当で合格 ----------------
+# ---------------- T36: 現行計画 210 テイク＋負例100分はstrict相当で合格（2026-09-05 監査 §6: 計画は val.PLAN_DEFAULT から組む） ----------------
 rows36 = []
-for kind in "ABCDE":
-    for i in range(20):
+for kind, n_kind in val.PLAN_DEFAULT.items():
+    if kind == "歩行":
+        continue
+    for i in range(n_kind):
         common = {"clip_id": f"{kind}{i}", "event_id": "1", "trial": kind,
                   "take_id": f"{kind}-take-{i}", "pair_id": "", "区分": kind,
                   "状態": "静止", "orig_file": f"{kind}{i}",
@@ -611,15 +613,19 @@ for kind in "ABCDE":
         if kind == "C":
             rows36.append({**common, "class": "none", "quadrant": "",
                            "t_start": "0", "t_cpa": "10"})
+        elif kind == "F":
+            rows36.append({**common, "class": "bike", "quadrant": "L",
+                           "t_start": "1", "t_cpa": "8", "横距離m": "3"})
         else:
             rows36.append({**common, "class": "car_drive", "quadrant": "L",
                            "t_start": "1", "t_cpa": "8", "横距離m": "3"})
-for i in range(20):
+N_WALK = val.PLAN_DEFAULT["歩行"]
+for i in range(N_WALK):
     rows36.append({"clip_id": f"walk{i}", "event_id": "1", "trial": "walk",
                    "class": "car_drive", "quadrant": "L", "t_start": "1",
                    "t_cpa": "8", "横距離m": "3", "take_id": f"walk-take-{i}",
-                   "pair_id": f"walk-pair-{i % 10}", "区分": "歩行",
-                   "状態": "静止" if i < 10 else "歩行", "orig_file": f"walk{i}",
+                   "pair_id": f"walk-pair-{i % (N_WALK // 2)}", "区分": "歩行",
+                   "状態": "静止" if i < N_WALK // 2 else "歩行", "orig_file": f"walk{i}",
                    "orig_duration_s": "10", "cut_offset_s": "0", "scored": "1"})
 for i, (off, a, b) in enumerate(cut.plan_negative_split(6000.0)):
     rows36.append(cut.negative_row(
@@ -632,7 +638,7 @@ import contextlib as _contextlib
 import io as _io
 with _contextlib.redirect_stdout(_io.StringIO()):
     val.validate(rows36, True, 10.0, dict(val.PLAN_DEFAULT))
-check("T36 計画120テイク＋別枠負例100分がstrict相当で合格",
+check("T36 現行計画210テイク（F含む）＋別枠負例100分がstrict相当で合格",
       not val.errs and not val.warns,
       f"(rows={len(rows36)}, errors={val.errs}, warnings={val.warns})")
 
