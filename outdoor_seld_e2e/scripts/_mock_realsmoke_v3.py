@@ -3,8 +3,8 @@
 使い方: python scripts/_mock_realsmoke_v3.py → out/realsmoke_mock_v3/score_v3.md"""
 import csv, math, subprocess, sys
 from pathlib import Path
-ROOT = Path(r"C:\Users\satos\research\outdoor_seld_e2e"); OUT = ROOT / "out" / "realsmoke_mock_v3"; OUT.mkdir(parents=True, exist_ok=True)
-PY = r"C:\Users\satos\research\DynamicSound\.venv\Scripts\python.exe"
+ROOT = Path(__file__).resolve().parents[1]; OUT = ROOT / "out" / "realsmoke_mock_v3"; OUT.mkdir(parents=True, exist_ok=True)
+PY = sys.executable
 
 def car_track(clip, az0, az1, d0, d1, k0, k1, rows, cls=4):
     for k in range(k0, k1 + 1):
