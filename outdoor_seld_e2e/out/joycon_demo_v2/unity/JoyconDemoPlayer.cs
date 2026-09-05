@@ -1,7 +1,7 @@
 // JoyconDemoPlayer.cs — 通知層の出力を振動で体験するデモ v2（2026-09-03）→ 6 振動子版（2026-09-05 夜）
 //
 // 5 振動子構成（本人決定 2026-09-06 00:03「5 個で」＝完成イメージ図・9/15 スライドの「振動子 5 個」と一致）:
-//   前左 +30° / 左 +90° / 後 180° / 右 −90° / 前右 −30°（0°=前、+=左）
+//   前左 +36° / 左 +108° / 後 180° / 右 −108° / 前右 −36°（0°=前、+=左。72° の均等刻み＝本人 00:13「72° 刻みで」）
 //   機器: Joy-con 4 本 → 前左・前右・左・右、Wii リモコン 1 本 → 後（WiiRemote.cs のドライバ。強さは ON 時間の割合で近似）
 //   Joy-con が 5 本そろったら Wii を外して Joy-con に差し替えるだけ（規則・表示は同じ）。
 //   足りない振動子は「未接続」として表示だけ動く（K の表示は 5 振動子の理想の挙動を出す）。
@@ -61,7 +61,7 @@ public class JoyconDemoPlayer : MonoBehaviour
     public bool ShowHud = true;      // H キー: 画面の黒い表示を全部 ON/OFF（振動・再生は変わらない）
     public bool ShowVib = false;     // K キー: スライド用「どの振動子が鳴っているか」だけの表示（H で他の表示を消して使う。2026-09-05）
     // 5 振動子（正準）: 前左・前右・左・右・後（後は左右どちらでもない＝側の記憶で 0 にしない）
-    static readonly float[] VIB_ANGLES = { 30f, -30f, 90f, -90f, 180f };
+    static readonly float[] VIB_ANGLES = { 36f, -36f, 108f, -108f, 180f };   // 72° の均等刻み
     static readonly string[] VIB_NAMES = { "前左", "前右", "左", "右", "後" };
     const int NU = 5;
     static bool IsRear(float ang) { return Mathf.Abs(ang) >= 170f; }
@@ -80,13 +80,13 @@ public class JoyconDemoPlayer : MonoBehaviour
     readonly Dictionary<Vib, Runner> runners = new Dictionary<Vib, Runner>();
     // Joy-con の役割（角度）。R で割当モード（持っている Joy-con のボタンを 前左→前右→左→右 の順に押す）。Wii の 1 本目は「後」
     readonly Dictionary<Vib, float> roleOf = new Dictionary<Vib, float>();
-    static readonly float[] ROLE_ORDER = { 30f, -30f, 90f, -90f };
+    static readonly float[] ROLE_ORDER = { 36f, -36f, 108f, -108f };
     int assignStep = -1;            // -1=割当モードでない, 0..3=次に押すべき役割の番号
     static string RoleName(float ang)
     {
         if (IsRear(ang)) return "後";
         float a = Mathf.Abs(ang); string side = ang > 0 ? "左" : "右";
-        return (a < 60f ? "前" : "") + side;
+        return (a < 72f ? "前" : "") + side;
     }
     int NearestUnit(float ang)
     {
@@ -231,10 +231,10 @@ public class JoyconDemoPlayer : MonoBehaviour
         {
             var lefts = new List<Vib>(); var rights = new List<Vib>();
             foreach (var v in vibs) if (v.jc != null) (v.jc.isLeft ? lefts : rights).Add(v);
-            if (lefts.Count > 0) roles.Add(new KeyValuePair<Vib, float>(lefts[0], 30f));
-            if (rights.Count > 0) roles.Add(new KeyValuePair<Vib, float>(rights[0], -30f));
-            if (lefts.Count > 1) roles.Add(new KeyValuePair<Vib, float>(lefts[1], 90f));
-            if (rights.Count > 1) roles.Add(new KeyValuePair<Vib, float>(rights[1], -90f));
+            if (lefts.Count > 0) roles.Add(new KeyValuePair<Vib, float>(lefts[0], 36f));
+            if (rights.Count > 0) roles.Add(new KeyValuePair<Vib, float>(rights[0], -36f));
+            if (lefts.Count > 1) roles.Add(new KeyValuePair<Vib, float>(lefts[1], 108f));
+            if (rights.Count > 1) roles.Add(new KeyValuePair<Vib, float>(rights[1], -108f));
         }
         var ws = new List<Vib>(); foreach (var v in vibs) if (v.wii != null) ws.Add(v);
         if (ws.Count > 0) roles.Add(new KeyValuePair<Vib, float>(ws[wiiSwap && ws.Count > 1 ? 1 : 0], 180f));
