@@ -58,9 +58,11 @@ SIDE_DEG, SIDE_NEED = 8.0, 2          # 側の記憶（2026-09-05）: ±8° が 
 SIDE_ON = os.environ.get("DEV_SIDE", "1") == "1"   # DEV_SIDE=0 で側の記憶なし（変更前との比較用）
 QUIET_RESET_S = 1.0
 SWITCH_PAUSE_S, SWITCH_RAMP_S = 0.25, 0.6
-UNITS6 = {"FL": 30.0, "FR": -30.0, "L": 90.0, "R": -90.0, "BL": 150.0, "BR": -150.0}   # 2026-09-05 夜: 左 3・右 3（本人決定）
+UNITS5 = {"FL": 30.0, "FR": -30.0, "L": 90.0, "R": -90.0, "B": 180.0}     # 2026-09-06: 5 個（本人決定・完成イメージ図と一致）。後は左右どちらでもない
+UNITS6 = {"FL": 30.0, "FR": -30.0, "L": 90.0, "R": -90.0, "BL": 150.0, "BR": -150.0}
 UNITS4 = {"FL": 45.0, "FR": -45.0, "BL": 135.0, "BR": -135.0}
-UNITS = UNITS4 if os.environ.get("DEV_UNITS", "6") == "4" else UNITS6
+UNITS = {"4": UNITS4, "6": UNITS6}.get(os.environ.get("DEV_UNITS", "5"), UNITS5)
+def is_rear(a): return abs(a) >= 170.0
 PAN_GAIN, PAN_MIN = 1.6, 0.08
 ATTR_DEG = 30.0
 
@@ -120,7 +122,7 @@ def replay(urg):
             w = {k: max(0.0, math.cos(math.radians(stable_az - a))) ** 4 for k, a in UNITS.items()}
             if SIDE_ON and side != 0:
                 for k, a in UNITS.items():
-                    if (side > 0 and a < 0) or (side < 0 and a > 0): w[k] = 0.0
+                    if not is_rear(a) and ((side > 0 and a < 0) or (side < 0 and a > 0)): w[k] = 0.0
             s = sum(w.values())
             for k in UNITS:
                 a = amp * w[k] / s * PAN_GAIN if s > 0 else 0.0
@@ -180,7 +182,7 @@ def score(pred, meta: Path, clips):
                 continue
             gaz = evs[best]["fr"][k][0]
             if abs(gaz) >= SIDE_DEG:
-                opp = {k for k, a in UNITS.items() if (gaz > 0 and a < 0) or (gaz < 0 and a > 0)}
+                opp = {k for k, a in UNITS.items() if not is_rear(a) and ((gaz > 0 and a < 0) or (gaz < 0 and a > 0))}
                 if any(u in amps for u in opp):
                     opp_s += 1.0 / FPS
             if k <= evs[best]["cpa"] + FPS:
