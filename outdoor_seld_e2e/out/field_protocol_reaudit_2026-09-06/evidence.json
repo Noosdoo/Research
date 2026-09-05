@@ -1,0 +1,271 @@
+{
+  "head": "f26b57aea7eb5e3975f191d094ab0bcd9a27c8d4",
+  "original_name_override": {
+    "source_annotation": [
+      {
+        "clip_id": "S1_take01",
+        "event_id": "1",
+        "trial": "A",
+        "class": "car_drive",
+        "quadrant": "L",
+        "t_start": "4.00",
+        "t_cpa": "10.00",
+        "take_id": "S1/01",
+        "pair_id": "",
+        "区分": "A",
+        "状態": "静止",
+        "横距離m": "2.5",
+        "n_car": "1",
+        "車種": "",
+        "速度": "",
+        "特記": "",
+        "session_id": "S1",
+        "orig_file": "ZOOM0001.wav",
+        "calibration_id": "S1_calib",
+        "calib_file": "S1_calib.wav",
+        "LAeq_dB": "52.3",
+        "暗騒音区間_秒": "0-60",
+        "t_start_rule": "t_start = t_cpa − 6 s（規則）; t_cpa = ラップ秒 "
+      }
+    ],
+    "conversion_warnings": [],
+    "cut_exit": 0,
+    "cut_rows": [],
+    "cut_output": "# mode=event gain=+0.00dB 回転(pitch/roll/yaw)=0/0/0\n  skip ZOOM0001.wav: 正例イベントの注釈がありません\n\nevent: 0クリップ / 注釈0行 -> C:\\Users\\satos\\research\\outdoor_seld_e2e\\out\\field_protocol_reaudit_2026-09-06\\fixtures\\custom_clips\n注釈CSV -> C:\\Users\\satos\\research\\outdoor_seld_e2e\\out\\field_protocol_reaudit_2026-09-06\\fixtures\\custom_cut.csv\n"
+  },
+  "calibration_batch": {
+    "exit_code": 0,
+    "before": [
+      {
+        "session_id": "S1",
+        "calibration_id": "S1_calib"
+      },
+      {
+        "session_id": "S2",
+        "calibration_id": "S2_calib"
+      }
+    ],
+    "after": [
+      {
+        "session_id": "S1",
+        "calibration_id": "S1_calib",
+        "gain_db": "0.00"
+      },
+      {
+        "session_id": "S2",
+        "calibration_id": "S1_calib",
+        "gain_db": "0.00"
+      }
+    ]
+  },
+  "calibration_window": {
+    "meter_interval_s": [
+      0,
+      60
+    ],
+    "meter_dBA": 104.76090503137817,
+    "matching_interval_gain_dB": -4.215955584641051e-08,
+    "documented_5_55_gain_dB": 1.760904983649084,
+    "scope": "constructed nonstationary calibration signal, not a measured hardware error"
+  },
+  "tuning_and_calibration_metadata": {
+    "tuning_rows_written_to_main_ann": 1,
+    "purpose_retained": false,
+    "warnings": [],
+    "explicit_calibration_id_after_convert": "S1_calib"
+  },
+  "warning_latency": {
+    "onset_s": 5.0,
+    "pseudo_cpa_s": 8.0,
+    "first_fire_s": 5.3,
+    "onset_to_fire_delay_s": 0.2999999999999998,
+    "reported_event": {
+      "clip": "warning_clip",
+      "trial": "A",
+      "event_id": "1",
+      "class": "siren",
+      "quadrant": "R",
+      "take_id": "S1/01",
+      "pair_id": "",
+      "state": "静止",
+      "n_car": "1",
+      "session": "S1",
+      "history_short": 0,
+      "front": 0,
+      "multi": 0,
+      "gt_tier": "warn",
+      "notified": true,
+      "fired_tier": "警告",
+      "lead": 2.7,
+      "quad_ok": true,
+      "az_est": -90.0
+    }
+  },
+  "warning_direction": {
+    "annotated_onset_direction": "R",
+    "onset_prediction_deg": -90,
+    "reported_event": {
+      "clip": "warning_clip",
+      "trial": "A",
+      "event_id": "1",
+      "class": "siren",
+      "quadrant": "R",
+      "take_id": "S1/01",
+      "pair_id": "",
+      "state": "静止",
+      "n_car": "1",
+      "session": "S1",
+      "history_short": 0,
+      "front": 0,
+      "multi": 0,
+      "gt_tier": "warn",
+      "notified": true,
+      "fired_tier": "警告",
+      "lead": 2.7,
+      "quad_ok": false,
+      "az_est": -166.5042667192042
+    },
+    "scope": "constructed moving sound with correct onset direction"
+  },
+  "walking_main_population": {
+    "main_count": 3,
+    "walking_pair_rows_in_main": 2,
+    "frame_recall_exported": false,
+    "events": [
+      {
+        "clip": "a",
+        "trial": "A",
+        "event_id": "1",
+        "class": "car_drive",
+        "quadrant": "L",
+        "take_id": "a",
+        "pair_id": "",
+        "state": "静止",
+        "n_car": "1",
+        "session": "S1",
+        "history_short": 0,
+        "front": 0,
+        "multi": 0,
+        "gt_tier": "caution",
+        "notified": true,
+        "fired_tier": "中",
+        "lead": 2.8,
+        "quad_ok": true,
+        "az_est": 90.0
+      },
+      {
+        "clip": "ws",
+        "trial": "歩行",
+        "event_id": "1",
+        "class": "car_drive",
+        "quadrant": "L",
+        "take_id": "ws",
+        "pair_id": "S1/P1",
+        "state": "静止",
+        "n_car": "1",
+        "session": "S1",
+        "history_short": 0,
+        "front": 0,
+        "multi": 0,
+        "gt_tier": "caution",
+        "notified": true,
+        "fired_tier": "中",
+        "lead": 2.8,
+        "quad_ok": true,
+        "az_est": 90.0
+      },
+      {
+        "clip": "ww",
+        "trial": "歩行",
+        "event_id": "1",
+        "class": "car_drive",
+        "quadrant": "L",
+        "take_id": "ww",
+        "pair_id": "S1/P1",
+        "state": "歩行",
+        "n_car": "1",
+        "session": "S1",
+        "history_short": 0,
+        "front": 0,
+        "multi": 0,
+        "gt_tier": "caution",
+        "notified": true,
+        "fired_tier": "中",
+        "lead": 2.8,
+        "quad_ok": true,
+        "az_est": 90.0
+      }
+    ]
+  },
+  "front_fix": {
+    "main_count": 0,
+    "front_count": 1
+  },
+  "opportunity": {
+    "D_count_0_D": {
+      "exit_code": 0,
+      "D_messages": [
+        "  S8 区分D: 0テイク（機会枠の上限目標 20。不足は不合格にしない・0 本のクラスは未評価と報告）"
+      ]
+    },
+    "D_count_0_D=8": {
+      "exit_code": 0,
+      "D_messages": [
+        "  S8 区分D: 0テイク（機会枠の上限目標 8。不足は不合格にしない・0 本のクラスは未評価と報告）"
+      ]
+    },
+    "D_count_16_D": {
+      "exit_code": 0,
+      "D_messages": [
+        "  S8 区分D: 16テイク（機会枠の上限目標 20。不足は不合格にしない・0 本のクラスは未評価と報告）"
+      ]
+    },
+    "D_count_16_D=8": {
+      "exit_code": 1,
+      "D_messages": [
+        "[ERROR(strict)] S8 区分D: 16テイク（計画 8テイク）",
+        "NG: エラー0件・警告1件（--strict: 警告も不合格）"
+      ]
+    },
+    "D_count_20_D": {
+      "exit_code": 0,
+      "D_messages": []
+    },
+    "D_count_20_D=8": {
+      "exit_code": 1,
+      "D_messages": [
+        "[ERROR(strict)] S8 区分D: 20テイク（計画 8テイク）",
+        "NG: エラー0件・警告1件（--strict: 警告も不合格）"
+      ]
+    }
+  },
+  "timing_counterexample": {
+    "vehicle_length_m": 4.5,
+    "speed_m_s": 1.0,
+    "assumed_reaction_s": 0.25,
+    "button_time_minus_center_CPA_s": -2.0,
+    "scope": "geometric counterexample to guaranteed cancellation, not measured human timing"
+  },
+  "source_sha256": {
+    "scripts/step19_realsmoke_convert.py": "77e01c0053269538429900357d82248b250ce1627b5cb0442f4c2b8b3cfa350e",
+    "scripts/step19b_realsmoke_cut.py": "a6556469623f5cc67e15b2e01b25a62002ad09688dbb071c1b6b8ba6e941e9ba",
+    "scripts/step19c_ann_validate.py": "b4854af9ac0b71c62ebd5fbbf9f3bf030d2e231541c57f5261d9426ca1c2f32b",
+    "scripts/step19d_field_csv_to_ann.py": "e736ec6079339db6af3e2d5556e03b3a23903f5e554dcb27fcd52338e1fe6529",
+    "scripts/step20_realsmoke_score_v3.py": "b6c364de3a508dcee138bc95309077400eaa5bd372385319bd093da185d93811",
+    "scripts/test_realsmoke_v2_units.py": "d3a0be8b1ed04d0b7b2fc0e5274c45f0647f4f3ee9ac8b7790361c085e915131",
+    "scripts/step12_notify_v43.py": "7dfd8cb327be87ec743f9d6d819fce51a28afa85b0e750a17496009124f5f232",
+    "scripts/step12_notify_v9b_hold.py": "031e4ecaefe0c1a14663c06d37c2a7755e2d4690f7664bf535f6d2b48fd2f435",
+    "out/notify_v43_sweep/winner.json": "4fff40074e2270d5eab27cf4c14a62c301be0c4741d1d29fba85ce9006ead739",
+    "md/audit/敵対的レビュー_実録プロトコル_対応計画_2026-09-06.md": "cbec04ba8c50fbc2793674bed2b841b717556ca36a6bec4e946b6970edc42ae3",
+    "md/design/実録_事前登録の変更票_2026-09-06.md": "b77c18e159e101c3f2a66fdac1aae94dbac4a39a934d0856d07a8d472dbd5ac8",
+    "md/design/実録_当日の手順書_車の収録_2026-09-05.md": "9d1f92b839ca012eeacecf99bca3ba48fe07a6a971b5692728e4d5db6661d0a1",
+    "md/design/実録_解析パイプライン_現場CSVから採点まで_2026-09-06.md": "f55a502a233206847b1ac5a480964d810b9907ef27e2a64a74deb552c9f9423b",
+    "md/design/実録_調整用と最終評価用の分離_2026-09-05.md": "aa6a3e551e5910190765e7f985f425ea24e98af8494267253e9bd7748d91b271",
+    "md/design/実録ハンドブック_2026-08-13.md": "0f0fb11cb13f9efc50d7d97ec0e12048bcee612c36dc98a6c106ae666fa617b2",
+    "md/design/実録_記入用CSV_2026-09-05/events.csv": "feb1e745c267f2f52bd885f138b5350e3821122c7381ce00d13d2654b3a76241",
+    "md/design/実録_記入用CSV_2026-09-05/README.md": "ebbda5199665d908dc938528782ee461a13db8eeedc2e70a0192745b792d63ba",
+    "md/design/実録_記入用CSV_2026-09-05/session.csv": "84dec25292e73b11bfc563863e26eebb9204c63c49027c25080b0686fa935d17",
+    "md/design/実録_記入用CSV_2026-09-05/例_記入済み.csv": "0d0d836ddbec054c486cef9911c8b82f50d23c6467ebe69f3166dc13b795bb54"
+  },
+  "existing_tests_last_line": "ALL PASS (50 checks)"
+}

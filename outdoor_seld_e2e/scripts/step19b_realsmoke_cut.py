@@ -264,11 +264,41 @@ def cut_audio(src: Path, start_s: float, dur_s: float, out_path: Path,
 
 # ------------------------------------------------------------------ main
 def _load_ann(path: Path):
+    """注釈を原録音キーで引く。orig_file 列（任意の原本名・再監査 N01）があればそれを、無ければ clip_id を使う。"""
     rows = list(csv.DictReader(open(path, encoding="utf-8-sig")))
     by_orig = {}
     for r in rows:
-        by_orig.setdefault(orig_key(r["clip_id"]), []).append(r)
+        src = (r.get("orig_file") or "").strip() or r["clip_id"]
+        by_orig.setdefault(orig_key(src), []).append(r)
     return rows, by_orig
+
+
+def load_calib_dir(calib_dir: Path) -> dict:
+    """step19 --calib が書いた calibration_<id>.json を全部読む: id -> gain_db（再監査 N04）。"""
+    import json
+    out = {}
+    for f in sorted(Path(calib_dir).glob("calibration_*.json")):
+        rec = json.loads(f.read_text(encoding="utf-8"))
+        out[rec["calibration_id"]] = float(rec["gain_db"])
+    return out
+
+
+def calib_for_rows(rows, calib_map: dict, cli_id: str, cli_gain: float):
+    """その原本の注釈行から校正 id を 1 つに決め、補正量を返す。行間で id が違う／CLI と食い違う／json に無いときは停止。"""
+    ids = {(r.get("calibration_id") or "").strip() for r in rows} - {""}
+    if len(ids) > 1:
+        raise ValueError(f"同じ原本の注釈行で calibration_id が複数あります: {sorted(ids)}")
+    cid = next(iter(ids)) if ids else cli_id
+    if cli_id and ids and cli_id != cid:
+        raise ValueError(f"--calibration-id {cli_id} と注釈の calibration_id {cid} が違います（校正の取り違え防止・N04）")
+    if calib_map:
+        if cid not in calib_map:
+            raise ValueError(f"calibration_id {cid!r} の json が --calib-dir にありません（step19 --calib で作る）")
+        gain = calib_map[cid]
+        if cli_gain and abs(cli_gain - gain) > 0.05:
+            raise ValueError(f"--gain-db {cli_gain:+.2f} と json の補正量 {gain:+.2f}（{cid}）が違います")
+        return cid, gain
+    return cid, cli_gain
 
 
 def _write_ann(path: Path, rows, append: bool = False):
@@ -311,8 +341,10 @@ def main() -> int:
     overlap = float(_arg("--overlap", str(OVERLAP)))
     gain_db = float(_arg("--gain-db", "0"))
     calibration_id = _arg("--calibration-id", "")
-    if gain_db and not calibration_id:
-        print("  ⚠️ --gain-db を渡すときは --calibration-id（step19 --calib の id）も渡してください（校正の引継ぎ・監査 R01）")
+    calib_map = load_calib_dir(Path(_arg("--calib-dir"))) if _arg("--calib-dir") else {}
+    allow_unmatched = "--allow-unmatched" in sys.argv
+    if gain_db and not calibration_id and not calib_map:
+        print("  ⚠️ --gain-db を渡すときは --calibration-id（step19 --calib の id）か --calib-dir も渡してください（校正の引継ぎ・監査 R01/N04）")
     pitch = float(_arg("--pitch", "0"))
     roll = float(_arg("--roll", "0"))
     yaw = float(_arg("--yaw", "0"))
@@ -330,13 +362,27 @@ def main() -> int:
     _, by_orig = _load_ann(ann_path)
 
     out_rows, n_clip = [], 0
+    matched_origs, skipped_files = set(), []
+    calib_names = {orig_key(r.get("calib_file", "")) for r in _load_ann(ann_path)[0] if r.get("calib_file")}
     for path in files:
         orig = orig_key(path.name)
+        if orig.endswith("_calib") or orig in calib_names:
+            continue                      # 校正録音（step19 --calib で使う）は切り出し対象ではない
         with sf.SoundFile(str(path)) as f:
             length = len(f) / f.samplerate
             input_fs = f.samplerate
         require_raw_metadata(input_fs)
         rows = by_orig.get(orig, [])
+        if not rows:
+            skipped_files.append(path.name)
+        else:
+            matched_origs.add(orig)
+        file_gain = gain_db
+        if rows:
+            calibration_id, file_gain = calib_for_rows(rows, calib_map, calibration_id if not calib_map else "", gain_db)
+            gain_db_file = file_gain
+        else:
+            gain_db_file = gain_db
         if mode == "event":
             events = [r for r in rows if r["class"].strip() != "none"]
             if not events:
@@ -346,11 +392,11 @@ def main() -> int:
                 ev = str(r.get("event_id", "1"))
                 off = plan_event_cut(float(r["t_cpa"]), length, dur, cpa_at)
                 new_clip = f"{orig}_e{ev}"
-                cut_audio(path, off, dur, out_dir / f"{new_clip}.flac", gain_db,
+                cut_audio(path, off, dur, out_dir / f"{new_clip}.flac", gain_db_file,
                           **rot)
                 out_rows += rebase_rows(rows, off, dur, orig, new_clip,
                                         target_event=ev, orig_duration_s=length,
-                                        calibration_id=calibration_id, gain_db=gain_db, cpa_at=cpa_at)
+                                        calibration_id=calibration_id, gain_db=gain_db_file, cpa_at=cpa_at)
                 n_clip += 1
                 print(f"  {new_clip}: off={off:.3f}s CPA→{float(r['t_cpa'])-off:.2f}s"
                       + ("  ⚠端でクランプ" if abs(off - (float(r['t_cpa']) - cpa_at)) > 1e-6
@@ -360,13 +406,13 @@ def main() -> int:
             tmpl = next((r for r in rows if r["class"].strip() == "none"), None)
             for i, (off, own0, own1) in enumerate(plan):
                 new_clip = f"{orig}_s{i:03d}"
-                cut_audio(path, off, dur, out_dir / f"{new_clip}.flac", gain_db,
+                cut_audio(path, off, dur, out_dir / f"{new_clip}.flac", gain_db_file,
                           **rot)
                 out_rows.append(negative_row(new_clip, orig, off, own0, own1, tmpl,
-                                             orig_duration_s=length, calibration_id=calibration_id, gain_db=gain_db))
+                                             orig_duration_s=length, calibration_id=calibration_id, gain_db=gain_db_file))
                 out_rows += rebase_rows(rows, off, dur, orig, new_clip,
                                         own=(own0, own1), orig_duration_s=length,
-                                        calibration_id=calibration_id, gain_db=gain_db, cpa_at=cpa_at)
+                                        calibration_id=calibration_id, gain_db=gain_db_file, cpa_at=cpa_at)
                 n_clip += 1
             cov = sum(b - a for _, a, b in plan)
             print(f"  {orig}: {len(plan)}クリップ 担当合計={cov:.2f}s "
@@ -375,6 +421,15 @@ def main() -> int:
     _write_ann(ann_out, out_rows, append=append)
     print(f"\n{mode}: {n_clip}クリップ / 注釈{len(out_rows)}行 -> {out_dir}")
     print(f"注釈CSV -> {ann_out}" + ("（既存行へ追記）" if append else ""))
+    # 原本と注釈の対応の照合（再監査 N01）: 注釈があるのに音声が無い原本、音声があるのに注釈が無いファイル
+    want = {k for k, rs in by_orig.items() if any(r["class"].strip() != "none" for r in rs)} if mode == "event" else set(by_orig)
+    missing_audio = sorted(want - matched_origs)
+    if skipped_files or missing_audio:
+        print(f"⚠️ 対応の不一致: 注釈があるのに音声が見つからない原本 {len(missing_audio)} 件 {missing_audio[:5]} / "
+              f"注釈が無くて飛ばした音声 {len(skipped_files)} 件 {skipped_files[:5]}")
+        if not allow_unmatched:
+            print("   → 原本名（orig_file）と音声ファイル名の stem を合わせてください。意図どおりなら --allow-unmatched で続行")
+            return 1
     return 0
 
 

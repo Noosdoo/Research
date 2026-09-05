@@ -153,6 +153,11 @@ def main() -> int:
     if calib:
         calib = Path(calib)
         calib_id = _arg("--calib-id", calib.stem)
+        if not _arg("--laeq-window"):
+            # 再監査 N04: 騒音計で測った区間と同じ区間を使う。校正録音が「測った 60 秒そのもの」なら全長（既定）
+            with sf.SoundFile(str(calib)) as fh:
+                win = (0.0, len(fh) / fh.samplerate)
+            print(f"校正窓は未指定 → 校正録音の全長 0-{win[1]:.1f}s を使う（騒音計の測定区間と同じ区間であること）")
         rec = calibration_record(calib, laeq, win, calib_id, out_dir)
         print(f"校正 {calib.name}: 窓 {win[0]:g}-{win[1]:g}s 計器 {laeq:.1f} dBA → gain-db {rec['gain_db']:+.2f}  calibration_id={calib_id}")
         if "--gain-only" in sys.argv:

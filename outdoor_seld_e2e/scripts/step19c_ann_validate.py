@@ -26,6 +26,8 @@
   python scripts/step19c_ann_validate.py --ann ann_all.csv --cut --strict  # 収録完了後
   （--plan で区分ごとの計画本数を上書き。既定は 2026-08-22 改訂の A〜E各20＋Fバイク10＋歩行100＝計210本。
     --strict は本数不足などの警告も不合格にする＝全収録完了後の最終ゲート用）
+  2026-09-06 再監査 N03: 区分の内訳は --subplan "D:crossing=8,backup_beep=4,horn=4,siren<=4" で検査する（必須 '=' はちょうど、任意 '<=' は 0〜上限）。
+    D 全体を --opportunity にすると必須 16 本の不足を見逃すので、D には --subplan を使う
   2026-09-06（監査 R04/W8）: take_id は session_id 列があれば (session_id, take_id) の組で一意（別セッションの take 1 が衝突しない）。
     --cut のとき calibration_id が空の行は警告（校正の引継ぎ）。--opportunity D=8 のように機会枠を指定すると、
     その区分の不足は「上限目標に届かず」の情報表示だけで警告にしない（サイレン等の遭遇枠。0 本でも評価は成立）。
@@ -50,7 +52,10 @@ DIST_CLASSES = {"car_drive", "kick", "bike"}
 QUADS = {"F", "B", "L", "R"}
 LATERAL_KEYS = ("横距離m", "横距離", "lateral_m")
 PLAN_DEFAULT = {"A": 20, "B": 20, "C": 20, "D": 20, "E": 20, "F": 10, "歩行": 100}
-OPPORTUNITY = set()      # --opportunity で指定した機会枠の区分（不足を不合格にしない）   # 2026-09-05: F バイク 10 本を追加（ハンドブック 2026-08-22 改訂の計 210 本）
+OPPORTUNITY = set()      # --opportunity で指定した機会枠の区分（不足を不合格にしない）
+# --subplan "D:crossing=8,backup_beep=4,horn=4,siren<=4": 区分の内訳。'=' は必須（ちょうど）、'<=' は任意（0〜上限）。
+# 区分の総数は [必須の和, 必須の和＋任意の上限の和] を許容（再監査 N03: D 全体を機会枠にしない）
+SUBPLAN = {}             # kind -> {cls: (kind_of_constraint, n)}   # 2026-09-05: F バイク 10 本を追加（ハンドブック 2026-08-22 改訂の計 210 本）
 EXPOSURE_KIND = "負例露出"
 STATES = {"静止", "歩行"}
 EPS = 1e-6
@@ -228,12 +233,40 @@ def validate(rows, cut: bool, dur: float, plan: dict):
         takes.setdefault(tid, r)
 
     got = Counter(r.get("区分", "").strip() for r in takes.values())
+    take_cls = {}
+    for r in rows:
+        tid = r.get("take_id", "").strip()
+        if not tid:
+            continue
+        sid = r.get("session_id", "").strip()
+        if sid and not tid.startswith(sid):
+            tid = f"{sid}/{tid}"
+        if r["class"].strip() != "none" and tid not in take_cls:
+            take_cls[tid] = r["class"].strip()
     for k in sorted(plan):
-        if got.get(k, 0) != plan[k]:
-            if k in OPPORTUNITY and got.get(k, 0) < plan[k]:
-                print(f"  S8 区分{k}: {got.get(k,0)}テイク（機会枠の上限目標 {plan[k]}。不足は不合格にしない・0 本のクラスは未評価と報告）")
+        n = got.get(k, 0)
+        if k in SUBPLAN:
+            req = {c: v for c, (op, v) in SUBPLAN[k].items() if op == "="}
+            opt = {c: v for c, (op, v) in SUBPLAN[k].items() if op == "<="}
+            lo, hi = sum(req.values()), sum(req.values()) + sum(opt.values())
+            got_cls = Counter(take_cls.get(t, "") for t, r in takes.items() if r.get("区分", "").strip() == k)
+            for c, v in req.items():
+                if got_cls.get(c, 0) != v:
+                    warn(f"S8 区分{k} の必須 {c}: {got_cls.get(c, 0)}テイク（計画 {v}テイク）")
+            for c, v in opt.items():
+                if got_cls.get(c, 0) > v:
+                    warn(f"S8 区分{k} の任意 {c}: {got_cls.get(c, 0)}テイク（上限 {v}テイク）")
+                elif got_cls.get(c, 0) < v:
+                    print(f"  S8 区分{k} の任意 {c}: {got_cls.get(c, 0)}テイク（上限目標 {v}。不足は不合格にしない・0 本なら未評価と報告）")
+            if not (lo <= n <= hi):
+                warn(f"S8 区分{k}: {n}テイク（内訳の計画 {lo}〜{hi}テイク）")
             else:
-                warn(f"S8 区分{k}: {got.get(k,0)}テイク（計画 {plan[k]}テイク）")
+                print(f"  S8 区分{k}: {n}テイク（内訳 " + " ".join(f"{c}={got_cls.get(c, 0)}" for c in SUBPLAN[k]) + f"・許容 {lo}〜{hi}）")
+        elif n != plan[k]:
+            if k in OPPORTUNITY and n < plan[k]:
+                print(f"  S8 区分{k}: {n}テイク（機会枠の上限目標 {plan[k]}。不足は不合格にしない・0 本のクラスは未評価と報告）")
+            else:
+                warn(f"S8 区分{k}: {n}テイク（計画 {plan[k]}テイク）")
     if cut:
         n_nocal = sum(1 for r in rows if not r.get("calibration_id", "").strip())
         if n_nocal:
@@ -302,6 +335,18 @@ def main() -> int:
             OPPORTUNITY.add(k.strip())
             if v is not None:
                 plan[k.strip()] = int(v)
+    if _arg("--subplan"):
+        # 例: D:crossing=8,backup_beep=4,horn=4,siren<=4  （複数の区分は ';' で区切る）
+        for part in _arg("--subplan").split(";"):
+            kind, spec = part.split(":", 1)
+            d = {}
+            for item in spec.split(","):
+                if "<=" in item:
+                    c, v = item.split("<="); d[c.strip()] = ("<=", int(v))
+                else:
+                    c, v = item.split("="); d[c.strip()] = ("=", int(v))
+            SUBPLAN[kind.strip()] = d
+            plan[kind.strip()] = sum(v for op, v in d.values())     # 総数の上限（満数）
     rows = list(csv.DictReader(open(ann, encoding="utf-8-sig")))
     print(f"# 注釈検証: {ann.name}（{'切り出し後' if cut else '原録音'}・"
           f"クリップ長{dur if cut else '制限なし'}）\n")

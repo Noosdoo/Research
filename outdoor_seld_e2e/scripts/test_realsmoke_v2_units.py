@@ -747,6 +747,110 @@ check("T41 履歴不足: CPA 4 s のテイクは history_short=1（CPA 18 s は 
       and out41b[0]["history_short"] == "0" and abs(float(out41b[0]["t_cpa"]) - 8.0) < 1e-6,
       f"(off={off41}, cpa_in_clip={out41[0]['t_cpa']}, flag={out41[0]['history_short']} / off_b={off41b}, flag_b={out41b[0]['history_short']})")
 
+
+# ---------------- T42: 警告音の遅れ = 発火 − 鳴り始め、方向は鳴り始め直後（再監査 N02） ----------------
+v3 = _load("s20v3", "step20_realsmoke_score_v3.py")
+import json as _json42
+cfg43 = v3.V43.Cfg43(**_json42.loads((ROOT / "out/notify_v43_sweep/winner.json").read_text(encoding="utf-8")))
+pred42 = {"clipH": {}}
+for k in range(50, 100):                    # クラクション(1): 5.0 s から鳴る。方位は最初 R(−80°)、6.0 s 以降は B(−170°)
+    pred42["clipH"][k] = [(1, -80.0 if k < 60 else -170.0, -5.0, float("nan"))]
+rows42 = [{"clip_id": "clipH", "event_id": "1", "trial": "D", "class": "horn", "quadrant": "R", "t_start": "5.0", "t_cpa": "8.0",
+           "take_id": "D-1", "pair_id": "", "区分": "D", "状態": "静止", "横距離m": "", "n_car": "", "scored": "1"}]
+ev42, _, _ = v3.evaluate(rows42, pred42, cfg43, (2.5, 1.5), 7.5, False, 1.0)
+e42 = ev42[0]
+check("T42 警告音: 5.0 s 鳴り始め→5.3 s 通知 = 遅れ 0.3 s（リードではない）、方向は鳴り始め直後で R と一致",
+      e42["notified"] and e42["delay"] is not None and abs(e42["delay"] - 0.3) < 1e-6 and e42["lead"] is None and e42["quad_ok"] is True,
+      f"(delay={e42['delay']}, lead={e42['lead']}, az_est={e42['az_est']}, quad_ok={e42['quad_ok']})")
+
+# ---------------- T43: 歩行対比は主要評価から外し、検出フレーム率を出す（再監査 N05） ----------------
+pred43 = {"clipA": {}, "clipP1s": {}, "clipP1w": {}}
+for k in range(30, 90):
+    for c in ("clipA", "clipP1s"):
+        pred43[c][k] = [(4, 120.0, -5.0, 8.0 - (k - 30) * 0.1)]
+for k in range(30, 90, 2):
+    pred43["clipP1w"][k] = [(4, 120.0, -5.0, 8.0 - (k - 30) * 0.1)]     # 歩行側は半分のフレームだけ検出
+base43 = {"event_id": "1", "trial": "A", "class": "car_drive", "quadrant": "L", "t_start": "3.0", "t_cpa": "8.0", "区分": "A", "横距離m": "2.5", "n_car": "1", "scored": "1"}
+rows43 = [dict(base43, clip_id="clipA", take_id="A-1", pair_id="", 状態="静止"),
+          dict(base43, clip_id="clipP1s", take_id="W-1", pair_id="P1", 状態="静止", 区分="歩行", trial="walk"),
+          dict(base43, clip_id="clipP1w", take_id="W-2", pair_id="P1", 状態="歩行", 区分="歩行", trial="walk")]
+ev43, _, _ = v3.evaluate(rows43, pred43, cfg43, (2.5, 1.5), 7.5, False)
+main43, side43, _ = v3.summarize(ev43, False)
+pairs43, diffs43 = v3.walk_pairs_summary(side43["walk"])
+check("T43 歩行対比: A 1 本だけが主要評価、静止側も含めた対 1 組は別集計、検出フレーム率が出る（歩行 < 静止）",
+      len(main43) == 1 and len(side43["walk"]) == 2 and len(pairs43) == 1 and pairs43[0][3] is not None and pairs43[0][4] is not None
+      and pairs43[0][4] < pairs43[0][3] and diffs43 and diffs43[0] < 0,
+      f"(main={len(main43)}, walk={len(side43['walk'])}, fr_static={pairs43[0][3]}, fr_walk={pairs43[0][4]})")
+
+# ---------------- T44: 区分 D の内訳検査（再監査 N03）: 0 本=不合格 / 必須 16 のみ=合格 / 満数 20=合格 ----------------
+def rows_D(n_cross, n_beep, n_horn, n_siren):
+    out = [{"clip_id": "A_0", "event_id": "1", "trial": "A", "class": "car_drive", "quadrant": "L", "t_start": "1", "t_cpa": "8",
+            "take_id": "A-0", "pair_id": "", "区分": "A", "状態": "静止", "横距離m": "2"}]      # 空の入力にならないよう A を 1 本
+    for cls, n in (("crossing", n_cross), ("backup_beep", n_beep), ("horn", n_horn), ("siren", n_siren)):
+        for i in range(n):
+            out.append({"clip_id": f"D_{cls}{i}", "event_id": "1", "trial": "D", "class": cls, "quadrant": "L", "t_start": "1", "t_cpa": "4",
+                        "take_id": f"D-{cls}-{i}", "pair_id": "", "区分": "D", "状態": "静止", "横距離m": ""})
+    return out
+def s8_warns(rows, plan):
+    val.errs.clear(); val.warns.clear()
+    with _ctx39.redirect_stdout(_io39.StringIO()):
+        val.validate(rows, False, 10.0, dict(plan))
+    return [w for w in val.warns if "S8 区分D" in w]
+val.SUBPLAN.clear(); val.SUBPLAN["D"] = {"crossing": ("=", 8), "backup_beep": ("=", 4), "horn": ("=", 4), "siren": ("<=", 4)}
+w0 = s8_warns(rows_D(0, 0, 0, 0), {"A": 1, "D": 20}); w16 = s8_warns(rows_D(8, 4, 4, 0), {"A": 1, "D": 20}); w20 = s8_warns(rows_D(8, 4, 4, 4), {"A": 1, "D": 20}); w_bad = s8_warns(rows_D(8, 4, 0, 4), {"A": 1, "D": 20})
+val.SUBPLAN.clear()
+check("T44 D の内訳: 0 本→警告あり、必須 16 のみ→警告なし、満数 20→警告なし、クラクション欠落（16 本でも内訳違い）→警告あり",
+      bool(w0) and not w16 and not w20 and bool(w_bad), f"(0本={len(w0)}, 16={len(w16)}, 20={len(w20)}, 内訳違い={len(w_bad)})")
+
+# ---------------- T45: 任意の原本名・2 セッション・校正ごとの補正量で、現場 CSV→変換→校正→切り出し→検査を通す（再監査 N01/N04） ----------------
+with tempfile.TemporaryDirectory() as td:
+    import soundfile as sf
+    import subprocess, csv as _csv45
+    td = Path(td); raw = td / "raw"; raw.mkdir()
+    fs = 24000; tt = np.arange(fs * 12) / fs
+    def wav(name, amp):
+        sf.write(str(raw / name), np.tile((amp * np.sin(2 * np.pi * 1000.0 * tt))[:, None], (1, 4)).astype(np.float32), fs)
+    wav("S1_calib.wav", 0.01); wav("ZOOM0001.wav", 0.01); wav("S2_calib.wav", 0.001); wav("REC_A.wav", 0.001)
+    with open(td / "session.csv", "w", newline="", encoding="utf-8") as f:
+        w = _csv45.DictWriter(f, fieldnames=["session_id", "区分", "LAeq_dB", "暗騒音区間_秒", "校正原本"]); w.writeheader()
+        w.writerow({"session_id": "S1", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S1_calib.wav"})
+        w.writerow({"session_id": "S2", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S2_calib.wav"})
+    with open(td / "events.csv", "w", newline="", encoding="utf-8") as f:
+        w = _csv45.DictWriter(f, fieldnames=["session_id", "take_id", "event_id", "class", "象限", "ラップ秒", "n_car", "横距離m", "状態", "pair_id", "原本"]); w.writeheader()
+        w.writerow({"session_id": "S1", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "9.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": "", "原本": "ZOOM0001.wav"})
+        w.writerow({"session_id": "S2", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "L", "ラップ秒": "9.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": "", "原本": "REC_A.wav"})
+    py = sys.executable; sc = ROOT / "scripts"
+    r1 = subprocess.run([py, str(sc / "step19d_field_csv_to_ann.py"), "--session", str(td / "session.csv"), "--events", str(td / "events.csv"), "--out", str(td / "ann_orig.csv"), "--audio-dir", str(raw)], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    conv = td / "conv"
+    r2 = subprocess.run([py, str(sc / "step19_realsmoke_convert.py"), "--in", str(raw), "--calib", str(raw / "S1_calib.wav"), "--laeq", "52.3", "--gain-only", "--out", str(conv)], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    r3 = subprocess.run([py, str(sc / "step19_realsmoke_convert.py"), "--in", str(raw), "--calib", str(raw / "S2_calib.wav"), "--laeq", "52.3", "--gain-only", "--out", str(conv)], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    r4 = subprocess.run([py, str(sc / "step19b_realsmoke_cut.py"), "--mode", "event", "--in", str(raw), "--ann", str(td / "ann_orig.csv"), "--calib-dir", str(conv), "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", str(td / "clips"), "--ann-out", str(td / "ann_all.csv")], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    r5 = subprocess.run([py, str(sc / "step19c_ann_validate.py"), "--ann", str(td / "ann_all.csv"), "--cut", "--plan", "A=2"], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    ann_all = list(_csv45.DictReader(open(td / "ann_all.csv", encoding="utf-8-sig"))) if (td / "ann_all.csv").exists() else []
+    g = {r["clip_id"]: (r.get("calibration_id"), float(r.get("gain_db") or 0)) for r in ann_all}
+    j1 = _json42.loads((conv / "calibration_S1_calib.json").read_text(encoding="utf-8")) if (conv / "calibration_S1_calib.json").exists() else {}
+    j2 = _json42.loads((conv / "calibration_S2_calib.json").read_text(encoding="utf-8")) if (conv / "calibration_S2_calib.json").exists() else {}
+    ok45 = (r1.returncode == 0 and r2.returncode == 0 and r3.returncode == 0 and r4.returncode == 0 and r5.returncode == 0
+            and len(ann_all) == 2 and "ZOOM0001_e1" in g and "REC_A_e1" in g
+            and g["ZOOM0001_e1"][0] == "S1_calib" and g["REC_A_e1"][0] == "S2_calib"
+            and abs(g["ZOOM0001_e1"][1] - j1.get("gain_db", 99)) < 0.05 and abs(g["REC_A_e1"][1] - j2.get("gain_db", 99)) < 0.05
+            and abs((g["REC_A_e1"][1] - g["ZOOM0001_e1"][1]) - 20.0) < 0.3)
+    check("T45 現場CSV→変換→校正→切り出し→検査を 2 セッション・任意の原本名で通し、各原本に自分の校正の補正量（差 20 dB）が付く",
+          ok45, f"(rc={[r.returncode for r in (r1, r2, r3, r4, r5)]}, rows={len(ann_all)}, g={g}, j1={j1.get('gain_db')}, j2={j2.get('gain_db')})"
+          + ("" if ok45 else f"\n  step19b: {r4.stdout[-600:]} {r4.stderr[-400:]}\n  step19c: {r5.stdout[-400:]}"))
+    # 原本が無い注釈 / 注釈が無い原本 → 停止（--allow-unmatched なしで終了コード 1）
+    wav("ORPHAN.wav", 0.01)
+    r6 = subprocess.run([py, str(sc / "step19b_realsmoke_cut.py"), "--mode", "event", "--in", str(raw), "--ann", str(td / "ann_orig.csv"), "--calib-dir", str(conv), "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", str(td / "clips2"), "--ann-out", str(td / "ann_all2.csv")], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    check("T45b 注釈の無い原本があると step19b は停止（終了コード 1）し、対応の不一致を表示する", r6.returncode == 1 and "対応の不一致" in r6.stdout, f"(rc={r6.returncode})")
+
+# ---------------- T46: session.csv の 用途=調整用 は最終評価の入力から外れる（A′・再監査 N06） ----------------
+sessions46 = [{"session_id": "S1", "区分": "A", "用途": "最終評価"}, {"session_id": "T1", "区分": "A", "用途": "調整用"}]
+events46 = [{"session_id": "S1", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "8.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""},
+            {"session_id": "T1", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "8.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""}]
+rows46, _ = s19d.convert(sessions46, events46, 6.0, 0.0, None)
+check("T46 用途列: 調整用セッションの行に 用途=調整用 が付く（変換器の出力で最終評価と分離できる）",
+      len(rows46) == 2 and {r["用途"] for r in rows46} == {"最終評価", "調整用"}, f"(用途={[r['用途'] for r in rows46]})")
+
 if fails:
     print(f"NG: {len(fails)}件 {fails}")
     sys.exit(1)

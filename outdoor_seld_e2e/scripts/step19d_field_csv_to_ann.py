@@ -6,8 +6,9 @@
 規則はここに 1 か所だけ書く（記入用 CSV の README と食い違ったらこちらが正）。
 
 変換規則:
-  - 一意キー = session_id × take_id。take_id は "<session_id>/<take>" に、clip_id（原録音キー）は "<session_id>_take<NN>"
-  - 原本ファイル名 = "<session_id>_take<NN>.wav"（録音機のファイル名は `原本` 列があればそれを優先）
+  - 一意キー = session_id × take_id。take_id は "<session_id>/<take>"。clip_id（原録音キー）は `原本` 列があればその stem（例 ZOOM0001）、無ければ "<session_id>_take<NN>"
+  - 原本ファイル名 = `原本` 列（任意名可・再監査 N01）、無ければ "<session_id>_take<NN>.wav"。step19b は orig_file で音声と照合する
+  - session.csv の `用途`（最終評価／調整用・既定 最終評価）: 調整用のセッションの行は ann_orig に入れず <out>_tuning.csv に出す（A′・再監査 N06）
   - 象限 → quadrant、状態 → 状態（そのまま）、区分は session.csv の区分（歩行対比の行は "歩行"）
   - 距離クラス（car_drive/kick/bike）: ラップ = 前端が肩の線を通った瞬間（最接近）。t_cpa = ラップ秒（＋ --lap-offset）、t_start = t_cpa − --pre（既定 6 s。負なら 0）
   - 警告音クラス（siren/horn/backup_beep/bike_bell/crossing）: ラップ = **音の始まり（気づいた瞬間）**。t_start = ラップ、t_cpa = ラップ + --warn-span（既定 3 s）
@@ -32,7 +33,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 OUT_COLS = ["clip_id", "event_id", "trial", "class", "quadrant", "t_start", "t_cpa",
             "take_id", "pair_id", "区分", "状態", "横距離m", "n_car", "車種", "速度", "特記",
-            "session_id", "orig_file", "calibration_id", "calib_file", "LAeq_dB", "暗騒音区間_秒", "t_start_rule"]
+            "session_id", "orig_file", "calibration_id", "calib_file", "LAeq_dB", "暗騒音区間_秒", "t_start_rule", "用途"]
 CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "car_drive", "crossing", "kick", "bike", "none"}
 WARN_CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "crossing"}
 QUADS = {"F", "B", "L", "R", ""}
@@ -91,6 +92,7 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
             warns.append(f"{sid}/take{tk}: event_id {ev} が重複")
         seen.add(key)
         orig = r.get("原本", "") or f"{sid}_take{tk}.wav"
+        clip_key = Path(orig).stem if r.get("原本", "") else f"{sid}_take{tk}"
         calib_file = srow.get("校正原本", "") or f"{sid}_calib.wav"
         if cls == "none":
             t_start = "0"
@@ -119,13 +121,14 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
                 t_start = f"{max(0.0, tc - pre):.2f}"
                 rule = f"t_start = t_cpa − {pre:g} s（規則）; t_cpa = ラップ秒 {'+ ' + str(lap_offset) + ' s' if lap_offset else ''}"
         out.append({
-            "clip_id": f"{sid}_take{tk}", "event_id": ev, "trial": ("walk" if kind == "歩行" else (srow.get("区分", "") or "?")),
+            "clip_id": clip_key, "event_id": ev, "trial": ("walk" if kind == "歩行" else (srow.get("区分", "") or "?")),
             "class": cls, "quadrant": quad, "t_start": t_start, "t_cpa": t_cpa,
             "take_id": f"{sid}/{tk}", "pair_id": (f"{sid}/{r['pair_id']}" if r.get("pair_id") else ""),
             "区分": kind, "状態": state, "横距離m": r.get("横距離m", ""), "n_car": r.get("n_car", ""),
             "車種": r.get("車種", ""), "速度": r.get("速度", ""), "特記": r.get("特記", ""),
             "session_id": sid, "orig_file": orig, "calibration_id": f"{sid}_calib", "calib_file": calib_file,
-            "LAeq_dB": srow.get("LAeq_dB", ""), "暗騒音区間_秒": srow.get("暗騒音区間_秒", ""), "t_start_rule": rule})
+            "LAeq_dB": srow.get("LAeq_dB", ""), "暗騒音区間_秒": srow.get("暗騒音区間_秒", ""), "t_start_rule": rule,
+            "用途": (srow.get("用途", "") or "最終評価")})
     return out, warns
 
 
@@ -139,8 +142,15 @@ def main() -> int:
     warn_span = float(_arg("--warn-span", "3"))
     rows, warns = convert(sessions, events, pre, lap_offset, audio_dir, warn_span)
     out_path.parent.mkdir(parents=True, exist_ok=True)
+    tuning = [r for r in rows if r.get("用途") == "調整用"]
+    rows = [r for r in rows if r.get("用途") != "調整用"]
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=OUT_COLS); w.writeheader(); w.writerows(rows)
+    if tuning:
+        tpath = out_path.with_name(out_path.stem + "_tuning.csv")
+        with open(tpath, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=OUT_COLS); w.writeheader(); w.writerows(tuning)
+        print(f"用途=調整用 {len(tuning)} 行は最終評価の入力に含めず -> {tpath}")
     for wmsg in warns:
         print("[WARN]", wmsg)
     n_take = len({(r["session_id"], r["take_id"]) for r in rows})

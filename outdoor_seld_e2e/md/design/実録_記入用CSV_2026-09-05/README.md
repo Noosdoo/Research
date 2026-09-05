@@ -169,11 +169,12 @@
 2. **校正録音（別ファイル・60 秒）から補正量を 1 回だけ求める**。本番テイクに `--laeq-window 10-70` を渡すと停止する（25 秒しかない）
 
    ```
-   python scripts/step19_realsmoke_convert.py --in raw/ --calib raw/<session>_calib.wav --laeq 52.3 --laeq-window 5-55 --gain-only
+   python scripts/step19_realsmoke_convert.py --in raw/ --calib raw/<session>_calib.wav --laeq 52.3 --gain-only --out out/realsmoke/conv
+   # --laeq-window は省略＝校正ファイル全長（騒音計で測った 60 秒と同じ区間・再監査 N04）。セッションごとに実行
    ```
 
-3. **10 秒クリップに切り出し**: `step19b --gain-db <上の値> --calibration-id <session>_calib --pitch/--roll/--yaw`（CPA 前の履歴が足りないテイクは `history_short=1`）
-4. **step19c 検査器を通す**（`--cut`。列・校正 id・session×take の一意性・none 行の書き忘れ）
+3. **10 秒クリップに切り出し**: `step19b --mode event --in raw/ --ann ann_orig.csv --calib-dir out/realsmoke/conv --pitch/--roll/--yaw`（校正は各原本の id から自動で引く。CPA 前の履歴が足りないテイクは `history_short=1`）
+4. **step19c 検査器を通す**（`--cut --subplan "D:crossing=8,backup_beep=4,horn=4,siren<=4"`。列・校正 id・session×take の一意性・none 行の書き忘れ・D の内訳）
 5. **採点は `step20_realsmoke_score_v3.py`**（v4.3＋hold。象限は上の窓の推定方位と比べる。前方 F は別集計）
 
 ⚠️ **実録は学習には使わない（設計判断。「使えない」ではない）。** 学習は合成データだけで、実録は
