@@ -3,7 +3,8 @@
 
 旧図は 対向型=縦↓・すり抜け型=横→ と直交させていたため「違いは進む向き」に見えた。
 実際の違いは**進路が装着者からどれだけ横にずれているか**だけで、どちらも同じ道路を
-同じ向きに走る。よって2本の線を平行（どちらも↓）に描き、横のずれだけ変える。
+同じ向きに走る。よって2本の線を平行に描き、ずれだけ変える。向きは→（車は左→右、装着者は右端）。
+縦だとカードの高さ(274pt)が足りないので横に寝かせた（2026-09-06 本人指示）。
 
 副産物: 緑の車への方位線を等しい時間間隔で引くと、遠いうちはほぼ平行（方位が動かない
 ように見える）、近づくと扇が一気に開く。これが下段「なぜ15mで切るのか」（dθ/dt ∝ 1/d²）
@@ -45,10 +46,11 @@ CAPTION_NEW = "判定は毎フレーム、直近0.5秒の方位の傾きで行�
 PANEL_TITLE_NEW = "追加ルート(4フレーム)"
 COND2_SUB_NEW = "直近0.5秒の距離の傾き(最小二乗)がマイナス"
 
-# 図の寸法（装着者の中心 (OX, OY) からの相対値・pt）
-DX_GREEN = 58.0                                   # すり抜け型の横ずれ
-DY_MARKS = (160, 132, 104, 76, 48, 20)            # 等しい時間間隔の車の位置
-Y_LINE_TOP = 164.0                                # 線の上端（カード見出しの直下）
+# 図の寸法（横向き）。装着者の中心はカード左上からの相対、線の左端は絶対座標
+WEARER = (355.0, 105.0)                          # 装着者の中心（カード左上から）
+DY_GREEN = 62.0                                  # すり抜け型の縦ずれ（下）
+DX_MARKS = (304, 260, 216, 172, 128, 84, 40)     # 等しい時間間隔の車の位置（装着者からの距離）
+X_LINE_LEFT = 112.0                              # 線の左端
 
 
 # ---------------------------------------------------------------- helpers
@@ -163,7 +165,6 @@ def redraw(sl):
             pass
     assert len(ovals) == 1, "装着者の丸が %d 個" % len(ovals)
     dot = ovals[0]
-    OX, OY = dot.left / 12700 + 8, dot.top / 12700 + 8
     CL, CT = card.left / 12700, card.top / 12700
     CR, CB = CL + card.width / 12700, CT + card.height / 12700
 
@@ -180,36 +181,39 @@ def redraw(sl):
                                                   s.text_frame.text[:14] if s.has_text_frame else ""))
             s._element.getparent().remove(s._element)
 
-    # --- 描き直し ---
-    GX = OX + DX_GREEN
-    # 対向型: 装着者に向かう線＋矢頭（下向き）
-    rect(sl, OX - 1.2, Y_LINE_TOP, 2.4, (OY - 8) - Y_LINE_TOP, RED)
-    rect(sl, OX - 7, OY - 8 - 14, 14, 14, RED, MSO_SHAPE.ISOSCELES_TRIANGLE, rot=180)
-    # すり抜け型: 平行に横へずらした線＋矢頭（装着者の横を通り過ぎて下へ）
-    rect(sl, GX - 1.2, Y_LINE_TOP, 2.4, (OY + 14) - Y_LINE_TOP, GREEN)
-    rect(sl, GX - 7, OY + 14, 14, 14, GREEN, MSO_SHAPE.ISOSCELES_TRIANGLE, rot=180)
+    # --- 描き直し（横向き: 車は左→右、装着者は右端） ---
+    OX, OY = CL + WEARER[0], CT + WEARER[1]
+    dot.left, dot.top = int(Pt(OX - 8)), int(Pt(OY - 8))
+    GY, XL = OY + DY_GREEN, X_LINE_LEFT
+    # 対向型: 装着者に向かう線＋矢頭（右向き）
+    rect(sl, XL, OY - 1.2, (OX - 16) - XL, 2.4, RED)
+    rect(sl, OX - 23, OY - 7, 14, 14, RED, MSO_SHAPE.ISOSCELES_TRIANGLE, rot=90)
+    # すり抜け型: 平行に下へずらした線＋矢頭（装着者の横を通り過ぎて右へ）
+    rect(sl, XL, GY - 1.2, (OX + 22) - XL, 2.4, GREEN)
+    rect(sl, OX + 15, GY - 7, 14, 14, GREEN, MSO_SHAPE.ISOSCELES_TRIANGLE, rot=90)
     # 等しい時間間隔の車の位置と、装着者から見た方位線（緑だけ扇になる）
-    for dy in DY_MARKS:
-        y = OY - dy
-        rect(sl, OX - 2.5, y - 2.5, 5, 5, RED)
-        rect(sl, GX - 2.5, y - 2.5, 5, 5, GREEN)
-        dashed(sl, OX, OY, GX, y, GREEN)
-    # ラベル
-    txt(sl, OX - 8 - 140, Y_LINE_TOP, 140, 34,
+    for dx in DX_MARKS:
+        x = OX - dx
+        rect(sl, x - 2.5, OY - 2.5, 5, 5, RED)
+        rect(sl, x - 2.5, GY - 2.5, 5, 5, GREEN)
+        dashed(sl, OX, OY, x, GY, GREEN)
+    # ラベル（赤は線の上・緑は線の下、どちらも左寄せ）
+    txt(sl, XL + 4, OY - 40, 150, 34,
         [[("対向型", {"size": 11.5, "bold": True, "color": RED})],
-         [("方位が変わらない", {"size": 9.5, "color": SUB})]], align=PP_ALIGN.RIGHT, line=1.25)
-    txt(sl, GX + 10, Y_LINE_TOP, 140, 34,
+         [("方位が変わらない", {"size": 9.5, "color": SUB})]], line=1.25)
+    txt(sl, XL + 4, GY + 8, 150, 34,
         [[("すり抜け型", {"size": 11.5, "bold": True, "color": GREEN})],
          [("方位が速く変わる", {"size": 9.5, "color": SUB})]], line=1.25)
-    txt(sl, GX + 10, Y_LINE_TOP + 40, 140, 30,
+    # 扇の遠い側（左）の、線が来ない空きに注記
+    txt(sl, XL + 48, OY + 6, 150, 30,
         [[("遠いうちは緑も動かない", {"size": 9, "color": MUTED})],
          [("→ 15mで切る理由", {"size": 9, "color": MUTED})]], line=1.2)
-    txt(sl, CL + 16, OY - 30, 150, 16,
+    txt(sl, CL + 16, CB - 54, 170, 16,
         [[("■ 等しい時間間隔の車の位置", {"size": 8.5, "color": MUTED})]])
-    # 装着者ラベルは緑の矢頭とぶつかるので、丸の左に置く
-    wearer_lbl.left, wearer_lbl.top = int(Pt(OX - 100)), int(Pt(OY - 10.7))
-    wearer_lbl.width, wearer_lbl.height = int(Pt(88)), int(Pt(21.4))
-    wearer_lbl.text_frame.paragraphs[0].alignment = PP_ALIGN.RIGHT
+    # 装着者ラベルは丸の右
+    wearer_lbl.left, wearer_lbl.top = int(Pt(OX + 12)), int(Pt(OY - 10.7))
+    wearer_lbl.width, wearer_lbl.height = int(Pt(60)), int(Pt(21.4))
+    wearer_lbl.text_frame.paragraphs[0].alignment = PP_ALIGN.LEFT
     # キャプション
     set_para(caption, 0, CAPTION_NEW)
     return removed
