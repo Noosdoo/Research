@@ -78,6 +78,9 @@ EPS = 1e-9
 BASE_COLS = ["clip_id", "event_id", "trial", "class", "quadrant", "t_start", "t_cpa"]
 PLAN_COLS = ["take_id", "pair_id", "区分", "状態"]
 CUT_COLS = ["orig_file", "orig_duration_s", "cut_offset_s", "scored"]
+# 2026-09-06（監査 R01/R10）: 校正の引継ぎと履歴不足のフラグ。calibration_id は step19 --calib の id、gain_db は適用した補正量、
+# history_short は「最接近がクリップ内 cpa_at − 0.5 s より早い」（録音開始が遅く CPA 前の履歴が足りない）= 1
+CALIB_COLS = ["calibration_id", "gain_db", "history_short"]
 DIST_CLASSES = {"car_drive", "kick", "bike"}
 
 
@@ -156,7 +159,8 @@ def plan_negative_split(length_s: float, dur: float = DUR,
 
 # ------------------------------------------------------------------ 注釈の再基準化
 def rebase_rows(rows, off: float, dur: float, orig: str, new_clip: str,
-                target_event=None, own=None, orig_duration_s=None):
+                target_event=None, own=None, orig_duration_s=None,
+                calibration_id: str = "", gain_db: float = 0.0, cpa_at: float = CPA_AT):
     """原録音時刻の注釈行を、切り出しクリップの時刻へ移す。
 
     重要: **1つの物理イベントはちょうど1クリップでだけ採点される**ようにする。
@@ -190,13 +194,17 @@ def rebase_rows(rows, off: float, dur: float, orig: str, new_clip: str,
                                  if orig_duration_s is not None else "")
         nr["cut_offset_s"] = f"{off:.3f}"
         nr["scored"] = str(scored)
+        nr["calibration_id"] = calibration_id or r.get("calibration_id", "")
+        nr["gain_db"] = f"{gain_db:.2f}"
+        nr["history_short"] = str(int(scored == 1 and (t1 - off) < cpa_at - 0.5))
         out.append(nr)
     return out
 
 
 def negative_row(new_clip: str, orig: str, off: float, own0: float, own1: float,
-                 template=None, orig_duration_s=None):
+                 template=None, orig_duration_s=None, calibration_id: str = "", gain_db: float = 0.0):
     r = dict(template or {})
+    r.update({"calibration_id": calibration_id or r.get("calibration_id", ""), "gain_db": f"{gain_db:.2f}", "history_short": "0"})
     r.update({"clip_id": new_clip, "event_id": "n1", "class": "none",
               "quadrant": "", "t_start": f"{own0:.3f}", "t_cpa": f"{own1:.3f}",
               "orig_file": orig,
@@ -302,6 +310,9 @@ def main() -> int:
     cpa_at = float(_arg("--cpa-at", str(CPA_AT)))
     overlap = float(_arg("--overlap", str(OVERLAP)))
     gain_db = float(_arg("--gain-db", "0"))
+    calibration_id = _arg("--calibration-id", "")
+    if gain_db and not calibration_id:
+        print("  ⚠️ --gain-db を渡すときは --calibration-id（step19 --calib の id）も渡してください（校正の引継ぎ・監査 R01）")
     pitch = float(_arg("--pitch", "0"))
     roll = float(_arg("--roll", "0"))
     yaw = float(_arg("--yaw", "0"))
@@ -338,7 +349,8 @@ def main() -> int:
                 cut_audio(path, off, dur, out_dir / f"{new_clip}.flac", gain_db,
                           **rot)
                 out_rows += rebase_rows(rows, off, dur, orig, new_clip,
-                                        target_event=ev, orig_duration_s=length)
+                                        target_event=ev, orig_duration_s=length,
+                                        calibration_id=calibration_id, gain_db=gain_db, cpa_at=cpa_at)
                 n_clip += 1
                 print(f"  {new_clip}: off={off:.3f}s CPA→{float(r['t_cpa'])-off:.2f}s"
                       + ("  ⚠端でクランプ" if abs(off - (float(r['t_cpa']) - cpa_at)) > 1e-6
@@ -351,9 +363,10 @@ def main() -> int:
                 cut_audio(path, off, dur, out_dir / f"{new_clip}.flac", gain_db,
                           **rot)
                 out_rows.append(negative_row(new_clip, orig, off, own0, own1, tmpl,
-                                             orig_duration_s=length))
+                                             orig_duration_s=length, calibration_id=calibration_id, gain_db=gain_db))
                 out_rows += rebase_rows(rows, off, dur, orig, new_clip,
-                                        own=(own0, own1), orig_duration_s=length)
+                                        own=(own0, own1), orig_duration_s=length,
+                                        calibration_id=calibration_id, gain_db=gain_db, cpa_at=cpa_at)
                 n_clip += 1
             cov = sum(b - a for _, a, b in plan)
             print(f"  {orig}: {len(plan)}クリップ 担当合計={cov:.2f}s "

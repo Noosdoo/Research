@@ -26,6 +26,9 @@
   python scripts/step19c_ann_validate.py --ann ann_all.csv --cut --strict  # 収録完了後
   （--plan で区分ごとの計画本数を上書き。既定は 2026-08-22 改訂の A〜E各20＋Fバイク10＋歩行100＝計210本。
     --strict は本数不足などの警告も不合格にする＝全収録完了後の最終ゲート用）
+  2026-09-06（監査 R04/W8）: take_id は session_id 列があれば (session_id, take_id) の組で一意（別セッションの take 1 が衝突しない）。
+    --cut のとき calibration_id が空の行は警告（校正の引継ぎ）。--opportunity D=8 のように機会枠を指定すると、
+    その区分の不足は「上限目標に届かず」の情報表示だけで警告にしない（サイレン等の遭遇枠。0 本でも評価は成立）。
 """
 from __future__ import annotations
 
@@ -46,7 +49,8 @@ CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "car_drive", "crossing",
 DIST_CLASSES = {"car_drive", "kick", "bike"}
 QUADS = {"F", "B", "L", "R"}
 LATERAL_KEYS = ("横距離m", "横距離", "lateral_m")
-PLAN_DEFAULT = {"A": 20, "B": 20, "C": 20, "D": 20, "E": 20, "F": 10, "歩行": 100}   # 2026-09-05: F バイク 10 本を追加（ハンドブック 2026-08-22 改訂の計 210 本）
+PLAN_DEFAULT = {"A": 20, "B": 20, "C": 20, "D": 20, "E": 20, "F": 10, "歩行": 100}
+OPPORTUNITY = set()      # --opportunity で指定した機会枠の区分（不足を不合格にしない）   # 2026-09-05: F バイク 10 本を追加（ハンドブック 2026-08-22 改訂の計 210 本）
 EXPOSURE_KIND = "負例露出"
 STATES = {"静止", "歩行"}
 EPS = 1e-6
@@ -210,6 +214,9 @@ def validate(rows, cut: bool, dur: float, plan: dict):
         tid = r.get("take_id", "").strip()
         if not tid:
             continue
+        sid = r.get("session_id", "").strip()
+        if sid and not tid.startswith(sid):
+            tid = f"{sid}/{tid}"           # 別セッションの同じ take 番号を区別（監査 R04）
         physical_source = (r.get("orig_file", "").strip() if cut
                            else r.get("clip_id", "").strip())
         sig = (r.get("区分", "").strip(), r.get("状態", "").strip(),
@@ -223,7 +230,14 @@ def validate(rows, cut: bool, dur: float, plan: dict):
     got = Counter(r.get("区分", "").strip() for r in takes.values())
     for k in sorted(plan):
         if got.get(k, 0) != plan[k]:
-            warn(f"S8 区分{k}: {got.get(k,0)}テイク（計画 {plan[k]}テイク）")
+            if k in OPPORTUNITY and got.get(k, 0) < plan[k]:
+                print(f"  S8 区分{k}: {got.get(k,0)}テイク（機会枠の上限目標 {plan[k]}。不足は不合格にしない・0 本のクラスは未評価と報告）")
+            else:
+                warn(f"S8 区分{k}: {got.get(k,0)}テイク（計画 {plan[k]}テイク）")
+    if cut:
+        n_nocal = sum(1 for r in rows if not r.get("calibration_id", "").strip())
+        if n_nocal:
+            warn(f"S9 calibration_id が空の行 {n_nocal} 件（step19 --calib の id を step19b --calibration-id で渡す。監査 R01）")
     planned_total = sum(got.get(k, 0) for k in plan)
     print("  S8 区分別テイク数: "
           + " ".join(f"{k}={got.get(k,0)}" for k in sorted(plan))
@@ -282,6 +296,12 @@ def main() -> int:
         for kv in _arg("--plan").split(","):
             k, v = kv.split("=")
             plan[k.strip()] = int(v)
+    if _arg("--opportunity"):
+        for kv in _arg("--opportunity").split(","):
+            k, v = kv.split("=") if "=" in kv else (kv, None)
+            OPPORTUNITY.add(k.strip())
+            if v is not None:
+                plan[k.strip()] = int(v)
     rows = list(csv.DictReader(open(ann, encoding="utf-8-sig")))
     print(f"# 注釈検証: {ann.name}（{'切り出し後' if cut else '原録音'}・"
           f"クリップ長{dur if cut else '制限なし'}）\n")

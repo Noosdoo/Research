@@ -609,7 +609,7 @@ for kind, n_kind in val.PLAN_DEFAULT.items():
         common = {"clip_id": f"{kind}{i}", "event_id": "1", "trial": kind,
                   "take_id": f"{kind}-take-{i}", "pair_id": "", "区分": kind,
                   "状態": "静止", "orig_file": f"{kind}{i}",
-                  "orig_duration_s": "10", "cut_offset_s": "0", "scored": "1"}
+                  "orig_duration_s": "10", "cut_offset_s": "0", "scored": "1", "calibration_id": "S-calib"}
         if kind == "C":
             rows36.append({**common, "class": "none", "quadrant": "",
                            "t_start": "0", "t_cpa": "10"})
@@ -626,11 +626,11 @@ for i in range(N_WALK):
                    "t_cpa": "8", "横距離m": "3", "take_id": f"walk-take-{i}",
                    "pair_id": f"walk-pair-{i % (N_WALK // 2)}", "区分": "歩行",
                    "状態": "静止" if i < N_WALK // 2 else "歩行", "orig_file": f"walk{i}",
-                   "orig_duration_s": "10", "cut_offset_s": "0", "scored": "1"})
+                   "orig_duration_s": "10", "cut_offset_s": "0", "scored": "1", "calibration_id": "S-calib"})
 for i, (off, a, b) in enumerate(cut.plan_negative_split(6000.0)):
     rows36.append(cut.negative_row(
         f"exposure_s{i:04d}", "exposure", off, a, b,
-        {"take_id": "exposure-take", "pair_id": "", "区分": "負例露出", "状態": "静止"},
+        {"take_id": "exposure-take", "pair_id": "", "区分": "負例露出", "状態": "静止", "calibration_id": "S-calib"},
         orig_duration_s=6000.0))
 val.errs.clear()
 val.warns.clear()
@@ -659,6 +659,91 @@ check("T37 C負例が100分あっても区分=負例露出が0分ならstrict相
       f"(errors={val.errs}, warnings={val.warns})")
 
 print()
+
+# ---------------- T38: 校正録音（60s）→ 短い本番テイク（25s）へ補正量を引き継ぐ（監査 R01） ----------------
+with tempfile.TemporaryDirectory() as td:
+    import soundfile as sf
+    import subprocess
+    td = Path(td)
+    fs = 96000
+    rng = np.random.default_rng(38)
+    calib = (rng.standard_normal((fs * 60, 4)) * 0.01).astype(np.float32)   # 60 s の暗騒音（校正録音）
+    tt = np.arange(fs * 25) / fs
+    take = np.tile((0.01 * np.sin(2 * np.pi * 1000.0 * tt))[:, None], (1, 4)).astype(np.float32)    # 25 s の本番テイク（1 kHz: リサンプルで実効値が変わらない）
+    sf.write(str(td / "S1_calib.wav"), calib, fs)
+    sf.write(str(td / "S1_take01.wav"), take, fs)
+    # 旧経路: 本番テイクに 10-70 s の窓 → 停止する（監査の再現）
+    try:
+        s19.calib_gain_db(td / "S1_take01.wav", 52.3, (10.0, 70.0)); old_stops = False
+    except AssertionError:
+        old_stops = True
+    # 新経路: 校正ファイルから 1 回だけ求め、テイクには渡すだけ
+    rec = s19.calibration_record(td / "S1_calib.wav", 52.3, (5.0, 55.0), "S1_calib", td / "conv")
+    g_expected = s19.calib_gain_db(td / "S1_calib.wav", 52.3, (5.0, 55.0))   # 同じ関数で求めた値と一致するか（json の値の同一性）
+    out = s19.convert_with_gain(td / "S1_take01.wav", td / "conv", rec["gain_db"], 0, 0, 0)
+    y, fsy = sf.read(str(out))
+    ratio = float(np.sqrt((y[:, 0] ** 2).mean()) / np.sqrt((take[:, 0].astype(np.float64) ** 2).mean()))
+    check("T38 校正 60s→本番 25s: 旧経路は停止・新経路は補正量を 1 回求めて本番に適用（json に記録）",
+          old_stops and (td / "conv" / "calibration_S1_calib.json").exists()
+          and abs(rec["gain_db"] - g_expected) < 0.05 and abs(20 * np.log10(ratio) - rec["gain_db"]) < 0.3 and fsy == 24000,
+          f"(old_stops={old_stops}, gain={rec['gain_db']:+.2f}dB expected={g_expected:+.2f}, applied={20*np.log10(ratio):+.2f}dB)")
+
+# ---------------- T39: 現場 CSV（2 セッション・同じ take 番号）→ ann_orig（監査 R04） ----------------
+s19d = _load("s19dfield", "step19d_field_csv_to_ann.py")
+sessions = [{"session_id": "S1", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "10-70"},
+            {"session_id": "S2", "区分": "A", "LAeq_dB": "50.1", "暗騒音区間_秒": "10-70"}]
+events = [{"session_id": "S1", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "8.4", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""},
+          {"session_id": "S1", "take_id": "2", "event_id": "1", "class": "car_drive", "象限": "F", "ラップ秒": "7.0", "n_car": "1", "横距離m": "1.0", "状態": "静止", "pair_id": ""},
+          {"session_id": "S1", "take_id": "3", "event_id": "1", "class": "none", "象限": "", "ラップ秒": "", "n_car": "0", "横距離m": "", "状態": "静止", "pair_id": ""},
+          {"session_id": "S2", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "B", "ラップ秒": "9.0", "n_car": "2", "横距離m": "2.5", "状態": "歩行", "pair_id": "P1"},
+          {"session_id": "S2", "take_id": "2", "event_id": "1", "class": "car_drive", "象限": "B", "ラップ秒": "9.5", "n_car": "1", "横距離m": "2.5", "状態": "静止", "pair_id": "P1"}]
+rows39, warns39 = s19d.convert(sessions, events, 6.0, 0.0, None)
+takes39 = {r["take_id"] for r in rows39}
+r_s1t1 = next(r for r in rows39 if r["session_id"] == "S1" and r["take_id"].endswith("/01"))
+r_s2t1 = next(r for r in rows39 if r["session_id"] == "S2" and r["take_id"].endswith("/01"))
+check("T39 現場 CSV→ann_orig: session×take が一意・列名対応・t_start 規則・校正 id・歩行対比の区分",
+      len(rows39) == 5 and len(takes39) == 5 and r_s1t1["take_id"] != r_s2t1["take_id"]
+      and r_s1t1["quadrant"] == "R" and r_s1t1["t_cpa"] == "8.40" and r_s1t1["t_start"] == "2.40"
+      and r_s1t1["calibration_id"] == "S1_calib" and r_s1t1["orig_file"] == "S1_take01.wav"
+      and r_s2t1["区分"] == "歩行" and r_s2t1["pair_id"] == "S2/P1" and r_s2t1["trial"] == "walk"
+      and any(r["class"] == "none" and r["t_start"] == "0" for r in rows39)
+      and all(w.startswith("S1/take03: 負例") for w in warns39),
+      f"(rows={len(rows39)}, takes={sorted(takes39)}, warns={warns39})")
+# step19c は (session_id, take_id) で数える: 2 セッションの take 1 が衝突しない
+val.errs.clear(); val.warns.clear()
+import contextlib as _ctx39, io as _io39
+rows39c = [dict(r, **{"t_cpa": (r["t_cpa"] or "20.0")}) for r in rows39]
+with _ctx39.redirect_stdout(_io39.StringIO()):
+    val.validate(rows39c, False, 30.0, {"A": 3, "歩行": 2})
+check("T39b step19c: 別セッションの同じ take 番号を別テイクとして数える（A=3・歩行=2 で計画一致・S8 の衝突エラー無し）",
+      not [e for e in val.errs if "S8" in e] and not [w for w in val.warns if "S8 区分" in w and "負例露出" not in w],
+      f"(errors={val.errs}, warnings={val.warns})")
+
+# ---------------- T40: 機会枠（W8/D10）: D=8 は上限目標。0 本でも警告にしない ----------------
+val.errs.clear(); val.warns.clear(); val.OPPORTUNITY.clear(); val.OPPORTUNITY.add("D")
+rows40 = [{"clip_id": f"A{i}", "event_id": "1", "trial": "A", "class": "car_drive", "quadrant": "L", "t_start": "1", "t_cpa": "8",
+           "take_id": f"A-{i}", "pair_id": "", "区分": "A", "状態": "静止", "横距離m": "2"} for i in range(2)]
+with _ctx39.redirect_stdout(_io39.StringIO()):
+    val.validate(rows40, False, 10.0, {"A": 2, "D": 8})
+check("T40 機会枠 D=8 が 0 本でも S8 の警告にしない（A は計画どおりで警告無し）",
+      not [w for w in val.warns if "S8 区分" in w and "負例露出" not in w] and not val.errs, f"(warnings={val.warns}, errors={val.errs})")
+val.OPPORTUNITY.clear()
+
+# ---------------- T41: 履歴不足フラグ（R10）と校正 id の伝播（R01） ----------------
+rows41 = [{"clip_id": "S1_take01", "event_id": "1", "trial": "A", "class": "car_drive", "quadrant": "B", "t_start": "0.0", "t_cpa": "4.0",
+           "take_id": "S1/01", "pair_id": "", "区分": "A", "状態": "静止", "横距離m": "1.0"}]
+off41 = cut.plan_event_cut(4.0, 25.0, 10.0, 8.0)          # CPA 4 s → 先頭 0 s にクランプ
+out41 = cut.rebase_rows(rows41, off41, 10.0, "S1_take01", "S1_take01_e1", target_event="1", orig_duration_s=25.0,
+                        calibration_id="S1_calib", gain_db=12.34, cpa_at=8.0)
+rows41b = [dict(rows41[0], t_start="10.0", t_cpa="18.0")]
+off41b = cut.plan_event_cut(18.0, 25.0, 10.0, 8.0)
+out41b = cut.rebase_rows(rows41b, off41b, 10.0, "S1_take01", "S1_take01_e1", target_event="1", orig_duration_s=25.0,
+                         calibration_id="S1_calib", gain_db=12.34, cpa_at=8.0)
+check("T41 履歴不足: CPA 4 s のテイクは history_short=1（CPA 18 s は 0）、calibration_id/gain_db が行に付く",
+      off41 == 0.0 and out41[0]["history_short"] == "1" and out41[0]["calibration_id"] == "S1_calib" and out41[0]["gain_db"] == "12.34"
+      and out41b[0]["history_short"] == "0" and abs(float(out41b[0]["t_cpa"]) - 8.0) < 1e-6,
+      f"(off={off41}, cpa_in_clip={out41[0]['t_cpa']}, flag={out41[0]['history_short']} / off_b={off41b}, flag_b={out41b[0]['history_short']})")
+
 if fails:
     print(f"NG: {len(fails)}件 {fails}")
     sys.exit(1)

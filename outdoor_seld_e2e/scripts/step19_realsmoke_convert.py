@@ -15,6 +15,11 @@
       --laeq 52.5 --laeq-window 10-70 [--pitch 8] [--roll 2] [--yaw 0]
   --laeq: 騒音計の読み値dB(A)（暗騒音1分収録時にメモした値）
   --laeq-window: その暗騒音区間の録音内秒数（例 10-70）
+  --calib <wav>: **校正録音（セッション冒頭の 60 秒）を別ファイルで指定**（2026-09-06・監査 R01）。
+      補正量はこのファイルの --laeq-window から 1 回だけ求め、--in の全テイク（20〜30 秒の本番）に同じ量を適用する。
+      calibration_id（既定 = 校正ファイル名）と補正量を <out>/calibration_<id>.json に書く。step19b には
+      --gain-db と --calibration-id を渡す（`--gain-only --calib ...` でその 2 つを表示）。
+      録音機のゲイン設定を変えたら校正を取り直し、別の calibration_id にする。
 """
 from __future__ import annotations
 
@@ -104,6 +109,35 @@ def convert(path: Path, out_dir: Path, laeq: float, win: tuple,
     return out
 
 
+def calibration_record(calib: Path, laeq: float, win: tuple, calib_id: str, out_dir: Path) -> dict:
+    """校正録音から補正量を 1 回だけ求め、calibration_<id>.json に記録する（R01）。"""
+    import json
+    gain_db = calib_gain_db(calib, laeq, win)
+    rec = {"calibration_id": calib_id, "calib_file": calib.name, "laeq_dba": laeq,
+           "laeq_window_s": [win[0], win[1]], "gain_db": round(gain_db, 3)}
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / f"calibration_{calib_id}.json").write_text(json.dumps(rec, ensure_ascii=False, indent=1), encoding="utf-8")
+    return rec
+
+
+def convert_with_gain(path: Path, out_dir: Path, gain_db: float, pitch: float, roll: float, yaw: float) -> Path:
+    """校正済みの補正量（dB）を渡して変換する（本番テイク用。テイク自身から LAeq は測らない）。"""
+    wav, fs = sf.read(str(path), dtype="float64", always_2d=True)
+    assert wav.shape[1] == 4, f"{path.name}: 4ch(FOA)ではありません"
+    if fs != FS_OUT:
+        wav = resample_poly(wav, FS_OUT, fs, axis=0)
+    R = rot_matrix(pitch, roll, yaw)
+    xyz = wav[:, [3, 1, 2]] @ R.T
+    wav = np.column_stack([wav[:, 0], xyz[:, 1], xyz[:, 2], xyz[:, 0]])
+    wav = wav * (10.0 ** (gain_db / 20.0))
+    peak = float(np.max(np.abs(wav)))
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out = out_dir / (path.stem + "_conv.flac")
+    sf.write(out, wav, FS_OUT, subtype="PCM_24")
+    print(f"{path.name}: 校正済み gain={gain_db:+.1f}dB peak={peak:.3f}{'  ⚠️CLIP注意' if peak > 0.99 else ''} -> {out.name}")
+    return out
+
+
 def main() -> int:
     src = Path(_arg("--in"))
     out_dir = Path(_arg("--out", str(ROOT / "out" / "realsmoke" / "converted")))
@@ -115,6 +149,20 @@ def main() -> int:
     yaw = float(_arg("--yaw", "0"))
     files = sorted(src.glob("*.wav")) if src.is_dir() else [src]
     assert files, f"wavが見つかりません: {src}"
+    calib = _arg("--calib")
+    if calib:
+        calib = Path(calib)
+        calib_id = _arg("--calib-id", calib.stem)
+        rec = calibration_record(calib, laeq, win, calib_id, out_dir)
+        print(f"校正 {calib.name}: 窓 {win[0]:g}-{win[1]:g}s 計器 {laeq:.1f} dBA → gain-db {rec['gain_db']:+.2f}  calibration_id={calib_id}")
+        if "--gain-only" in sys.argv:
+            print(f"step19b へ: --gain-db {rec['gain_db']:+.2f} --calibration-id {calib_id}")
+            return 0
+        for f in files:
+            if f.resolve() == calib.resolve():
+                continue
+            convert_with_gain(f, out_dir, rec["gain_db"], pitch, roll, yaw)
+        return 0
     if "--gain-only" in sys.argv:
         # 長時間録音用: 全長を読まずにゲインだけ出す（step19b --gain-db へ渡す）
         for f in files:
