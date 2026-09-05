@@ -53,6 +53,9 @@ URG_MIN = 0.15
 CONFIRM_WIN, CONFIRM_NEED = 4, 2
 HOLD_S = 0.3
 JUMP_DEG, JUMP_NEED = 60.0, 2
+SIDE_DEG, SIDE_NEED = 8.0, 2          # 側の記憶（2026-09-05）: ±8° が 2 フレーム続いたら左/右に確定し、反対側を 0 に
+import os
+SIDE_ON = os.environ.get("DEV_SIDE", "1") == "1"   # DEV_SIDE=0 で側の記憶なし（変更前との比較用）
 QUIET_RESET_S = 1.0
 SWITCH_PAUSE_S, SWITCH_RAMP_S = 0.25, 0.6
 UNITS = {"FL": 45.0, "FR": -45.0, "BL": 135.0, "BR": -135.0}
@@ -71,6 +74,7 @@ def replay(urg):
     held_u, held_az, held_t = 0.0, 0.0, -10.0
     stable_az, jump_frames, have_stable = 0.0, 0, False
     switch_t0 = -10.0
+    side, side_l, side_r = 0, 0, 0
     n_switch = 0
     for (t, u, az) in urg:
         recent.append(u); recent = recent[-CONFIRM_WIN:]
@@ -93,6 +97,15 @@ def replay(urg):
                     stable_az, jump_frames, accepted = eaz, 0, True
         elif t - held_t >= QUIET_RESET_S:
             have_stable, jump_frames = False, 0
+            side, side_l, side_r = 0, 0, 0
+        if accepted:
+            side, side_l, side_r = 0, 0, 0
+        if confirmed and eu >= URG_MIN:
+            if stable_az >= SIDE_DEG: side_l += 1; side_r = 0
+            elif stable_az <= -SIDE_DEG: side_r += 1; side_l = 0
+            else: side_l = side_r = 0
+            if side_l >= SIDE_NEED: side = +1
+            if side_r >= SIDE_NEED: side = -1
         amps = {}
         if accepted:
             n_switch += 1; switch_t0 = t
@@ -103,6 +116,8 @@ def replay(urg):
             ramp = min(1.0, max(0.0, (t - switch_t0 - SWITCH_PAUSE_S) / SWITCH_RAMP_S))
             amp = (0.25 + 0.75 * eu) * (0.3 + 0.7 * ramp)
             w = {k: max(0.0, math.cos(math.radians(stable_az - a))) ** 4 for k, a in UNITS.items()}
+            if SIDE_ON and side > 0: w["FR"] = 0.0; w["BR"] = 0.0
+            elif SIDE_ON and side < 0: w["FL"] = 0.0; w["BL"] = 0.0
             s = sum(w.values())
             for k in UNITS:
                 a = amp * w[k] / s * PAN_GAIN if s > 0 else 0.0
@@ -134,7 +149,7 @@ def load_pred_rows(path: Path, horiz: bool):
 
 def score(pred, meta: Path, clips):
     stat = defaultdict(lambda: [0, 0]); n_strong = 0; leads = []
-    wrong_s = 0.0; duty = 0.0; n_switch_tot = 0
+    wrong_s = 0.0; duty = 0.0; n_switch_tot = 0; opp_s = 0.0
     for clip in clips:
         evs = [DG.mk_event(c, t, fr) for c, t, fr in DG.gt_tracks(meta, clip)]
         frames = pred.get(clip)
@@ -160,6 +175,11 @@ def score(pred, meta: Path, clips):
             if best is None:
                 wrong_s += 1.0 / FPS
                 continue
+            gaz = evs[best]["fr"][k][0]
+            if abs(gaz) >= SIDE_DEG:
+                opp = {"FR", "BR"} if gaz > 0 else {"FL", "BL"}
+                if any(u in amps for u in opp):
+                    opp_s += 1.0 / FPS
             if k <= evs[best]["cpa"] + FPS:
                 first.setdefault(best, k)
                 maxamp[best] = max(maxamp[best], max(amps.values()))
@@ -177,7 +197,7 @@ def score(pred, meta: Path, clips):
     n = max(len(clips), 1)
     return dict(crit=g("critical"), strong=100 * n_strong / max(stat["critical"][1], 1), caut=g("caution"), safe=g("safe"),
                 lead=float(np.nanmedian(leads)), lead25=float(100 * np.nanmean(leads >= 2.5)),
-                wrong=wrong_s / n, duty=100 * duty / n, n_switch=n_switch_tot / n, n_clips=len(clips))
+                wrong=wrong_s / n, opp=opp_s / n, duty=100 * duty / n, n_switch=n_switch_tot / n, n_clips=len(clips))
 
 
 def main() -> int:
@@ -203,9 +223,10 @@ def main() -> int:
     R = [f"# 機器層の再生評価（連続モード・正式仕様を再生） — {out_md.stem}", "",
          f"plan= {plan.relative_to(ROOT)} ({split}{f', mix≤{clip_max}' if clip_max else ''}) = {len(clips):,} 本 / GT= {meta.relative_to(ROOT)}", "",
          "到達= イベントの方位から 30° 以内の向きで震えた最初の時刻が CPA＋1 s まで。至近で振幅≥0.8= 段階通知の「強」相当の強さで震えた至近イベントの割合。",
-         "誤った向き= 震えているのに向きの 30° 以内に GT がいない時間 [s/本]。振動時間率= 震えたフレームの割合。切替= 受け入れた方位の跳び（合図）の回数/本。", "",
-         "| 予測 | 本数 | 至近到達(振動) | **至近で振幅≥0.8** | 注意到達 | 安全抑制 | リード中央 | ≥2.5s | 誤った向き [s/本] | 振動時間率 | 切替/本 |",
-         "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
+         "誤った向き= 震えているのに向きの 30° 以内に GT がいない時間 [s/本]。反対側の振動子= 帰属した GT が |方位| ≥ 8° のとき反対側（前右・後右 / 前左・後左）が震えていた時間 [s/本]。振動時間率= 震えたフレームの割合。切替= 受け入れた方位の跳び（合図）の回数/本。"
+         + ("" if SIDE_ON else "  ⚠️ DEV_SIDE=0（側の記憶なし＝変更前）"), "",
+         "| 予測 | 本数 | 至近到達(振動) | **至近で振幅≥0.8** | 注意到達 | 安全抑制 | リード中央 | ≥2.5s | 誤った向き [s/本] | 反対側の振動子 [s/本] | 振動時間率 | 切替/本 |",
+         "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     print("\n".join(R[:3]), flush=True)
     for label, src in items:
         horiz = src.endswith("@h"); p = Path(src[:-2] if horiz else src)
@@ -215,7 +236,7 @@ def main() -> int:
             R.append(f"| {label} | （未着: {p.name}） |"); print(R[-1], flush=True); continue
         s = score(load_pred_rows(p, horiz), meta, clips)
         R.append(f"| {label}{' (予測を水平変換)' if horiz else ''} | {s['n_clips']:,} | {s['crit']:.1f}% | **{s['strong']:.1f}%** | {s['caut']:.1f}% | {s['safe']:.1f}% "
-                 f"| {s['lead']:.2f}s | {s['lead25']:.1f}% | {s['wrong']:.2f} | {s['duty']:.1f}% | {s['n_switch']:.2f} |")
+                 f"| {s['lead']:.2f}s | {s['lead25']:.1f}% | {s['wrong']:.2f} | {s['opp']:.2f} | {s['duty']:.1f}% | {s['n_switch']:.2f} |")
         print(R[-1], flush=True)
     out_md.parent.mkdir(parents=True, exist_ok=True)
     out_md.write_text("\n".join(R) + "\n", encoding="utf-8")
