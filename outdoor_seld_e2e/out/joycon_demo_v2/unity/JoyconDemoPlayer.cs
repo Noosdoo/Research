@@ -50,6 +50,10 @@ public class JoyconDemoPlayer : MonoBehaviour
     bool swapSides = false, mergeMode = true, gradedMode = true, panMode = true, swapFrontBack = false;   // G は既定 ON（本人採用 2026-09-03）
     string lastFire = "";
     public bool ShowHud = true;      // H キー: 画面の黒い表示を全部 ON/OFF（振動・再生は変わらない）
+    public bool ShowVib = false;     // K キー: スライド用「どの振動子が鳴っているか」だけの表示（H で他の表示を消して使う。2026-09-05）
+    static readonly float[] VIB_ANGLES = { 45f, -45f, 135f, -135f };      // 前左・前右・後左・後右（0°=前、+=左）
+    static readonly string[] VIB_NAMES = { "前左", "前右", "後左", "後右" };
+    readonly float[] vibAmp = new float[4]; readonly float[] vibUntil = new float[4];
     string cueSource = "";        // "正解の位置から（オラクル）" / "本物のモデルの検出から"
     static readonly Dictionary<string, string> CLS_JP2 = new Dictionary<string, string> {
         { "car", "車" }, { "siren", "救急車のサイレン" }, { "horn", "クラクション" }, { "backup_beep", "バック音" },
@@ -60,7 +64,7 @@ public class JoyconDemoPlayer : MonoBehaviour
     int firedCount = 0, mergedCount = 0;
 
     // 束ね用: 手ごとの実行中パターン
-    class Runner { public string tier; public float endTime, lastFireTime; public Coroutine co; }
+    class Runner { public string tier; public float endTime, lastFireTime, az; public Coroutine co; }
     readonly Dictionary<Joycon, Runner> runners = new Dictionary<Joycon, Runner>();
     // 役割（角度）: 前左 +45 / 前右 −45 / 後左 +135 / 後右 −135。R で割当モード（持っている Joy-con のボタンを 前左→前右→後左→後右 の順に押す）
     readonly Dictionary<Joycon, float> roleOf = new Dictionary<Joycon, float>();
@@ -151,6 +155,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.B)) swapFrontBack = !swapFrontBack;
         if (Input.GetKeyDown(KeyCode.J)) switchCue = !switchCue;
         if (Input.GetKeyDown(KeyCode.H)) ShowHud = !ShowHud;
+        if (Input.GetKeyDown(KeyCode.K)) ShowVib = !ShowVib;
         if (Input.GetKeyDown(KeyCode.R)) { roleOf.Clear(); assignStep = joycons.Count > 0 ? 0 : -1; lastFire = joycons.Count > 0 ? "割当: 前左で持っている Joy-con のボタンを押してください" : "Joy-con が接続されていません"; }
         if (Input.GetKeyDown(KeyCode.T)) StartCoroutine(RoleTest());
         AssignTick();
@@ -222,7 +227,7 @@ public class JoyconDemoPlayer : MonoBehaviour
                 {
                     if (prev.co != null) StopCoroutine(prev.co);
                     runners.Remove(prevJc);
-                    var mv = new Runner { tier = c.tier, lastFireTime = src.time,
+                    var mv = new Runner { tier = c.tier, lastFireTime = src.time, az = c.az,
                                           endTime = Mathf.Max(prev.endTime, src.time) + EXTEND_SEC, };
                     runners[jc] = mv;
                     mv.co = StartCoroutine(PatternUntil(jc, mv, true));
@@ -233,10 +238,11 @@ public class JoyconDemoPlayer : MonoBehaviour
         }
         firedCount++;
         lastFire = $"{c.t:F1} 秒 {role} {TierJp(c.tier)} {Jp(c.cls)} (方位 {c.az:F0}°、0=前 +=左)";
-        if (jc == null) return;                       // Joy-con未接続でも画面表示だけ動く
-        if (!isDist) { jc.SetRumble(120f, 240f, 0.5f, 300); return; }   // 警告 = 単発
+        if (jc == null)                               // Joy-con未接続でも画面表示（振動子の表示 K も）は動く
+        { if (!isDist) MarkAz(c.az, 0.5f, 300); else MarkAz(c.az, c.tier == "強" ? 1f : 0.4f, c.tier == "強" ? 720 : 780); return; }
+        if (!isDist) { jc.SetRumble(120f, 240f, 0.5f, 300); MarkAz(c.az, 0.5f, 300); return; }   // 警告 = 単発
         if (runners.TryGetValue(jc, out r) && r.co != null) StopCoroutine(r.co);
-        r = new Runner { tier = c.tier, lastFireTime = src.time,
+        r = new Runner { tier = c.tier, lastFireTime = src.time, az = c.az,
                          endTime = src.time + (c.tier == "強" ? 0.72f : 0.78f) };
         runners[jc] = r;
         r.co = StartCoroutine(PatternUntil(jc, r));
@@ -248,8 +254,8 @@ public class JoyconDemoPlayer : MonoBehaviour
         if (continued) yield return new WaitForSeconds(0.05f);      // 移動時は頭出しを避けて滑らかにつなぐ
         while (src.isPlaying && src.time < r.endTime)
         {
-            if (r.tier == "強") { jc.SetRumble(320f, 640f, 1.0f, 110); yield return new WaitForSeconds(0.18f); }
-            else { jc.SetRumble(80f, 160f, 0.4f, 90); yield return new WaitForSeconds(0.39f); }
+            if (r.tier == "強") { jc.SetRumble(320f, 640f, 1.0f, 110); MarkAz(r.az, 1f, 110); yield return new WaitForSeconds(0.18f); }
+            else { jc.SetRumble(80f, 160f, 0.4f, 90); MarkAz(r.az, 0.4f, 90); yield return new WaitForSeconds(0.39f); }
         }
         r.co = null;
     }
@@ -309,13 +315,14 @@ public class JoyconDemoPlayer : MonoBehaviour
             switchCount++; switchRampT0 = src.time;
             string roleN;
             Joycon jn = HandForAz(g.az, out roleN);
-            if (jn != null) StartCoroutine(SwitchPulse(jn));   // 0.2 秒の合図。束ねの Runner とは別管理
+            StartCoroutine(SwitchPulse(jn, g.az));   // 0.2 秒の合図（Joy-con 無しでも表示は出す）。束ねの Runner とは別管理
         }
         if (g.u < URG_MIN) return;
         if (src.time - switchRampT0 < 0.25f) return;           // 合図の間は連続振動を止める
         float ramp = Mathf.Clamp01((src.time - switchRampT0 - 0.25f) / 0.6f);   // 切替後 0.6 秒で立ち上げ直す
         float amp = (0.25f + 0.75f * g.u) * Mathf.Lerp(0.3f, 1f, ramp);   // 0.25(注意の入口)〜1.0(至近)
         float lo = Mathf.Lerp(80f, 320f, g.u), hi = Mathf.Lerp(160f, 640f, g.u);
+        MarkPan(g.az, amp);                                   // 表示用（4 振動子の按分。Joy-con の有無に関係なく出す）
         if (!panMode)
         {
             string roleC;
@@ -352,11 +359,12 @@ public class JoyconDemoPlayer : MonoBehaviour
         }
     }
 
-    IEnumerator SwitchPulse(Joycon jc)
+    IEnumerator SwitchPulse(Joycon jc, float az = 0f)
     {
         for (int i = 0; i < 2; i++)
         {
-            jc.SetRumble(400f, 800f, 1.0f, 70);
+            if (jc != null) jc.SetRumble(400f, 800f, 1.0f, 70);
+            MarkAz(az, 1f, 70);
             yield return new WaitForSeconds(0.11f);
         }
     }
@@ -430,7 +438,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         foreach (var kv in roles)
         {
             lastFire = $"テスト: {RoleName(kv.Value)} が震えます";
-            kv.Key.SetRumble(200f, 400f, 1.0f, 500);
+            kv.Key.SetRumble(200f, 400f, 1.0f, 500); MarkAngle(kv.Value, 1f, 500);
             yield return new WaitForSeconds(0.9f);
         }
         lastFire = "テスト終了: " + RoleSummary();
@@ -438,39 +446,106 @@ public class JoyconDemoPlayer : MonoBehaviour
 
     // 画面の文字: 左上に半透明の箱をひとつ（幅は画面の 55% まで・折り返し）。右上は ScenarioVisualizer の凡例が使う
     float T { get { return (src != null && src.clip != null) ? src.time : 0f; } }
+    Vector2 panelScroll;
+
+    // ---- スライド用: どの振動子が鳴っているかだけの表示（K・2026-09-05 本人要望）。振動の呼び出しと同じ場所で Mark* を呼んで状態を持つ ----
+    void MarkUnit(int k, float amp, int ms)
+    {
+        if (amp <= 0f) return;
+        vibAmp[k] = Mathf.Max(amp, Time.time < vibUntil[k] ? vibAmp[k] : 0f);
+        vibUntil[k] = Mathf.Max(vibUntil[k], Time.time + ms / 1000f);
+    }
+    void MarkAngle(float ang, float amp, int ms)
+    {
+        int best = 0; float bd = 999f;
+        for (int k = 0; k < 4; k++) { float d = Mathf.Abs(Mathf.DeltaAngle(ang, VIB_ANGLES[k])); if (d < bd) { bd = d; best = k; } }
+        MarkUnit(best, amp, ms);
+    }
+    void MarkAz(float az, float amp, int ms) { MarkAngle(az, amp, ms); }
+    void MarkPan(float az, float amp)
+    {
+        if (!panMode) { MarkAz(az, amp, 120); return; }
+        float sum = 0f; var w = new float[4];
+        for (int k = 0; k < 4; k++) { float c = Mathf.Cos((az - VIB_ANGLES[k]) * Mathf.Deg2Rad); w[k] = c > 0 ? c * c * c * c : 0f; sum += w[k]; }
+        for (int k = 0; k < 4; k++) { float a = sum > 0 ? amp * w[k] / sum * 1.6f : 0f; if (a >= 0.08f) MarkUnit(k, Mathf.Clamp01(a), 120); }
+    }
+    float VibNow(int k) { return Time.time < vibUntil[k] ? vibAmp[k] : 0f; }
+
+    void DrawVib()
+    {
+        float size = Mathf.Min(Screen.height * 0.62f, 480f);
+        var rect = new Rect(24, (Screen.height - size) / 2f, size, size);
+        DemoHudLayout.Background(rect);
+        var title = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(size * 0.045f), alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+        title.normal.textColor = Color.white;
+        GUI.Label(new Rect(rect.x, rect.y + 6, rect.width, size * 0.08f), "振動子の状態（上が前）", title);
+        float cx = rect.x + size / 2f, cy = rect.y + size * 0.55f, r = size * 0.30f, box = size * 0.22f;
+        var lab = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(size * 0.05f), alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+        lab.normal.textColor = Color.white;
+        var small = new GUIStyle(lab) { fontSize = Mathf.RoundToInt(size * 0.038f), fontStyle = FontStyle.Normal };
+        Color old = GUI.color;
+        GUI.color = new Color(1f, 1f, 1f, 0.85f);
+        GUI.DrawTexture(new Rect(cx - size * 0.05f, cy - size * 0.05f, size * 0.1f, size * 0.1f), Texture2D.whiteTexture);
+        GUI.color = old;
+        GUI.Label(new Rect(cx - size * 0.15f, cy - size * 0.17f, size * 0.3f, size * 0.07f), "▲ 前", small);
+        GUI.Label(new Rect(cx - size * 0.15f, cy + size * 0.08f, size * 0.3f, size * 0.07f), "自分", small);
+        var on = new Color(1f, 0.55f, 0.1f, 0.95f); var onMax = new Color(1f, 0.12f, 0.1f, 1f);
+        for (int k = 0; k < 4; k++)
+        {
+            float a = VibNow(k);
+            float th = VIB_ANGLES[k] * Mathf.Deg2Rad;                     // 0°=上、+=左
+            float px = cx - Mathf.Sin(th) * r, py = cy - Mathf.Cos(th) * r;
+            var br = new Rect(px - box / 2f, py - box / 2f, box, box);
+            if (a > 0f)
+            {
+                GUI.color = new Color(1f, 0.85f, 0.5f, 0.35f);
+                GUI.DrawTexture(new Rect(br.x - 8, br.y - 8, br.width + 16, br.height + 16), Texture2D.whiteTexture);
+                GUI.color = Color.Lerp(on, onMax, a);
+            }
+            else GUI.color = new Color(1f, 1f, 1f, 0.12f);
+            GUI.DrawTexture(br, Texture2D.whiteTexture);
+            GUI.color = old;
+            GUI.Label(br, VIB_NAMES[k] + (a > 0f ? "\n" + a.ToString("F1") : ""), lab);
+        }
+        GUI.Label(new Rect(rect.x, rect.y + size - size * 0.09f, rect.width, size * 0.07f), "K: この表示を消す　H: 他の表示を消す", small);
+        GUI.color = old;
+    }
+
     void OnGUI()
     {
+        if (joycons == null) return;
+        if (ShowVib) DrawVib();
         if (!ShowHud)
         {
-            var tiny = new GUIStyle(GUI.skin.label) { fontSize = 12 };
-            tiny.normal.textColor = new Color(1f, 1f, 1f, 0.6f);
-            GUI.Label(new Rect(8, 6, 400, 20), $"H: 表示を戻す   場面 {clipIdx + 1}/{clips.Count}   再生 {T:F1} 秒", tiny);
+            var tiny = new GUIStyle(GUI.skin.label) { fontSize = 12, wordWrap = true };
+            tiny.normal.textColor = Color.white;
+            GUI.Label(new Rect(12, 8, Mathf.Max(40, Screen.width - 24), 40), $"H: 表示を戻す　場面 {clipIdx + 1}/{clips.Count}　再生 {T:F1} 秒", tiny);
             return;
         }
-        // 左上の操作パネル: 行ごとに高さを計算して折り返す（画面幅の 52% まで。右上の凡例と重ならない）
-        int fs = 14;
-        GUIStyle st = null, hd = null;
-        float w = Mathf.Min(900f, Screen.width * 0.60f);
-        float tw = w - 20f;
-        List<KeyValuePair<string, GUIStyle>> items = null;
-        float[] hs = null; float total = 0f;
-        int nCue = 0;
-        for (int attempt = 0; attempt < 4; attempt++)
+        var panel = DemoHudLayout.Current.main;
+        var st = new GUIStyle(GUI.skin.label) { fontSize = 14, wordWrap = true, richText = false };
+        st.normal.textColor = Color.white;
+        var hd = new GUIStyle(st) { fontSize = 16, fontStyle = FontStyle.Bold };
+        int count; var items = BuildPanelItems(st, hd, out count);
+        float tw = panel.width - 32, total = 12;
+        var hs = new float[items.Count];
+        for (int i = 0; i < items.Count; i++)
+        { hs[i] = items[i].Value.CalcHeight(new GUIContent(items[i].Key), tw) + 5; total += hs[i]; }
+        if (gradedMode) total += st.CalcHeight(new GUIContent("緊急度 (連続モードの振動の強さ)"), tw) + 24;
+        panel.height = Mathf.Min(panel.height, total);
+        DemoHudLayout.Background(panel);
+        panelScroll = GUI.BeginScrollView(panel, panelScroll, new Rect(0,0,panel.width-18,total),false,total>panel.height);
+        float y = 6;
+        for (int i = 0; i < items.Count; i++)
+        { GUI.Label(new Rect(8,y,tw,hs[i]),items[i].Key,items[i].Value); y += hs[i]; }
+        if (gradedMode)
         {
-            st = new GUIStyle(GUI.skin.label) { fontSize = fs, wordWrap = true, richText = true };
-            st.normal.textColor = Color.white;
-            hd = new GUIStyle(st) { fontSize = fs + 2, fontStyle = FontStyle.Bold };
-            items = BuildPanelItems(st, hd, out nCue);
-            total = 12f;
-            hs = new float[items.Count];
-            for (int i = 0; i < items.Count; i++) { hs[i] = items[i].Value.CalcHeight(new GUIContent(items[i].Key), tw) + 3f; total += hs[i]; }
-            if (gradedMode) total += 30f;
-            if (total + 12f <= Screen.height - 70f) break;   // 下の「いまの判定」パネルの分を空けて収める
-            fs -= 1;                                          // 収まらなければ 1 段小さく（14→13→12→11）
+            float h=st.CalcHeight(new GUIContent("緊急度 (連続モードの振動の強さ)"),tw);
+            GUI.Label(new Rect(8,y,tw,h),"緊急度 (連続モードの振動の強さ)",st); y+=h+5;
+            Color old=GUI.color;GUI.color=new Color(1,1,1,.25f);GUI.DrawTexture(new Rect(8,y,tw,10),Texture2D.whiteTexture);
+            GUI.color=new Color(1,.45f,.2f);GUI.DrawTexture(new Rect(8,y,tw*Mathf.Clamp01(lastGradedU),10),Texture2D.whiteTexture);GUI.color=old;
         }
-        {
-        }
-        DrawPanel(items, hs, total, w, tw, st);
+        GUI.EndScrollView();
     }
 
     List<KeyValuePair<string, GUIStyle>> BuildPanelItems(GUIStyle st, GUIStyle hd, out int nCue)
@@ -488,7 +563,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         items.Add(new KeyValuePair<string, GUIStyle>($"  P 方向按分={(panMode ? "ON" : "OFF")} (方位に応じて複数の本に振り分ける)", st));
         items.Add(new KeyValuePair<string, GUIStyle>($"  J 切替の合図={(switchCue ? "ON" : "OFF")} (追跡が別の車に乗り移ったら短い2連)", st));
         items.Add(new KeyValuePair<string, GUIStyle>($"  S 左右入替={(swapSides ? "ON" : "OFF")}" + (joycons.Count >= 4 ? $"   B 前後入替={(swapFrontBack ? "ON" : "OFF")}" : ""), st));
-        items.Add(new KeyValuePair<string, GUIStyle>("操作: ←/→ 場面を変える   Space 再生/停止", st));
+        items.Add(new KeyValuePair<string, GUIStyle>("操作: ←/→ 場面を変える   Space 再生/停止   K 振動子だけの表示   H この表示を消す", st));
         items.Add(new KeyValuePair<string, GUIStyle>($"再生 {T:F1} 秒   振動した回数 {firedCount}   束ねた回数 {mergedCount}", st));
         items.Add(new KeyValuePair<string, GUIStyle>($"切替の合図 {switchCount} 回" + (gradedMode ? $"   緊急度 {lastGradedU:F2} (0=安全 1=至近)" : ""), st));
         items.Add(new KeyValuePair<string, GUIStyle>("最後の通知: " + (lastFire == "" ? "—" : lastFire), st));
@@ -502,26 +577,4 @@ public class JoyconDemoPlayer : MonoBehaviour
         return items;
     }
 
-    void DrawPanel(List<KeyValuePair<string, GUIStyle>> items, float[] hs, float total, float w, float tw, GUIStyle st)
-    {
-        var old = GUI.color;
-        GUI.color = new Color(0f, 0f, 0f, 0.55f);
-        GUI.DrawTexture(new Rect(6, 6, w, total + 6f), Texture2D.whiteTexture);
-        GUI.color = old;
-        float x = 14f, y = 12f;
-        for (int i = 0; i < items.Count; i++)
-        {
-            GUI.Label(new Rect(x, y, tw, hs[i]), items[i].Key, items[i].Value);
-            y += hs[i];
-        }
-        if (gradedMode)
-        {
-            GUI.Label(new Rect(x, y, 200, 22), "緊急度 (連続モードの振動の強さ)", st);
-            GUI.color = new Color(1f, 1f, 1f, 0.25f);
-            GUI.DrawTexture(new Rect(x + 190, y + 4, 204, 14), Texture2D.whiteTexture);
-            GUI.color = new Color(1f, 0.45f, 0.2f, 0.95f);
-            GUI.DrawTexture(new Rect(x + 192, y + 6, 200f * Mathf.Clamp01(lastGradedU), 10), Texture2D.whiteTexture);
-            GUI.color = old;
-        }
-    }
 }
