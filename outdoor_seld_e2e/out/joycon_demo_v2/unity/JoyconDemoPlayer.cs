@@ -287,7 +287,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         while (urgIdx + 1 < urg.Count && urg[urgIdx + 1].t <= src.time) urgIdx++;
         if (urg.Count == 0) return;
         var g0 = urg[urgIdx];
-        if (urgIdx < lastUrgIdx) { recentU.Clear(); heldT = -10f; haveStable = false; jumpFrames = 0; }   // 場面の切替・巻き戻し
+        if (urgIdx < lastUrgIdx) { recentU.Clear(); heldT = -10f; haveStable = false; jumpFrames = 0; sideState = 0; sideL = 0; sideR = 0; }   // 場面の切替・巻き戻し
         bool newFrame = urgIdx != lastUrgIdx;
         if (newFrame) { recentU.Add(g0.u); while (recentU.Count > CONFIRM_WIN) recentU.RemoveAt(0); lastUrgIdx = urgIdx; }
         int nOk = 0; foreach (var uu in recentU) if (uu >= URG_MIN) nOk++;
@@ -307,7 +307,9 @@ public class JoyconDemoPlayer : MonoBehaviour
             }
             g.az = stableAz;
         }
-        else if (src.time - heldT >= 1.0f) { haveStable = false; jumpFrames = 0; }   // 1 秒以上静かなら次は新規扱い
+        else if (src.time - heldT >= 1.0f) { haveStable = false; jumpFrames = 0; sideState = 0; sideL = 0; sideR = 0; }   // 1 秒以上静かなら次は新規扱い（側も未決定に）
+        if (acceptedJump) { sideState = 0; sideL = 0; sideR = 0; }           // 別の車に乗り移った → 側は決め直し
+        if (newFrame && confirmed && g.u >= URG_MIN) UpdateSide(g.az);        // 安定化後の方位で側を更新
         bool jumped = acceptedJump && lastGradedU >= URG_MIN;
         lastGradedU = g.u; lastGradedAz = g.az; lastGradedT = src.time;
         if (jumped && switchCue)
@@ -332,18 +334,12 @@ public class JoyconDemoPlayer : MonoBehaviour
         }
         if (joycons.Count >= 4)
         {
-            // 4方向按分: 各振動子の角度 θk（前左+45/前右−45/後左+135/後右−135）に cos⁴(az−θk) の重み
-            //   （cos² → cos⁴ 2026-09-05 本人「右の振動子がよく震える」: 左 8° で前右が 0.58 → 0.39、左 15° で 0.40 → 0.16。真正面は両方のまま）
+            // 4方向按分（cos⁴・側の記憶つき）: 重みは PanWeights4（表示 K と同じ計算）。役割の角度 → 正準の振動子番号で引く
             var roles = Roles4();
-            float sum = 0f; var w = new float[roles.Count];
+            var w4 = PanWeights4(g.az, amp);
             for (int k = 0; k < roles.Count; k++)
             {
-                float c = Mathf.Cos((g.az - roles[k].Value) * Mathf.Deg2Rad);
-                w[k] = c > 0 ? c * c * c * c : 0f; sum += w[k];
-            }
-            for (int k = 0; k < roles.Count; k++)
-            {
-                float a = sum > 0 ? amp * w[k] / sum * 1.6f : 0f;
+                float a = w4[NearestUnit(roles[k].Value)];
                 if (a >= 0.08f) roles[k].Key.SetRumble(lo, hi, Mathf.Clamp01(a), 120);
             }
             return;
@@ -465,9 +461,38 @@ public class JoyconDemoPlayer : MonoBehaviour
     void MarkPan(float az, float amp)
     {
         if (!panMode) { MarkAz(az, amp, 120); return; }
-        float sum = 0f; var w = new float[4];
-        for (int k = 0; k < 4; k++) { float c = Mathf.Cos((az - VIB_ANGLES[k]) * Mathf.Deg2Rad); w[k] = c > 0 ? c * c * c * c : 0f; sum += w[k]; }
-        for (int k = 0; k < 4; k++) { float a = sum > 0 ? amp * w[k] / sum * 1.6f : 0f; if (a >= 0.08f) MarkUnit(k, Mathf.Clamp01(a), 120); }
+        var w = PanWeights4(az, amp);
+        for (int k = 0; k < 4; k++) if (w[k] >= 0.08f) MarkUnit(k, w[k], 120);
+    }
+
+    // 側の記憶（2026-09-05 本人「前から来る車で前右が反応する」→ ヒステリシス案を採用）:
+    //   方位 ≥ +8° が 2 フレーム続いたら「左」、≤ −8° が 2 フレーム続いたら「右」。一度決めたら反対側の条件が満たされるまで変えない。
+    //   未決定（真正面）は前の 2 つで震える。決まったら反対側（前右・後右 / 前左・後左）を 0 に。切替の合図・1 秒の無音・場面切替で未決定に戻す
+    const float SIDE_DEG = 8f; const int SIDE_NEED = 2;
+    int sideState = 0, sideL = 0, sideR = 0;          // sideState: 0=未決定 +1=左 −1=右
+    void UpdateSide(float az)
+    {
+        if (az >= SIDE_DEG) { sideL++; sideR = 0; }
+        else if (az <= -SIDE_DEG) { sideR++; sideL = 0; }
+        else { sideL = 0; sideR = 0; }
+        if (sideL >= SIDE_NEED) sideState = +1;
+        if (sideR >= SIDE_NEED) sideState = -1;
+    }
+    int NearestUnit(float ang)
+    {
+        int best = 0; float bd = 999f;
+        for (int k = 0; k < 4; k++) { float d = Mathf.Abs(Mathf.DeltaAngle(ang, VIB_ANGLES[k])); if (d < bd) { bd = d; best = k; } }
+        return best;
+    }
+    // 4 振動子（前左・前右・後左・後右）の振幅: cos⁴ の按分 → 側が決まっていれば反対側を 0 → 正規化 × 1.6（8% 未満は呼び側で捨てる）
+    float[] PanWeights4(float az, float amp)
+    {
+        var w = new float[4]; float sum = 0f;
+        for (int k = 0; k < 4; k++) { float c = Mathf.Cos((az - VIB_ANGLES[k]) * Mathf.Deg2Rad); w[k] = c > 0 ? c * c * c * c : 0f; }
+        if (sideState > 0) { w[1] = 0f; w[3] = 0f; } else if (sideState < 0) { w[0] = 0f; w[2] = 0f; }
+        for (int k = 0; k < 4; k++) sum += w[k];
+        for (int k = 0; k < 4; k++) w[k] = sum > 0 ? Mathf.Clamp01(amp * w[k] / sum * 1.6f) : 0f;
+        return w;
     }
     float VibNow(int k) { return Time.time < vibUntil[k] ? vibAmp[k] : 0f; }
 
@@ -507,6 +532,7 @@ public class JoyconDemoPlayer : MonoBehaviour
             GUI.color = old;
             GUI.Label(br, VIB_NAMES[k] + (a > 0f ? "\n" + a.ToString("F1") : ""), lab);
         }
+        GUI.Label(new Rect(rect.x, rect.y + size - size * 0.16f, rect.width, size * 0.07f), "側: " + (sideState > 0 ? "左に確定" : sideState < 0 ? "右に確定" : "未決定（真正面は前の 2 つ）"), small);
         GUI.Label(new Rect(rect.x, rect.y + size - size * 0.09f, rect.width, size * 0.07f), "K: この表示を消す　H: 他の表示を消す", small);
         GUI.color = old;
     }
