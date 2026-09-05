@@ -1,0 +1,213 @@
+{
+  "head": "0dc66179d05db603cbaa6c013ad0e3363423e056",
+  "a_weighting": {
+    "one_khz_fullscale_sine_dBA": 143.0,
+    "target_52_3_dBA_after_gain": 52.3,
+    "scope": "1 kHz normalization and gain transfer only, not IEC instrument certification"
+  },
+  "yaw_sign": {
+    "measured_right_deg": 30,
+    "corrected_math_azimuth_deg": 4.2611352919058783e-16
+  },
+  "front_only_calibration": {
+    "front_after_Y_reflection": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "left_after_Y_reflection": [
+      0.0,
+      -1.0,
+      0.0
+    ],
+    "scope": "identifiability counterexample; does not assert actual recordings are mirrored"
+  },
+  "short_take_calibration": {
+    "duration_s": 25,
+    "window_s": [
+      10,
+      70
+    ],
+    "gain_only": "laeq-windowが録音長を超えています",
+    "convert": "laeq-windowが録音長を超えています"
+  },
+  "literal_csv_join": {
+    "missing_required_columns": [
+      "clip_id",
+      "quadrant",
+      "t_cpa",
+      "t_start",
+      "trial"
+    ],
+    "validator_errors": [
+      "S1 必須列がありません: clip_id",
+      "S1 必須列がありません: trial",
+      "S1 必須列がありません: quadrant",
+      "S1 必須列がありません: t_start",
+      "S1 必須列がありません: t_cpa"
+    ]
+  },
+  "example_clip_offsets": [
+    {
+      "take_id": "1",
+      "event_id": "1",
+      "lap_as_cpa_s": 8.4,
+      "cut_offset_s": 0.40000000000000036,
+      "cpa_in_clip_s": 8.0
+    },
+    {
+      "take_id": "2",
+      "event_id": "1",
+      "lap_as_cpa_s": 6.1,
+      "cut_offset_s": 0.0,
+      "cpa_in_clip_s": 6.1
+    },
+    {
+      "take_id": "3",
+      "event_id": "1",
+      "lap_as_cpa_s": 7.8,
+      "cut_offset_s": 0.0,
+      "cpa_in_clip_s": 7.8
+    },
+    {
+      "take_id": "4",
+      "event_id": "1",
+      "lap_as_cpa_s": 5.2,
+      "cut_offset_s": 0.0,
+      "cpa_in_clip_s": 5.2
+    },
+    {
+      "take_id": "4",
+      "event_id": "2",
+      "lap_as_cpa_s": 19.6,
+      "cut_offset_s": 11.600000000000001,
+      "cpa_in_clip_s": 8.0
+    },
+    {
+      "take_id": "6",
+      "event_id": "1",
+      "lap_as_cpa_s": 9.0,
+      "cut_offset_s": 1.0,
+      "cpa_in_clip_s": 8.0
+    },
+    {
+      "take_id": "7",
+      "event_id": "1",
+      "lap_as_cpa_s": 7.5,
+      "cut_offset_s": 0.0,
+      "cpa_in_clip_s": 7.5
+    }
+  ],
+  "late_front_notification": {
+    "newly_stated_window_s": [
+      5.5,
+      6.5
+    ],
+    "actual_accepted_window_s": [
+      0,
+      9
+    ],
+    "result": [
+      {
+        "clip": "case",
+        "trial": "1",
+        "event_id": "1",
+        "class": "car_drive",
+        "take_id": "s1_1",
+        "pair_id": "",
+        "state": "静止",
+        "frame_recall": 0.0,
+        "gt_tier": "caution",
+        "notified": true,
+        "fired_tier": "中",
+        "lead": -0.4,
+        "quad_ok": true
+      }
+    ],
+    "included_by_main_scored_filter": 1
+  },
+  "multi_car_count": {
+    "same_results": true,
+    "results": {
+      "1": [
+        {
+          "clip": "case",
+          "trial": "1",
+          "event_id": "1",
+          "class": "car_drive",
+          "take_id": "s1_1",
+          "pair_id": "",
+          "state": "静止",
+          "frame_recall": 0.0,
+          "gt_tier": "caution",
+          "notified": true,
+          "fired_tier": "中",
+          "lead": -0.4,
+          "quad_ok": true
+        }
+      ],
+      "2": [
+        {
+          "clip": "case",
+          "trial": "1",
+          "event_id": "1",
+          "class": "car_drive",
+          "take_id": "s1_1",
+          "pair_id": "",
+          "state": "静止",
+          "frame_recall": 0.0,
+          "gt_tier": "caution",
+          "notified": true,
+          "fired_tier": "中",
+          "lead": -0.4,
+          "quad_ok": true
+        }
+      ]
+    }
+  },
+  "quadrant_time_mismatch": {
+    "GT_at_minus_2s": "B",
+    "prediction_at_7_8s": "R",
+    "result": [
+      {
+        "clip": "case",
+        "trial": "1",
+        "event_id": "1",
+        "class": "car_drive",
+        "take_id": "s1_1",
+        "pair_id": "",
+        "state": "静止",
+        "frame_recall": 0.029,
+        "gt_tier": "caution",
+        "notified": true,
+        "fired_tier": "中",
+        "lead": 0.2,
+        "quad_ok": false
+      }
+    ],
+    "scope": "the two directions can both be correct at their own times; no measured path asserted"
+  },
+  "global_take_id_collision": [
+    "S8 L3: take_id=1 の区分/状態/pair_id/原録音が行間で不一致です (('A', '静止', '', 'case') vs ('A', '静止', '', 'case_other'))"
+  ],
+  "source_sha256": {
+    "md/audit/敵対的レビュー依頼_実録プロトコル_2026-09-05_Astra用.md": "251c19c60991e53ac7a175bc943399dc68f333d40800bc883569de0282a237ef",
+    "md/design/実録_当日の手順書_車の収録_2026-09-05.md": "7b679aec60c48b41b517b401ceb8e20d37591149e338b2ea22f1b367eead1e72",
+    "md/design/実録_機材リスト_2026-09-05.md": "169964c0e4e926be4273b07dd1e32beb4ddcf5640c2b2bf8eb160f5aaa689ae9",
+    "md/design/実録ハンドブック_2026-08-13.md": "72748a9ab018f8654d22a140f98ff63f112eca9292741619f8ff6229b5964d79",
+    "md/design/実録スモーク計画書_2026-07.md": "731d0d9a9284ee13816bf653ef28f46291c935a617764351d46d1c7ab3834688",
+    "md/design/実録_調整用と最終評価用の分離_2026-09-05.md": "6d3b7425fca49db8ce1247ee310d79519963100b033d8c8abdd79bf6bdfda9e5",
+    "scripts/step19_realsmoke_convert.py": "8f0a224eca3c04d7a4538b28368caeffa4647f86dd4a5941a7a97056fed51e55",
+    "scripts/step19b_realsmoke_cut.py": "24f14f8ec381c5e11fa9a343c24cf25117181eb222da8b2dbebe2669a5be1fea",
+    "scripts/step19c_ann_validate.py": "fd89e9f90e381051175e964cc76a8049ad8196aed4d772aeecd8f192deba1ebf",
+    "scripts/step20_realsmoke_score_v2.py": "f0b50b4a2a2146f6c544c47e769a512c8f26b2785a9e72099db7de612aea8c2c",
+    "scripts/step12_notify_v43.py": "7dfd8cb327be87ec743f9d6d819fce51a28afa85b0e750a17496009124f5f232",
+    "scripts/_notify_v42_q2_table.py": "e687404e944a30d1dd8b88a92f1325a6ea6f159ce85abfe631c79446ceaa6db0",
+    "scripts/_notify_v43_attrib.py": "6ffbcc52eb1df159bcd4da061d70bd9854c4d40468e4f2f7144a4e579132a2e8",
+    "src/outdoor_seld/calibration.py": "e5da1d16899255c5080be252d3e1386b0af8ffced37355fac86a9b1d157f122e",
+    "md/design/実録_記入用CSV_2026-09-05/events.csv": "feb1e745c267f2f52bd885f138b5350e3821122c7381ce00d13d2654b3a76241",
+    "md/design/実録_記入用CSV_2026-09-05/README.md": "580a85495256e32995968f4eb658d87886dcee831ce8006903caa316558b1973",
+    "md/design/実録_記入用CSV_2026-09-05/session.csv": "84dec25292e73b11bfc563863e26eebb9204c63c49027c25080b0686fa935d17",
+    "md/design/実録_記入用CSV_2026-09-05/例_記入済み.csv": "0d0d836ddbec054c486cef9911c8b82f50d23c6467ebe69f3166dc13b795bb54"
+  }
+}
