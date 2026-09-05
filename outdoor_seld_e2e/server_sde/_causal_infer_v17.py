@@ -89,7 +89,9 @@ model.setup("predict")
 sd = torch.load(CKPT, map_location="cpu", weights_only=False)["state_dict"]
 sd = {k.replace("_orig_mod.", ""): v for k, v in sd.items()}
 missing, _ = model.load_state_dict(sd, strict=False)
-netmiss = [k for k in missing if k.startswith("net.")]
+netmiss = [k for k in missing if k.startswith("net.") and not (HEIGHT and ".h_mlp." in k)]   # v17: h_mlp 無し ckpt はゼロ初期化のまま（無条件モデルと同一）
+if HEIGHT and any(".h_mlp." in k for k in missing):
+    print("[height] ckpt に h_mlp が無い → ゼロ初期化のまま推論（無条件モデルと同一の出力）", flush=True)
 assert not netmiss, f"netの重みが欠けている: {netmiss[:5]}"
 model.eval().cuda()
 NCLS = ds.num_classes

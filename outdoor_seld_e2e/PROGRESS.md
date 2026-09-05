@@ -3580,4 +3580,4 @@ v2テンプレートを訂正: v1/v2 の確定値は同一採点器で直接比�
   学習時に高さへ N(0,0.05 m) のゆらぎ。判定 = 正しい高さで v16 e139（9.9%）より 0.5pt 以上改善、±0.20 m ずらしても v15（10.3%）より悪くならない、目標 9.4%
 - 実装 `server_sde/height_patch.py`（データセット→step→モデルのモンキーパッチ）、`_train_sde17.py`/`_train_causal17.py`/`_infer_sde17.py`/`_causal_infer_v17.py`（CAUSAL_GLOB 追加）、
   `v17_smoke.sbatch`（ゼロ初期化で v16 と同一予測になる確認＋学習の煙試験）→ `v17_train.sbatch` → `v17_causal.sbatch`（感度評価 ±0.20 m を e099/e119/e139/e149 で）。
-  job 3972 → 3973 → 3974（pro_6000・normal）。取り込み・採点 = `_fetch_v17_results.sh`（統一採点器）
+  job 3975 → 3976 → 3977（pro_6000・normal。3972 は推論スクリプトの assert（h_mlp 無し ckpt）で失敗し修正・再投入）。取り込み・採点 = `_fetch_v17_results.sh`（統一採点器）
