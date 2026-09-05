@@ -105,10 +105,8 @@ public class JoyconDemoPlayer : MonoBehaviour
         src = GetComponent<AudioSource>();
         if (JoyconManager.Instance != null) joycons = JoyconManager.Instance.j;
         else { joycons = new List<Joycon>(); HIDapi.hid_init(); }
-        try { wiis.AddRange(WiiRemote.Enumerate()); } catch (System.Exception e) { Debug.LogWarning("[Wii] enumerate failed: " + e.Message); }
-        for (int i = 0; i < wiis.Count; i++) wiis[i].SetLeds(1 << i);
         foreach (var j in joycons) vibs.Add(new Vib { jc = j });
-        foreach (var w in wiis) vibs.Add(new Vib { wii = w });
+        ScanWii();
         dataDir = Path.Combine(Application.streamingAssetsPath, "joycon_demo_v2");
         if (!Directory.Exists(dataDir)) dataDir = Path.Combine(Application.streamingAssetsPath, "joycon_demo");
         // サブフォルダ（種類別・日本語名）も再帰的に拾う。clip = dataDir からの相対パス（区切りは /）
@@ -122,6 +120,25 @@ public class JoyconDemoPlayer : MonoBehaviour
     }
 
     void OnApplicationQuit() { foreach (var w in wiis) w.Close(); }
+
+    // Wii リモコンの検索（起動時と N キー）。あとから接続した本も拾う（同じ path は二重に開かない）
+    void ScanWii()
+    {
+        int before = wiis.Count;
+        try
+        {
+            foreach (var w in WiiRemote.Enumerate())
+            {
+                bool dup = false; foreach (var x in wiis) if (x.path == w.path) { dup = true; break; }
+                if (dup) { w.Close(); continue; }
+                w.index = wiis.Count; wiis.Add(w); vibs.Add(new Vib { wii = w });
+            }
+        }
+        catch (System.Exception e) { Debug.LogWarning("[Wii] enumerate failed: " + e.Message); }
+        for (int i = 0; i < wiis.Count; i++) wiis[i].SetLeds(1 << i);
+        lastFire = $"Wii の検索: {wiis.Count} 本（新たに {wiis.Count - before} 本）";
+        Debug.Log("[Wii] " + lastFire);
+    }
 
     static bool ParseF(string s, out float v)
     {
@@ -182,6 +199,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.P)) panMode = !panMode;
         if (Input.GetKeyDown(KeyCode.B)) swapFrontBack = !swapFrontBack;
         if (Input.GetKeyDown(KeyCode.W)) wiiSwap = !wiiSwap;
+        if (Input.GetKeyDown(KeyCode.N)) ScanWii();
         if (Input.GetKeyDown(KeyCode.J)) switchCue = !switchCue;
         if (Input.GetKeyDown(KeyCode.H)) ShowHud = !ShowHud;
         if (Input.GetKeyDown(KeyCode.K)) ShowVib = !ShowVib;
@@ -586,7 +604,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         items.Add(new KeyValuePair<string, GUIStyle>("通知の元: " + (cueSource == "" ? "(読込中)" : cueSource), st));
         items.Add(new KeyValuePair<string, GUIStyle>(
             $"振動子 6: Joy-con {joycons.Count} 本 / Wii {wiis.Count} 本" + (vibs.Count > 0 ? $"  役割 [{RoleSummary()}]" : " (未接続。画面だけ動きます)"), st));
-        items.Add(new KeyValuePair<string, GUIStyle>("  R=Joy-con の役割を決め直す  T=順に震わせて確認  W=Wii の左右入替", st));
+        items.Add(new KeyValuePair<string, GUIStyle>("  R=Joy-con の役割を決め直す  T=順に震わせて確認  W=Wii の左右入替  N=Wii を再検索 (あとから繋いだ本を拾う)", st));
         if (assignStep >= 0)
             items.Add(new KeyValuePair<string, GUIStyle>($"★ 割当中: 「{RoleName(ROLE_ORDER[assignStep])}」で持っている Joy-con のボタン (ZL/ZR/SL/SR/十字/スティック押込) を押してください ({assignStep + 1}/{Mathf.Min(4, joycons.Count)})", hd));
         items.Add(new KeyValuePair<string, GUIStyle>("設定:", st));
