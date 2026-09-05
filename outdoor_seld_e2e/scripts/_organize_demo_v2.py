@@ -107,7 +107,20 @@ def with_model_versions(entries):
     return out
 
 
+def sync_unity_scripts():
+    for cs in (SRC / "unity").glob("*.cs"):
+        shutil.copy2(cs, UNITY / cs.name)
+    editor = UNITY / "Editor"
+    editor.mkdir(exist_ok=True)
+    shutil.copy2(SRC / "unity/Editor/DemoGameViewFit.cs", editor / "DemoGameViewFit.cs")
+
+
 def main() -> int:
+    if "--scripts-only" in sys.argv:
+        assert UNITY.exists(), UNITY
+        sync_unity_scripts()
+        print("-> Unity runtime scripts + Game View fitting helper")
+        return 0
     total = 0
     for src, cat, jp in resolve_entries(MAP):
         n = copy_set(SRC / src, DST / cat / jp)
@@ -120,8 +133,7 @@ def main() -> int:
         if udst.exists():
             shutil.rmtree(udst)
         shutil.copytree(DST, udst)
-        for cs in ("JoyconDemoPlayer.cs", "ScenarioVisualizer.cs"):
-            shutil.copy2(SRC / "unity" / cs, UNITY / cs)
+        sync_unity_scripts()
         print(f"-> Unity: {udst} + {UNITY}/JoyconDemoPlayer.cs, ScenarioVisualizer.cs (overwritten)")
     return 0
 
