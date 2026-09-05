@@ -504,7 +504,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         var title = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(size * 0.045f), alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
         title.normal.textColor = Color.white;
         GUI.Label(new Rect(rect.x, rect.y + 6, rect.width, size * 0.08f), "振動子の状態（上が前）", title);
-        float cx = rect.x + size / 2f, cy = rect.y + size * 0.55f, r = size * 0.30f, box = size * 0.22f;
+        float cx = rect.x + size / 2f, cy = rect.y + size * 0.50f, r = size * 0.25f, box = size * 0.19f;   // 下の文字と重ならないよう少し小さく（2026-09-05 本人指摘）
         var lab = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(size * 0.05f), alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
         lab.normal.textColor = Color.white;
         var small = new GUIStyle(lab) { fontSize = Mathf.RoundToInt(size * 0.038f), fontStyle = FontStyle.Normal };
@@ -512,8 +512,8 @@ public class JoyconDemoPlayer : MonoBehaviour
         GUI.color = new Color(1f, 1f, 1f, 0.85f);
         GUI.DrawTexture(new Rect(cx - size * 0.05f, cy - size * 0.05f, size * 0.1f, size * 0.1f), Texture2D.whiteTexture);
         GUI.color = old;
-        GUI.Label(new Rect(cx - size * 0.15f, cy - size * 0.17f, size * 0.3f, size * 0.07f), "▲ 前", small);
-        GUI.Label(new Rect(cx - size * 0.15f, cy + size * 0.08f, size * 0.3f, size * 0.07f), "自分", small);
+        GUI.Label(new Rect(cx - size * 0.12f, cy - size * 0.13f, size * 0.24f, size * 0.07f), "▲ 前", small);
+        GUI.Label(new Rect(cx - size * 0.12f, cy + size * 0.06f, size * 0.24f, size * 0.07f), "自分", small);
         var on = new Color(1f, 0.55f, 0.1f, 0.95f); var onMax = new Color(1f, 0.12f, 0.1f, 1f);
         for (int k = 0; k < 4; k++)
         {
@@ -532,8 +532,8 @@ public class JoyconDemoPlayer : MonoBehaviour
             GUI.color = old;
             GUI.Label(br, VIB_NAMES[k] + (a > 0f ? "\n" + a.ToString("F1") : ""), lab);
         }
-        GUI.Label(new Rect(rect.x, rect.y + size - size * 0.16f, rect.width, size * 0.07f), "側: " + (sideState > 0 ? "左に確定" : sideState < 0 ? "右に確定" : "未決定（真正面は前の 2 つ）"), small);
-        GUI.Label(new Rect(rect.x, rect.y + size - size * 0.09f, rect.width, size * 0.07f), "K: この表示を消す　H: 他の表示を消す", small);
+        GUI.Label(new Rect(rect.x, rect.y + size * 0.80f, rect.width, size * 0.07f), "側: " + (sideState > 0 ? "左に確定" : sideState < 0 ? "右に確定" : "未決定（真正面は前の 2 つ）"), small);
+        GUI.Label(new Rect(rect.x, rect.y + size * 0.885f, rect.width, size * 0.07f), "K: この表示を消す　H: 他の表示を消す", small);
         GUI.color = old;
     }
 
