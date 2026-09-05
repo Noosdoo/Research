@@ -3581,3 +3581,4 @@ v2テンプレートを訂正: v1/v2 の確定値は同一採点器で直接比�
 - 実装 `server_sde/height_patch.py`（データセット→step→モデルのモンキーパッチ）、`_train_sde17.py`/`_train_causal17.py`/`_infer_sde17.py`/`_causal_infer_v17.py`（CAUSAL_GLOB 追加）、
   `v17_smoke.sbatch`（ゼロ初期化で v16 と同一予測になる確認＋学習の煙試験）→ `v17_train.sbatch` → `v17_causal.sbatch`（感度評価 ±0.20 m を e099/e119/e139/e149 で）。
   job 3975 → 3976 → 3977（pro_6000・normal。3972 は推論スクリプトの assert（h_mlp 無し ckpt）で失敗し修正・再投入）。取り込み・採点 = `_fetch_v17_results.sh`（統一採点器）
+- 12:55 煙試験 3975 合格（ゼロ初期化で v16 と予測完全一致・h_mlp が学習で動く）→ 3976 基準学習 開始。見張り（背景）が完了時に取り込み・統一採点（`_fetch_v17_results.sh`）
