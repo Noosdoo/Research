@@ -1,19 +1,24 @@
-// JoyconDemoPlayer.cs — 通知層の出力を振動で体験するデモ v2（2026-09-03）→ 6 振動子版（2026-09-05 夜）
+// JoyconDemoPlayer.cs — 通知層の出力をJoy-con振動で体験するデモ v2（2026-09-03）
 //
-// 6 振動子構成（本人決定 2026-09-05「左に三つ、右に三つ、角度で分類」）:
-//   前左 +30° / 左 +90° / 後左 +150° / 前右 −30° / 右 −90° / 後右 −150°（0°=前、+=左）
-//   機器: Joy-con 4 本 → 前左・前右・後左・後右、Wii リモコン 2 本 → 左・右（WiiRemote.cs のドライバ。強さは ON 時間の割合で近似）
-//   Joy-con が 6 本そろったら Wii を外して Joy-con に差し替えるだけ（規則・表示は同じ）。
-//   足りない振動子は「未接続」として表示だけ動く（K の表示は 6 振動子の理想の挙動を出す）。
+// v1（2026-09-01）からの追加:
+//   M : 束ねモード ON/OFF — 同じ手・同じ段の再トリガが MERGE_SEC(1.0s) 以内なら「振動を延長」するだけで
+//       新しい通知にしない（機器側で束ねる案。規則は無変更＝cues.csv は生の出力のまま）
+//   J : 系列切替の合図 ON/OFF（連続モード時。方位が跳んだら短い2連＋弱いところから立ち上げ直す）
+//   G : 連続モード ON/OFF — 車・キック・バイクは <clip>_urgency.csv（予測からの緊急度 0..1）で振動の強さを
+//       （機器層の仕様 = README_機器層の仕様.md: 確認 4 フレーム中 2・保持 0.3 秒・方位の跳び 60° は 2 フレームで受け入れ・按分 cos⁴）
+//       毎フレーム連続に変える（安全→注意→至近で徐々に強くなる案）。警告音の単発パターンはそのまま
+//   P : パンニング ON/OFF — 連続モードで方位に応じて左右の振幅を配分（正面=両手半分、真横=片手のみ）。
+//       ⚠️ Joy-con 2本では前後が区別できない（首元4〜6方向デバイスでは隣接振動子の按分にする）
+//   H : 画面の黒い表示（左上・凡例・判定）を全部 ON/OFF
+//   R : Joy-con の役割割当（前左→前右→後左→後右 の順に、その役で持っている本のボタンを押す）  T : 役割順に1本ずつ震わせて確認
+//   B : （Joy-con 4本のとき）前ペア/後ペアの入れ替え
+//   4本構成: 接続順で 左1本目=前左(+45°) 右1本目=前右(−45°) 左2本目=後左(+135°) 右2本目=後右(−135°)。
+//       連続モードのパンは4方向の按分（cos²の重み）になり、前後が区別できる。2本なら従来の左右按分
 //
-// キー:
-//   ←/→ 場面  Space 再生/停止  M 束ね  G 連続  P 方向按分  J 切替の合図  S 左右入替  B 前後入替  W Wii の左右入替
-//   R Joy-con の役割割当（前左→前右→後左→後右 の順にその本のボタンを押す）  T 役割順に 1 個ずつ震わせて確認
-//   H 画面の黒い表示を全部 ON/OFF  K 振動子だけの表示（スライド用）
-//
-// 機器層の仕様 = README_機器層の仕様.md（確認 4 中 2・保持 0.3 秒・方位の安定化 60°/2 フレーム・側の記憶 ±8°/2 フレーム・cos⁴ 按分）
-// 前提: JoyconLib (Looking-Glass)、シーンに JoyconManager が 1 つ、
+// 使い方: README_v2.md を参照。←/→ クリップ切替  Space 再生/停止  S 左右入替  M 束ね  G 連続
+// 前提: JoyconLib (Looking-Glass)、シーンに JoyconManager が1つ、
 //       Assets/StreamingAssets/joycon_demo_v2/<種類別フォルダ>/<日本語名>.wav / _cues.csv / _urgency.csv / _scene.csv
+//       （サブフォルダは再帰的に読む。日本語のフォルダ名・ファイル名は Uri エスケープで対応）
 //
 // 振動の対応（本研究の「危険度=鳴り方」・v1と同じ）:
 //   強   = 速い連打 ぶっぶっぶっぶっ（4発・強く・高め）
@@ -32,39 +37,23 @@ public class JoyconDemoPlayer : MonoBehaviour
     struct Cue { public float t; public string side, tier, cls; public float az; }
     struct Urg { public float t, u, az; }
 
-    // 振動子（機器）の抽象: Joy-con か Wii リモコン。機器層はこれに「強さ・周波数・長さ」を送るだけ
-    class Vib
-    {
-        public Joycon jc; public WiiRemote wii;
-        public string Tag { get { return jc != null ? (jc.isLeft ? "JoyL" : "JoyR") : ("Wii" + (wii.index + 1)); } }
-        public void Rumble(float lo, float hi, float amp, int ms)
-        {
-            if (jc != null) jc.SetRumble(lo, hi, amp, ms);
-            else wii.Rumble(amp, ms);                      // Wii は強さだけ（周波数は指定できない）
-        }
-    }
-
     const float MERGE_SEC = 1.0f;          // 束ね: この時間内の同段再トリガは延長扱い
     const float EXTEND_SEC = 0.45f;        // 束ね: 1回の延長量
     const float URG_MIN = 0.15f;           // 連続: これ未満は無振動
 
     AudioSource src;
     List<Joycon> joycons;
-    readonly List<WiiRemote> wiis = new List<WiiRemote>();
-    readonly List<Vib> vibs = new List<Vib>();
     readonly List<string> clips = new List<string>();
     readonly List<Cue> cues = new List<Cue>();
     readonly List<Urg> urg = new List<Urg>();
     int clipIdx = 0, nextCue = 0, urgIdx = 0;
-    bool swapSides = false, mergeMode = true, gradedMode = true, panMode = true, swapFrontBack = false, wiiSwap = false;   // G は既定 ON（本人採用 2026-09-03）
+    bool swapSides = false, mergeMode = true, gradedMode = true, panMode = true, swapFrontBack = false;   // G は既定 ON（本人採用 2026-09-03）
     string lastFire = "";
     public bool ShowHud = true;      // H キー: 画面の黒い表示を全部 ON/OFF（振動・再生は変わらない）
     public bool ShowVib = false;     // K キー: スライド用「どの振動子が鳴っているか」だけの表示（H で他の表示を消して使う。2026-09-05）
-    // 6 振動子（正準）: 前左・前右・左・右・後左・後右
-    static readonly float[] VIB_ANGLES = { 30f, -30f, 90f, -90f, 150f, -150f };
-    static readonly string[] VIB_NAMES = { "前左", "前右", "左", "右", "後左", "後右" };
-    const int NU = 6;
-    readonly float[] vibAmp = new float[NU]; readonly float[] vibUntil = new float[NU];
+    static readonly float[] VIB_ANGLES = { 45f, -45f, 135f, -135f };      // 前左・前右・後左・後右（0°=前、+=左）
+    static readonly string[] VIB_NAMES = { "前左", "前右", "後左", "後右" };
+    readonly float[] vibAmp = new float[4]; readonly float[] vibUntil = new float[4];
     string cueSource = "";        // "正解の位置から（オラクル）" / "本物のモデルの検出から"
     static readonly Dictionary<string, string> CLS_JP2 = new Dictionary<string, string> {
         { "car", "車" }, { "siren", "救急車のサイレン" }, { "horn", "クラクション" }, { "backup_beep", "バック音" },
@@ -74,24 +63,14 @@ public class JoyconDemoPlayer : MonoBehaviour
     string dataDir;
     int firedCount = 0, mergedCount = 0;
 
-    // 束ね用: 振動子ごとの実行中パターン
+    // 束ね用: 手ごとの実行中パターン
     class Runner { public string tier; public float endTime, lastFireTime, az; public Coroutine co; }
-    readonly Dictionary<Vib, Runner> runners = new Dictionary<Vib, Runner>();
-    // Joy-con の役割（角度）。R で割当モード（持っている Joy-con のボタンを 前左→前右→後左→後右 の順に押す）。Wii は接続順で 左・右（W で入替）
-    readonly Dictionary<Vib, float> roleOf = new Dictionary<Vib, float>();
-    static readonly float[] ROLE_ORDER = { 30f, -30f, 150f, -150f };
+    readonly Dictionary<Joycon, Runner> runners = new Dictionary<Joycon, Runner>();
+    // 役割（角度）: 前左 +45 / 前右 −45 / 後左 +135 / 後右 −135。R で割当モード（持っている Joy-con のボタンを 前左→前右→後左→後右 の順に押す）
+    readonly Dictionary<Joycon, float> roleOf = new Dictionary<Joycon, float>();
+    static readonly float[] ROLE_ORDER = { 45f, -45f, 135f, -135f };
     int assignStep = -1;            // -1=割当モードでない, 0..3=次に押すべき役割の番号
-    static string RoleName(float ang)
-    {
-        float a = Mathf.Abs(ang); string side = ang > 0 ? "左" : "右";
-        return (a < 60f ? "前" : (a > 120f ? "後" : "")) + side;
-    }
-    int NearestUnit(float ang)
-    {
-        int best = 0; float bd = 999f;
-        for (int k = 0; k < NU; k++) { float d = Mathf.Abs(Mathf.DeltaAngle(ang, VIB_ANGLES[k])); if (d < bd) { bd = d; best = k; } }
-        return best;
-    }
+    string RoleName(float ang) { return (Mathf.Abs(ang) < 90f ? "前" : "後") + (ang > 0 ? "左" : "右"); }
 
     // 可視化(ScenarioVisualizer)から読むための公開プロパティ（v1 と同じ名前）
     public string CurrentClip { get { return clips.Count > 0 ? clips[clipIdx] : null; } }
@@ -103,12 +82,7 @@ public class JoyconDemoPlayer : MonoBehaviour
     void Start()
     {
         src = GetComponent<AudioSource>();
-        if (JoyconManager.Instance != null) joycons = JoyconManager.Instance.j;
-        else { joycons = new List<Joycon>(); HIDapi.hid_init(); }
-        try { wiis.AddRange(WiiRemote.Enumerate()); } catch (System.Exception e) { Debug.LogWarning("[Wii] enumerate failed: " + e.Message); }
-        for (int i = 0; i < wiis.Count; i++) wiis[i].SetLeds(1 << i);
-        foreach (var j in joycons) vibs.Add(new Vib { jc = j });
-        foreach (var w in wiis) vibs.Add(new Vib { wii = w });
+        joycons = JoyconManager.Instance != null ? JoyconManager.Instance.j : new List<Joycon>();
         dataDir = Path.Combine(Application.streamingAssetsPath, "joycon_demo_v2");
         if (!Directory.Exists(dataDir)) dataDir = Path.Combine(Application.streamingAssetsPath, "joycon_demo");
         // サブフォルダ（種類別・日本語名）も再帰的に拾う。clip = dataDir からの相対パス（区切りは /）
@@ -120,8 +94,6 @@ public class JoyconDemoPlayer : MonoBehaviour
         clips.Sort(System.StringComparer.Ordinal);
         if (clips.Count > 0) StartCoroutine(LoadClip(0));
     }
-
-    void OnApplicationQuit() { foreach (var w in wiis) w.Close(); }
 
     static bool ParseF(string s, out float v)
     {
@@ -181,7 +153,6 @@ public class JoyconDemoPlayer : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.G)) gradedMode = !gradedMode;
         if (Input.GetKeyDown(KeyCode.P)) panMode = !panMode;
         if (Input.GetKeyDown(KeyCode.B)) swapFrontBack = !swapFrontBack;
-        if (Input.GetKeyDown(KeyCode.W)) wiiSwap = !wiiSwap;
         if (Input.GetKeyDown(KeyCode.J)) switchCue = !switchCue;
         if (Input.GetKeyDown(KeyCode.H)) ShowHud = !ShowHud;
         if (Input.GetKeyDown(KeyCode.K)) ShowVib = !ShowVib;
@@ -196,50 +167,33 @@ public class JoyconDemoPlayer : MonoBehaviour
         while (src.isPlaying && nextCue < cues.Count && src.time >= cues[nextCue].t)
             Fire(cues[nextCue++]);
         if (gradedMode && src.isPlaying) GradedTick();
-        foreach (var w in wiis) w.Tick();            // Wii: ON 時間の割合で強さを作る
     }
 
-    // 接続している振動子とその役割（角度）。Joy-con: R の割当 か 接続順（L1=前左 R1=前右 L2=後左 R2=後右）。Wii: 接続順で 左・右（W で入替）。
-    // B で前後の入替（±30 ↔ ±150、±90 はそのまま）、S で左右の入替
-    List<KeyValuePair<Vib, float>> Roles()
+    Joycon HandFor(bool wantLeft)
     {
-        var roles = new List<KeyValuePair<Vib, float>>();
-        int nJoy = 0; foreach (var v in vibs) if (v.jc != null) nJoy++;
-        if (roleOf.Count > 0 && roleOf.Count >= Mathf.Min(4, nJoy))
-            foreach (var kv in roleOf) roles.Add(new KeyValuePair<Vib, float>(kv.Key, kv.Value));
-        else
-        {
-            var lefts = new List<Vib>(); var rights = new List<Vib>();
-            foreach (var v in vibs) if (v.jc != null) (v.jc.isLeft ? lefts : rights).Add(v);
-            if (lefts.Count > 0) roles.Add(new KeyValuePair<Vib, float>(lefts[0], 30f));
-            if (rights.Count > 0) roles.Add(new KeyValuePair<Vib, float>(rights[0], -30f));
-            if (lefts.Count > 1) roles.Add(new KeyValuePair<Vib, float>(lefts[1], 150f));
-            if (rights.Count > 1) roles.Add(new KeyValuePair<Vib, float>(rights[1], -150f));
-        }
-        var ws = new List<Vib>(); foreach (var v in vibs) if (v.wii != null) ws.Add(v);
-        if (ws.Count > 0) roles.Add(new KeyValuePair<Vib, float>(ws[0], wiiSwap ? -90f : 90f));
-        if (ws.Count > 1) roles.Add(new KeyValuePair<Vib, float>(ws[1], wiiSwap ? 90f : -90f));
-        for (int i = 0; i < roles.Count; i++)
-        {
-            float a = roles[i].Value;
-            if (swapFrontBack) a = Mathf.Sign(a) * (180f - Mathf.Abs(a));
-            if (swapSides) a = -a;
-            roles[i] = new KeyValuePair<Vib, float>(roles[i].Key, a);
-        }
-        return roles;
+        foreach (var j in joycons) if (j.isLeft == wantLeft) return j;
+        return joycons.Count > 0 ? joycons[0] : null;
     }
 
-    // 方位 az（DCASE: 0°=前, +=左）に一番近い役割の振動子を返す（無ければ null。表示は動く）
-    Vib HandForAz(float az, out string roleName)
+    // 方位 az（DCASE: 0°=前, +=左）に一番近い役割の Joy-con を返す。4本なら前左/前右/後左/後右、2本なら左右
+    Joycon HandForAz(float az, out string roleName)
     {
-        Vib best = null; float bestD = 999f, bestAng = VIB_ANGLES[NearestUnit(az)];
-        foreach (var kv in Roles())
+        if (joycons.Count >= 4)
         {
-            float d = Mathf.Abs(Mathf.DeltaAngle(az, kv.Value));
-            if (d < bestD) { bestD = d; best = kv.Key; bestAng = kv.Value; }
+            var roles = Roles4();
+            Joycon best = null; float bestD = 999f, bestAng = 0f;
+            foreach (var kv in roles)
+            {
+                float d = Mathf.Abs(Mathf.DeltaAngle(az, kv.Value));
+                if (d < bestD) { bestD = d; best = kv.Key; bestAng = kv.Value; }
+            }
+            float a = swapSides ? -bestAng : bestAng;
+            roleName = (Mathf.Abs(a) < 90f ? "前" : "後") + (a > 0 ? "左" : "右");
+            return best;
         }
-        roleName = RoleName(bestAng);
-        return best;
+        bool wantLeft = (az > 0) ^ swapSides;
+        roleName = wantLeft ? "左手" : "右手";
+        return HandFor(wantLeft);
     }
 
     void Fire(Cue c)
@@ -248,14 +202,15 @@ public class JoyconDemoPlayer : MonoBehaviour
         // 連続モードでは距離クラスの離散通知は出さない（緊急度で連続に振動する）。警告音は従来どおり
         if (gradedMode && isDist) { lastFire = $"{c.t:F1} 秒 {TierJp(c.tier)} {Jp(c.cls)} → 連続モード中なので段階の振動は出さず、緊急度で震えます"; return; }
 
+        // 通知の方位で担当の Joy-con を決める（4本: 前左/前右/後左/後右、2本: 左右）
         string role;
-        Vib jc = HandForAz(c.az, out role);
-        // 束ね: 同じ段の再トリガが MERGE_SEC 以内 → 新しい連打を出さず延長だけ。担当が別の振動子に移った場合は
+        Joycon jc = HandForAz(c.az, out role);
+        // 束ね: 同じ段の再トリガが MERGE_SEC 以内 → 新しい連打を出さず延長だけ。担当が別の Joy-con に移った場合は
         // 振動をそちらへ移す（方向は更新するが「ぶっぶっ」の頭出しはしない）
         Runner r;
         if (mergeMode && isDist && jc != null)
         {
-            Vib prevJc = null; Runner prev = null;
+            Joycon prevJc = null; Runner prev = null;
             foreach (var kv in runners)
                 if (kv.Value.tier == c.tier && (src.time - kv.Value.lastFireTime) < MERGE_SEC && (prev == null || kv.Value.lastFireTime > prev.lastFireTime))
                 { prevJc = kv.Key; prev = kv.Value; }
@@ -276,16 +231,16 @@ public class JoyconDemoPlayer : MonoBehaviour
                                           endTime = Mathf.Max(prev.endTime, src.time) + EXTEND_SEC, };
                     runners[jc] = mv;
                     mv.co = StartCoroutine(PatternUntil(jc, mv, true));
-                    lastFire = $"{c.t:F1} 秒 {role} {TierJp(c.tier)} {Jp(c.cls)} → 束ねた (担当の振動子を移して伸ばした)";
+                    lastFire = $"{c.t:F1} 秒 {role} {TierJp(c.tier)} {Jp(c.cls)} → 束ねた (担当の Joy-con を移して伸ばした)";
                 }
                 return;
             }
         }
         firedCount++;
         lastFire = $"{c.t:F1} 秒 {role} {TierJp(c.tier)} {Jp(c.cls)} (方位 {c.az:F0}°、0=前 +=左)";
-        if (jc == null)                               // 振動子が無くても画面表示（K の表示も）は動く
+        if (jc == null)                               // Joy-con未接続でも画面表示（振動子の表示 K も）は動く
         { if (!isDist) MarkAz(c.az, 0.5f, 300); else MarkAz(c.az, c.tier == "強" ? 1f : 0.4f, c.tier == "強" ? 720 : 780); return; }
-        if (!isDist) { jc.Rumble(120f, 240f, 0.5f, 300); MarkAz(c.az, 0.5f, 300); return; }   // 警告 = 単発
+        if (!isDist) { jc.SetRumble(120f, 240f, 0.5f, 300); MarkAz(c.az, 0.5f, 300); return; }   // 警告 = 単発
         if (runners.TryGetValue(jc, out r) && r.co != null) StopCoroutine(r.co);
         r = new Runner { tier = c.tier, lastFireTime = src.time, az = c.az,
                          endTime = src.time + (c.tier == "強" ? 0.72f : 0.78f) };
@@ -294,13 +249,13 @@ public class JoyconDemoPlayer : MonoBehaviour
     }
 
     // 段ごとのパルスを endTime まで繰り返す（束ねで endTime が伸びれば続く）
-    IEnumerator PatternUntil(Vib jc, Runner r, bool continued = false)
+    IEnumerator PatternUntil(Joycon jc, Runner r, bool continued = false)
     {
         if (continued) yield return new WaitForSeconds(0.05f);      // 移動時は頭出しを避けて滑らかにつなぐ
         while (src.isPlaying && src.time < r.endTime)
         {
-            if (r.tier == "強") { jc.Rumble(320f, 640f, 1.0f, 110); MarkAz(r.az, 1f, 110); yield return new WaitForSeconds(0.18f); }
-            else { jc.Rumble(80f, 160f, 0.4f, 90); MarkAz(r.az, 0.4f, 90); yield return new WaitForSeconds(0.39f); }
+            if (r.tier == "強") { jc.SetRumble(320f, 640f, 1.0f, 110); MarkAz(r.az, 1f, 110); yield return new WaitForSeconds(0.18f); }
+            else { jc.SetRumble(80f, 160f, 0.4f, 90); MarkAz(r.az, 0.4f, 90); yield return new WaitForSeconds(0.39f); }
         }
         r.co = null;
     }
@@ -313,14 +268,18 @@ public class JoyconDemoPlayer : MonoBehaviour
 
     // 連続モード: 緊急度 0..1 で振幅・周波数を毎フレーム更新（安全→注意→至近で徐々に強く）
     float lastGradedU = 0f;
-    // 系列切替の合図（J キー・既定ON）: 方位が 60° 以上跳んで 2 フレーム続いた＝追跡が別の車に乗り移った
+    // 系列切替の合図（J キー・既定ON）: 緊急度が続いているのに方位が 0.3 秒以内に 60° 以上跳んだ＝追跡が別の車に乗り移った
     // → 新しい側で短い2連の合図を出し、連続振動を弱いところから立ち上げ直す（「別の車が来た」と伝える）
     bool switchCue = true; int switchCount = 0; float switchRampT0 = -10f; float lastGradedAz = 0f, lastGradedT = -1f;
-    // 確認と保持（2026-09-05）: 立ち上がり = 直近 4 フレームのうち 2 フレーム以上で緊急度 ≥ URG_MIN、保持 = 確認できた最後の値を 0.3 秒
+    // 確認と保持（2026-09-05 本人「安全圏なのに後右が震えた」= 検出層が 1 フレームだけ出した緊急度 0.24 で 0.12 秒震えた）:
+    //   立ち上がり = 直近 4 フレーム（0.4 秒）のうち 2 フレーム以上で緊急度 ≥ URG_MIN（離散の通知にある「4/4 確認」の軽い版）
+    //   保持 = 確認できた最後の値を 0.3 秒だけ保つ（検出層の 1 フレーム抜けで振動が途切れない）
     const int CONFIRM_WIN = 4, CONFIRM_NEED = 2; const float HOLD_S = 0.3f;
     readonly List<float> recentU = new List<float>();
     int lastUrgIdx = -1; float heldU = 0f, heldAz = 0f, heldT = -10f;
-    // 方位の安定化（2026-09-05）: 60° 以上跳んだ方位は 2 フレーム続いたときだけ受け入れる
+    // 方位の安定化（2026-09-05 本人「右なのに左」「前なのに後ろ」）: 検出層の方位が 60° 以上跳んだら、**2 フレーム続いたときだけ**受け入れる。
+    //   全場面の突き合わせでは前後・左右の取り違え 49 フレーム中 40 が 1 フレームだけの単発（検出層の一瞬の迷い）。
+    //   1 フレームの跳びは前の方位のまま震え、切替の合図（J）も受け入れたときだけ出す（跳びが本物＝別の車に乗り移ったとき）
     const float JUMP_DEG = 60f; const int JUMP_NEED = 2;
     float stableAz = 0f; int jumpFrames = 0; bool haveStable = false;
     void GradedTick()
@@ -335,6 +294,7 @@ public class JoyconDemoPlayer : MonoBehaviour
         bool confirmed = g0.u >= URG_MIN && nOk >= CONFIRM_NEED;
         if (confirmed) { heldU = g0.u; heldAz = g0.az; heldT = src.time; }
         var g = confirmed ? g0 : new Urg { t = g0.t, u = (src.time - heldT < HOLD_S) ? heldU : 0f, az = heldAz };
+        // 方位の安定化: 受け入れた方位 stableAz を使う。跳びは JUMP_NEED フレーム続いたら受け入れ（＝切替の合図）
         bool acceptedJump = false;
         if (g.u >= URG_MIN)
         {
@@ -356,74 +316,82 @@ public class JoyconDemoPlayer : MonoBehaviour
         {
             switchCount++; switchRampT0 = src.time;
             string roleN;
-            Vib jn = HandForAz(g.az, out roleN);
-            StartCoroutine(SwitchPulse(jn, g.az));   // 0.2 秒の合図（振動子が無くても表示は出す）。束ねの Runner とは別管理
+            Joycon jn = HandForAz(g.az, out roleN);
+            StartCoroutine(SwitchPulse(jn, g.az));   // 0.2 秒の合図（Joy-con 無しでも表示は出す）。束ねの Runner とは別管理
         }
         if (g.u < URG_MIN) return;
         if (src.time - switchRampT0 < 0.25f) return;           // 合図の間は連続振動を止める
         float ramp = Mathf.Clamp01((src.time - switchRampT0 - 0.25f) / 0.6f);   // 切替後 0.6 秒で立ち上げ直す
         float amp = (0.25f + 0.75f * g.u) * Mathf.Lerp(0.3f, 1f, ramp);   // 0.25(注意の入口)〜1.0(至近)
         float lo = Mathf.Lerp(80f, 320f, g.u), hi = Mathf.Lerp(160f, 640f, g.u);
-        MarkPan(g.az, amp);                                   // 表示用（6 振動子の理想の按分。機器の有無に関係なく出す）
-        var roles = Roles();
-        if (roles.Count == 0) return;
+        MarkPan(g.az, amp);                                   // 表示用（4 振動子の按分。Joy-con の有無に関係なく出す）
         if (!panMode)
         {
             string roleC;
-            Vib jc = HandForAz(g.az, out roleC);
-            if (jc != null) jc.Rumble(lo, hi, amp, 120);   // 毎フレーム上書き＝連続振動
+            Joycon jc = HandForAz(g.az, out roleC);
+            if (jc != null) jc.SetRumble(lo, hi, amp, 120);   // 毎フレーム上書き＝連続振動
             return;
         }
-        if (roles.Count <= 2)
+        if (joycons.Count >= 4)
         {
-            // 2 個以下: 方位を sin で左右に配分（前後は区別できない）
-            float sL = 0.5f * (1f + Mathf.Sin(g.az * Mathf.Deg2Rad)), sR = 1f - sL;
-            foreach (var kv in roles)
+            // 4方向按分（cos⁴・側の記憶つき）: 重みは PanWeights4（表示 K と同じ計算）。役割の角度 → 正準の振動子番号で引く
+            var roles = Roles4();
+            var w4 = PanWeights4(g.az, amp);
+            for (int k = 0; k < roles.Count; k++)
             {
-                float wj = kv.Value > 0 ? sL : sR;
-                if (wj * amp >= 0.08f) kv.Key.Rumble(lo, hi, Mathf.Clamp01(wj * amp * 1.4f), 120);
+                float a = w4[NearestUnit(roles[k].Value)];
+                if (a >= 0.08f) roles[k].Key.SetRumble(lo, hi, Mathf.Clamp01(a), 120);
             }
             return;
         }
-        // 3 個以上: 接続している振動子の角度で cos⁴ の按分（側の記憶つき）。K の表示（6 振動子の理想）と同じ計算
-        var angs = new float[roles.Count];
-        for (int k = 0; k < roles.Count; k++) angs[k] = roles[k].Value;
-        var w = PanWeights(angs, g.az, amp);
-        for (int k = 0; k < roles.Count; k++)
-            if (w[k] >= 0.08f) roles[k].Key.Rumble(lo, hi, w[k], 120);
+        // 2本: 方位 az（DCASE規約: +=左）を sin で左右に配分。正面/背後は両手半分ずつ（前後は2本では区別不可）
+        float sL = 0.5f * (1f + Mathf.Sin(g.az * Mathf.Deg2Rad));
+        float sR = 1f - sL;
+        if (swapSides) { float t = sL; sL = sR; sR = t; }
+        foreach (var j in joycons)
+        {
+            float wj = j.isLeft ? sL : sR;
+            if (wj * amp >= 0.08f) j.SetRumble(lo, hi, Mathf.Clamp01(wj * amp * 1.4f), 120);
+        }
     }
 
-    IEnumerator SwitchPulse(Vib jc, float az = 0f)
+    IEnumerator SwitchPulse(Joycon jc, float az = 0f)
     {
         for (int i = 0; i < 2; i++)
         {
-            if (jc != null) jc.Rumble(400f, 800f, 1.0f, 70);
+            if (jc != null) jc.SetRumble(400f, 800f, 1.0f, 70);
             MarkAz(az, 1f, 70);
             yield return new WaitForSeconds(0.11f);
         }
     }
 
-    // 側の記憶（2026-09-05）: 方位 ≥ +8° が 2 フレーム続いたら「左」、≤ −8° が 2 フレーム続いたら「右」。一度決めたら反対側の条件が満たされるまで変えない。
-    //   未決定（真正面）は前の 2 つで震える。決まったら反対側（角度の符号が逆）の振動子を 0 に。切替の合図・1 秒の無音・場面切替で未決定に戻す
-    const float SIDE_DEG = 8f; const int SIDE_NEED = 2;
-    int sideState = 0, sideL = 0, sideR = 0;          // sideState: 0=未決定 +1=左 −1=右
-    void UpdateSide(float az)
+    // 4本の役割割当（接続順・isLeft から）。B で前後ペアを入れ替え
+    List<KeyValuePair<Joycon, float>> Roles4()
     {
-        if (az >= SIDE_DEG) { sideL++; sideR = 0; }
-        else if (az <= -SIDE_DEG) { sideR++; sideL = 0; }
-        else { sideL = 0; sideR = 0; }
-        if (sideL >= SIDE_NEED) sideState = +1;
-        if (sideR >= SIDE_NEED) sideState = -1;
-    }
-    // 振動子（角度の並び）への按分: cos⁴ → 側が決まっていれば反対側を 0 → 正規化 × 1.6（8% 未満は呼び側で捨てる）
-    float[] PanWeights(float[] angles, float az, float amp)
-    {
-        int n = angles.Length; var w = new float[n]; float sum = 0f;
-        for (int k = 0; k < n; k++) { float c = Mathf.Cos((az - angles[k]) * Mathf.Deg2Rad); w[k] = c > 0 ? c * c * c * c : 0f; }
-        for (int k = 0; k < n; k++) if ((sideState > 0 && angles[k] < 0) || (sideState < 0 && angles[k] > 0)) w[k] = 0f;
-        for (int k = 0; k < n; k++) sum += w[k];
-        for (int k = 0; k < n; k++) w[k] = sum > 0 ? Mathf.Clamp01(amp * w[k] / sum * 1.6f) : 0f;
-        return w;
+        var roles = new List<KeyValuePair<Joycon, float>>();
+        if (roleOf.Count >= 4)
+        {
+            // R で本人が決めた割当を使う（B/S の入替もその上に掛かる）
+            foreach (var kv in roleOf)
+            {
+                float a = kv.Value;
+                if (swapFrontBack) a = (a > 0 ? 180f - a : -180f - a);
+                if (swapSides) a = -a;
+                roles.Add(new KeyValuePair<Joycon, float>(kv.Key, a));
+            }
+            return roles;
+        }
+        // 未割当: 接続順（HID の列挙順なので持ち方と合わないことがある → R で割り当て直す）
+        var lefts = new List<Joycon>(); var rights = new List<Joycon>();
+        foreach (var j in joycons) (j.isLeft ? lefts : rights).Add(j);
+        float fl = 45f, fr = -45f, bl = 135f, br = -135f;
+        if (swapFrontBack) { fl = 135f; fr = -135f; bl = 45f; br = -45f; }
+        if (swapSides) { fl = -fl; fr = -fr; bl = -bl; br = -br; }
+        if (lefts.Count > 0) roles.Add(new KeyValuePair<Joycon, float>(lefts[0], fl));
+        if (rights.Count > 0) roles.Add(new KeyValuePair<Joycon, float>(rights[0], fr));
+        if (lefts.Count > 1) roles.Add(new KeyValuePair<Joycon, float>(lefts[1], bl));
+        if (rights.Count > 1) roles.Add(new KeyValuePair<Joycon, float>(rights[1], br));
+        return roles;
     }
 
     static readonly Joycon.Button[] ANY_BUTTONS = {
@@ -436,18 +404,17 @@ public class JoyconDemoPlayer : MonoBehaviour
         return false;
     }
 
-    // 割当モード: 画面の指示どおりに、その役割で持っている Joy-con のボタンを押す。押した本を 0.3 秒震わせて確認（Wii は接続順・W で入替）
+    // 割当モード: 画面の指示どおりに、その役割で持っている Joy-con のボタンを押す。押した本を 0.3 秒震わせて確認
     void AssignTick()
     {
         if (assignStep < 0) return;
-        foreach (var v in vibs)
+        foreach (var j in joycons)
         {
-            if (v.jc == null || roleOf.ContainsKey(v) || !AnyButtonDown(v.jc)) continue;
-            roleOf[v] = ROLE_ORDER[assignStep];
-            v.Rumble(160f, 320f, 0.8f, 300); MarkAngle(ROLE_ORDER[assignStep], 0.8f, 300);
+            if (roleOf.ContainsKey(j) || !AnyButtonDown(j)) continue;
+            roleOf[j] = ROLE_ORDER[assignStep];
+            j.SetRumble(160f, 320f, 0.8f, 300);
             assignStep++;
             if (assignStep >= Mathf.Min(4, joycons.Count)) { assignStep = -1; lastFire = "割当完了: " + RoleSummary(); }
-            else lastFire = $"割当: 「{RoleName(ROLE_ORDER[assignStep])}」で持っている Joy-con のボタンを押してください";
             break;
         }
     }
@@ -455,26 +422,25 @@ public class JoyconDemoPlayer : MonoBehaviour
     string RoleSummary()
     {
         var parts = new List<string>();
-        var roles = Roles();
-        roles.Sort((a, b) => NearestUnit(a.Value).CompareTo(NearestUnit(b.Value)));
-        foreach (var kv in roles) parts.Add($"{RoleName(kv.Value)}={kv.Key.Tag}");
-        return (roleOf.Count > 0 ? "R割当済 " : "接続順・未割当(Rで割当) ") + string.Join(" ", parts);
+        foreach (var kv in Roles4()) parts.Add($"{RoleName(kv.Value)}={(kv.Key.isLeft ? "L" : "R")}");
+        return (roleOf.Count >= 4 ? "R割当済 " : "接続順・未割当(Rで割当) ") + string.Join(" ", parts);
     }
 
-    // T: 役割の順に 1 個ずつ震わせる（前左→前右→左→右→後左→後右）。どれがどれか手で確かめる
+    // T: 役割の順に 1 本ずつ震わせる（前左→前右→後左→後右）。どれがどれか手で確かめる
     IEnumerator RoleTest()
     {
-        var roles = Roles();
-        roles.Sort((a, b) => NearestUnit(a.Value).CompareTo(NearestUnit(b.Value)));
+        var roles = Roles4();
+        roles.Sort((a, b) => System.Array.IndexOf(ROLE_ORDER, Mathf.Round(a.Value)).CompareTo(System.Array.IndexOf(ROLE_ORDER, Mathf.Round(b.Value))));
         foreach (var kv in roles)
         {
-            lastFire = $"テスト: {RoleName(kv.Value)} ({kv.Key.Tag}) が震えます";
-            kv.Key.Rumble(200f, 400f, 1.0f, 500); MarkAngle(kv.Value, 1f, 500);
+            lastFire = $"テスト: {RoleName(kv.Value)} が震えます";
+            kv.Key.SetRumble(200f, 400f, 1.0f, 500); MarkAngle(kv.Value, 1f, 500);
             yield return new WaitForSeconds(0.9f);
         }
         lastFire = "テスト終了: " + RoleSummary();
     }
 
+    // 画面の文字: 左上に半透明の箱をひとつ（幅は画面の 55% まで・折り返し）。右上は ScenarioVisualizer の凡例が使う
     float T { get { return (src != null && src.clip != null) ? src.time : 0f; } }
     Vector2 panelScroll;
 
@@ -485,41 +451,71 @@ public class JoyconDemoPlayer : MonoBehaviour
         vibAmp[k] = Mathf.Max(amp, Time.time < vibUntil[k] ? vibAmp[k] : 0f);
         vibUntil[k] = Mathf.Max(vibUntil[k], Time.time + ms / 1000f);
     }
-    void MarkAngle(float ang, float amp, int ms) { MarkUnit(NearestUnit(ang), amp, ms); }
+    void MarkAngle(float ang, float amp, int ms)
+    {
+        int best = 0; float bd = 999f;
+        for (int k = 0; k < 4; k++) { float d = Mathf.Abs(Mathf.DeltaAngle(ang, VIB_ANGLES[k])); if (d < bd) { bd = d; best = k; } }
+        MarkUnit(best, amp, ms);
+    }
     void MarkAz(float az, float amp, int ms) { MarkAngle(az, amp, ms); }
     void MarkPan(float az, float amp)
     {
         if (!panMode) { MarkAz(az, amp, 120); return; }
-        var w = PanWeights(VIB_ANGLES, az, amp);
-        for (int k = 0; k < NU; k++) if (w[k] >= 0.08f) MarkUnit(k, w[k], 120);
+        var w = PanWeights4(az, amp);
+        for (int k = 0; k < 4; k++) if (w[k] >= 0.08f) MarkUnit(k, w[k], 120);
+    }
+
+    // 側の記憶（2026-09-05 本人「前から来る車で前右が反応する」→ ヒステリシス案を採用）:
+    //   方位 ≥ +8° が 2 フレーム続いたら「左」、≤ −8° が 2 フレーム続いたら「右」。一度決めたら反対側の条件が満たされるまで変えない。
+    //   未決定（真正面）は前の 2 つで震える。決まったら反対側（前右・後右 / 前左・後左）を 0 に。切替の合図・1 秒の無音・場面切替で未決定に戻す
+    const float SIDE_DEG = 8f; const int SIDE_NEED = 2;
+    int sideState = 0, sideL = 0, sideR = 0;          // sideState: 0=未決定 +1=左 −1=右
+    void UpdateSide(float az)
+    {
+        if (az >= SIDE_DEG) { sideL++; sideR = 0; }
+        else if (az <= -SIDE_DEG) { sideR++; sideL = 0; }
+        else { sideL = 0; sideR = 0; }
+        if (sideL >= SIDE_NEED) sideState = +1;
+        if (sideR >= SIDE_NEED) sideState = -1;
+    }
+    int NearestUnit(float ang)
+    {
+        int best = 0; float bd = 999f;
+        for (int k = 0; k < 4; k++) { float d = Mathf.Abs(Mathf.DeltaAngle(ang, VIB_ANGLES[k])); if (d < bd) { bd = d; best = k; } }
+        return best;
+    }
+    // 4 振動子（前左・前右・後左・後右）の振幅: cos⁴ の按分 → 側が決まっていれば反対側を 0 → 正規化 × 1.6（8% 未満は呼び側で捨てる）
+    float[] PanWeights4(float az, float amp)
+    {
+        var w = new float[4]; float sum = 0f;
+        for (int k = 0; k < 4; k++) { float c = Mathf.Cos((az - VIB_ANGLES[k]) * Mathf.Deg2Rad); w[k] = c > 0 ? c * c * c * c : 0f; }
+        if (sideState > 0) { w[1] = 0f; w[3] = 0f; } else if (sideState < 0) { w[0] = 0f; w[2] = 0f; }
+        for (int k = 0; k < 4; k++) sum += w[k];
+        for (int k = 0; k < 4; k++) w[k] = sum > 0 ? Mathf.Clamp01(amp * w[k] / sum * 1.6f) : 0f;
+        return w;
     }
     float VibNow(int k) { return Time.time < vibUntil[k] ? vibAmp[k] : 0f; }
-    bool UnitHasDevice(int k)
-    {
-        foreach (var kv in Roles()) if (NearestUnit(kv.Value) == k) return true;
-        return false;
-    }
 
     void DrawVib()
     {
-        float size = Mathf.Min(Screen.height * 0.60f, 480f);
-        var rect = new Rect(24, (Screen.height - size * 1.1f) / 2f, size, size * 1.1f);
+        float size = Mathf.Min(Screen.height * 0.62f, 480f);
+        var rect = new Rect(24, (Screen.height - size) / 2f, size, size);
         DemoHudLayout.Background(rect);
         var title = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(size * 0.045f), alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
         title.normal.textColor = Color.white;
-        GUI.Label(new Rect(rect.x, rect.y + 6, rect.width, size * 0.08f), "振動子の状態（上が前・左 3 右 3）", title);
-        float cx = rect.x + size / 2f, cy = rect.y + size * 0.53f, r = size * 0.31f, box = size * 0.17f;
-        var lab = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(size * 0.045f), alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
+        GUI.Label(new Rect(rect.x, rect.y + 6, rect.width, size * 0.08f), "振動子の状態（上が前）", title);
+        float cx = rect.x + size / 2f, cy = rect.y + size * 0.50f, r = size * 0.25f, box = size * 0.19f;   // 下の文字と重ならないよう少し小さく（2026-09-05 本人指摘）
+        var lab = new GUIStyle(GUI.skin.label) { fontSize = Mathf.RoundToInt(size * 0.05f), alignment = TextAnchor.MiddleCenter, fontStyle = FontStyle.Bold };
         lab.normal.textColor = Color.white;
-        var small = new GUIStyle(lab) { fontSize = Mathf.RoundToInt(size * 0.036f), fontStyle = FontStyle.Normal };
+        var small = new GUIStyle(lab) { fontSize = Mathf.RoundToInt(size * 0.038f), fontStyle = FontStyle.Normal };
         Color old = GUI.color;
         GUI.color = new Color(1f, 1f, 1f, 0.85f);
-        GUI.DrawTexture(new Rect(cx - size * 0.045f, cy - size * 0.045f, size * 0.09f, size * 0.09f), Texture2D.whiteTexture);
+        GUI.DrawTexture(new Rect(cx - size * 0.05f, cy - size * 0.05f, size * 0.1f, size * 0.1f), Texture2D.whiteTexture);
         GUI.color = old;
-        GUI.Label(new Rect(cx - size * 0.12f, cy - size * 0.125f, size * 0.24f, size * 0.07f), "▲ 前", small);
-        GUI.Label(new Rect(cx - size * 0.12f, cy + size * 0.055f, size * 0.24f, size * 0.07f), "自分", small);
+        GUI.Label(new Rect(cx - size * 0.12f, cy - size * 0.13f, size * 0.24f, size * 0.07f), "▲ 前", small);
+        GUI.Label(new Rect(cx - size * 0.12f, cy + size * 0.06f, size * 0.24f, size * 0.07f), "自分", small);
         var on = new Color(1f, 0.55f, 0.1f, 0.95f); var onMax = new Color(1f, 0.12f, 0.1f, 1f);
-        for (int k = 0; k < NU; k++)
+        for (int k = 0; k < 4; k++)
         {
             float a = VibNow(k);
             float th = VIB_ANGLES[k] * Mathf.Deg2Rad;                     // 0°=上、+=左
@@ -534,11 +530,10 @@ public class JoyconDemoPlayer : MonoBehaviour
             else GUI.color = new Color(1f, 1f, 1f, 0.12f);
             GUI.DrawTexture(br, Texture2D.whiteTexture);
             GUI.color = old;
-            string sub = a > 0f ? a.ToString("F1") : (UnitHasDevice(k) ? "" : "未接続");
-            GUI.Label(br, VIB_NAMES[k] + (sub == "" ? "" : "\n" + sub), lab);
+            GUI.Label(br, VIB_NAMES[k] + (a > 0f ? "\n" + a.ToString("F1") : ""), lab);
         }
-        GUI.Label(new Rect(rect.x, rect.y + size * 0.90f, rect.width, size * 0.07f), "側: " + (sideState > 0 ? "左に確定" : sideState < 0 ? "右に確定" : "未決定（真正面は前の 2 つ）"), small);
-        GUI.Label(new Rect(rect.x, rect.y + size * 0.98f, rect.width, size * 0.07f), "K: この表示を消す　H: 他の表示を消す", small);
+        GUI.Label(new Rect(rect.x, rect.y + size * 0.80f, rect.width, size * 0.07f), "側: " + (sideState > 0 ? "左に確定" : sideState < 0 ? "右に確定" : "未決定（真正面は前の 2 つ）"), small);
+        GUI.Label(new Rect(rect.x, rect.y + size * 0.885f, rect.width, size * 0.07f), "K: この表示を消す　H: 他の表示を消す", small);
         GUI.color = old;
     }
 
@@ -585,16 +580,15 @@ public class JoyconDemoPlayer : MonoBehaviour
         items.Add(new KeyValuePair<string, GUIStyle>($"場面 {clipIdx + 1}/{clips.Count}: {(clips.Count > 0 ? clips[clipIdx].Replace("/", " › ") : "なし")}", hd));
         items.Add(new KeyValuePair<string, GUIStyle>("通知の元: " + (cueSource == "" ? "(読込中)" : cueSource), st));
         items.Add(new KeyValuePair<string, GUIStyle>(
-            $"振動子 6: Joy-con {joycons.Count} 本 / Wii {wiis.Count} 本" + (vibs.Count > 0 ? $"  役割 [{RoleSummary()}]" : " (未接続。画面だけ動きます)"), st));
-        items.Add(new KeyValuePair<string, GUIStyle>("  R=Joy-con の役割を決め直す  T=順に震わせて確認  W=Wii の左右入替", st));
+            $"Joy-con: {joycons.Count}本" + (joycons.Count >= 4 ? $"  役割 [{RoleSummary()}]   R=役割を決め直す  T=順に震わせて確認" : (joycons.Count > 0 ? " (左=左手・右=右手)" : " (未接続。画面だけ動きます)")), st));
         if (assignStep >= 0)
             items.Add(new KeyValuePair<string, GUIStyle>($"★ 割当中: 「{RoleName(ROLE_ORDER[assignStep])}」で持っている Joy-con のボタン (ZL/ZR/SL/SR/十字/スティック押込) を押してください ({assignStep + 1}/{Mathf.Min(4, joycons.Count)})", hd));
         items.Add(new KeyValuePair<string, GUIStyle>("設定:", st));
         items.Add(new KeyValuePair<string, GUIStyle>($"  M 束ね={(mergeMode ? "ON" : "OFF")} (1秒以内の同じ通知は伸ばすだけ)", st));
         items.Add(new KeyValuePair<string, GUIStyle>($"  G 連続={(gradedMode ? "ON" : "OFF")} (近づくほど強く震える)", st));
-        items.Add(new KeyValuePair<string, GUIStyle>($"  P 方向按分={(panMode ? "ON" : "OFF")} (方位に応じて複数の振動子に振り分ける)", st));
+        items.Add(new KeyValuePair<string, GUIStyle>($"  P 方向按分={(panMode ? "ON" : "OFF")} (方位に応じて複数の本に振り分ける)", st));
         items.Add(new KeyValuePair<string, GUIStyle>($"  J 切替の合図={(switchCue ? "ON" : "OFF")} (追跡が別の車に乗り移ったら短い2連)", st));
-        items.Add(new KeyValuePair<string, GUIStyle>($"  S 左右入替={(swapSides ? "ON" : "OFF")}   B 前後入替={(swapFrontBack ? "ON" : "OFF")}   W Wii入替={(wiiSwap ? "ON" : "OFF")}", st));
+        items.Add(new KeyValuePair<string, GUIStyle>($"  S 左右入替={(swapSides ? "ON" : "OFF")}" + (joycons.Count >= 4 ? $"   B 前後入替={(swapFrontBack ? "ON" : "OFF")}" : ""), st));
         items.Add(new KeyValuePair<string, GUIStyle>("操作: ←/→ 場面を変える   Space 再生/停止   K 振動子だけの表示   H この表示を消す", st));
         items.Add(new KeyValuePair<string, GUIStyle>($"再生 {T:F1} 秒   振動した回数 {firedCount}   束ねた回数 {mergedCount}", st));
         items.Add(new KeyValuePair<string, GUIStyle>($"切替の合図 {switchCount} 回" + (gradedMode ? $"   緊急度 {lastGradedU:F2} (0=安全 1=至近)" : ""), st));

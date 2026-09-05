@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import csv
 import importlib.util
+import os
 import math
 import re
 import sys
@@ -54,11 +55,12 @@ CONFIRM_WIN, CONFIRM_NEED = 4, 2
 HOLD_S = 0.3
 JUMP_DEG, JUMP_NEED = 60.0, 2
 SIDE_DEG, SIDE_NEED = 8.0, 2          # 側の記憶（2026-09-05）: ±8° が 2 フレーム続いたら左/右に確定し、反対側を 0 に
-import os
 SIDE_ON = os.environ.get("DEV_SIDE", "1") == "1"   # DEV_SIDE=0 で側の記憶なし（変更前との比較用）
 QUIET_RESET_S = 1.0
 SWITCH_PAUSE_S, SWITCH_RAMP_S = 0.25, 0.6
-UNITS = {"FL": 45.0, "FR": -45.0, "BL": 135.0, "BR": -135.0}
+UNITS6 = {"FL": 30.0, "FR": -30.0, "L": 90.0, "R": -90.0, "BL": 150.0, "BR": -150.0}   # 2026-09-05 夜: 左 3・右 3（本人決定）
+UNITS4 = {"FL": 45.0, "FR": -45.0, "BL": 135.0, "BR": -135.0}
+UNITS = UNITS4 if os.environ.get("DEV_UNITS", "6") == "4" else UNITS6
 PAN_GAIN, PAN_MIN = 1.6, 0.08
 ATTR_DEG = 30.0
 
@@ -116,8 +118,9 @@ def replay(urg):
             ramp = min(1.0, max(0.0, (t - switch_t0 - SWITCH_PAUSE_S) / SWITCH_RAMP_S))
             amp = (0.25 + 0.75 * eu) * (0.3 + 0.7 * ramp)
             w = {k: max(0.0, math.cos(math.radians(stable_az - a))) ** 4 for k, a in UNITS.items()}
-            if SIDE_ON and side > 0: w["FR"] = 0.0; w["BR"] = 0.0
-            elif SIDE_ON and side < 0: w["FL"] = 0.0; w["BL"] = 0.0
+            if SIDE_ON and side != 0:
+                for k, a in UNITS.items():
+                    if (side > 0 and a < 0) or (side < 0 and a > 0): w[k] = 0.0
             s = sum(w.values())
             for k in UNITS:
                 a = amp * w[k] / s * PAN_GAIN if s > 0 else 0.0
@@ -177,7 +180,7 @@ def score(pred, meta: Path, clips):
                 continue
             gaz = evs[best]["fr"][k][0]
             if abs(gaz) >= SIDE_DEG:
-                opp = {"FR", "BR"} if gaz > 0 else {"FL", "BL"}
+                opp = {k for k, a in UNITS.items() if (gaz > 0 and a < 0) or (gaz < 0 and a > 0)}
                 if any(u in amps for u in opp):
                     opp_s += 1.0 / FPS
             if k <= evs[best]["cpa"] + FPS:
@@ -220,7 +223,7 @@ def main() -> int:
                 if m and int(m.group(1)) > clip_max:
                     continue
             clips.append(r["clip_id"])
-    R = [f"# 機器層の再生評価（連続モード・正式仕様を再生） — {out_md.stem}", "",
+    R = [f"# 機器層の再生評価（連続モード・正式仕様を再生・振動子 {len(UNITS)} 個: {','.join(f'{k}{a:+.0f}' for k, a in UNITS.items())}） — {out_md.stem}", "",
          f"plan= {plan.relative_to(ROOT)} ({split}{f', mix≤{clip_max}' if clip_max else ''}) = {len(clips):,} 本 / GT= {meta.relative_to(ROOT)}", "",
          "到達= イベントの方位から 30° 以内の向きで震えた最初の時刻が CPA＋1 s まで。至近で振幅≥0.8= 段階通知の「強」相当の強さで震えた至近イベントの割合。",
          "誤った向き= 震えているのに向きの 30° 以内に GT がいない時間 [s/本]。反対側の振動子= 帰属した GT が |方位| ≥ 8° のとき反対側（前右・後右 / 前左・後左）が震えていた時間 [s/本]。振動時間率= 震えたフレームの割合。切替= 受け入れた方位の跳び（合図）の回数/本。"
