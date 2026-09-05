@@ -9,15 +9,16 @@
   - 一意キー = session_id × take_id。take_id は "<session_id>/<take>" に、clip_id（原録音キー）は "<session_id>_take<NN>"
   - 原本ファイル名 = "<session_id>_take<NN>.wav"（録音機のファイル名は `原本` 列があればそれを優先）
   - 象限 → quadrant、状態 → 状態（そのまま）、区分は session.csv の区分（歩行対比の行は "歩行"）
-  - t_cpa = ラップ秒（＋ --lap-offset。同期の予備試験で測った録音開始〜ラップの遅れ）
-  - t_start = t_cpa − --pre（既定 6 s。イベントの始まりは現場で注釈しないので規則で決める。負なら 0）
+  - 距離クラス（car_drive/kick/bike）: ラップ = 前端が肩の線を通った瞬間（最接近）。t_cpa = ラップ秒（＋ --lap-offset）、t_start = t_cpa − --pre（既定 6 s。負なら 0）
+  - 警告音クラス（siren/horn/backup_beep/bike_bell/crossing）: ラップ = **音の始まり（気づいた瞬間）**。t_start = ラップ、t_cpa = ラップ + --warn-span（既定 3 s）
+    → 成功の窓は [ラップ−1 s, ラップ＋4 s]、方向はこの区間の推定方位で比べる（採点器 v3）
   - class=none の行（負例）は t_start=0、t_cpa=原本の長さ（--audio-dir から読む。無ければ空欄で step19b が埋める）
   - 校正: session.csv の LAeq_dB・暗騒音区間_秒・校正ファイル名（`校正原本` 列。無ければ "<session_id>_calib.wav"）から
     calibration_id="<session_id>_calib" を付ける（補正量そのものは step19 --calib が計算）
   - pair_id は "<session_id>/<pair_id>"、trial は 区分（歩行対比は "walk"）
 
 使い方: python scripts/step19d_field_csv_to_ann.py --session session.csv --events events.csv --out ann_orig.csv
-        [--pre 6] [--lap-offset 0] [--audio-dir raw/]
+        [--pre 6] [--lap-offset 0] [--warn-span 3] [--audio-dir raw/]
 """
 from __future__ import annotations
 
@@ -33,6 +34,7 @@ OUT_COLS = ["clip_id", "event_id", "trial", "class", "quadrant", "t_start", "t_c
             "take_id", "pair_id", "区分", "状態", "横距離m", "n_car", "車種", "速度", "特記",
             "session_id", "orig_file", "calibration_id", "calib_file", "LAeq_dB", "暗騒音区間_秒", "t_start_rule"]
 CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "car_drive", "crossing", "kick", "bike", "none"}
+WARN_CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "crossing"}
 QUADS = {"F", "B", "L", "R", ""}
 
 
@@ -54,7 +56,7 @@ def take_num(v: str) -> str:
         return v
 
 
-def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | None):
+def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | None, warn_span: float = 3.0):
     """返り値: (rows, warnings)"""
     warns = []
     ses = {}
@@ -109,9 +111,13 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
             except ValueError:
                 warns.append(f"{sid}/take{tk}: ラップ秒が数値でない '{lap}'")
                 tc = 0.0
-            t_cpa = f"{tc:.2f}"
-            t_start = f"{max(0.0, tc - pre):.2f}"
-            rule = f"t_start = t_cpa − {pre:g} s（規則）; t_cpa = ラップ秒 {'+ ' + str(lap_offset) + ' s' if lap_offset else ''}"
+            if cls in WARN_CLASSES:
+                t_start = f"{max(0.0, tc):.2f}"; t_cpa = f"{tc + warn_span:.2f}"
+                rule = f"警告音: t_start = ラップ（音の始まり）, t_cpa = ラップ + {warn_span:g} s"
+            else:
+                t_cpa = f"{tc:.2f}"
+                t_start = f"{max(0.0, tc - pre):.2f}"
+                rule = f"t_start = t_cpa − {pre:g} s（規則）; t_cpa = ラップ秒 {'+ ' + str(lap_offset) + ' s' if lap_offset else ''}"
         out.append({
             "clip_id": f"{sid}_take{tk}", "event_id": ev, "trial": ("walk" if kind == "歩行" else (srow.get("区分", "") or "?")),
             "class": cls, "quadrant": quad, "t_start": t_start, "t_cpa": t_cpa,
@@ -130,7 +136,8 @@ def main() -> int:
     pre = float(_arg("--pre", "6"))
     lap_offset = float(_arg("--lap-offset", "0"))
     audio_dir = Path(_arg("--audio-dir")) if _arg("--audio-dir") else None
-    rows, warns = convert(sessions, events, pre, lap_offset, audio_dir)
+    warn_span = float(_arg("--warn-span", "3"))
+    rows, warns = convert(sessions, events, pre, lap_offset, audio_dir, warn_span)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=OUT_COLS); w.writeheader(); w.writerows(rows)

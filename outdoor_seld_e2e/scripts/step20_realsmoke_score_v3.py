@@ -11,8 +11,8 @@
 3 つの時点・窓を分けて定義する（R03）:
   ① 型分類の窓（記述用のみ・CPA の 2.5〜1.5 秒前）: ここでは使わない（GT の連続方位が無い）
   ② **通知成功の窓** = [t_start − 1 s, t_cpa ＋ 1 s]（合成の採点器と同じ）。critical は強、caution は中か強、safe は強も中も無いこと
-  ③ **方向の比較時点** = 注釈の象限を書いた窓（既定: CPA の 2.5〜1.5 秒前 = 記入用 CSV の定義）。その窓の**推定方位の中央（単位ベクトル平均）**を
-     4 象限に丸めて注釈と比べる。発火時刻の方位ではない。窓に推定が無ければ「方向は評価不能（未検出）」
+  ③ **方向の比較時点** = 注釈の象限を書いた窓（距離クラス: CPA の 2.5〜1.5 秒前 = 記入用 CSV の定義。警告音クラス: [t_start, t_cpa] = ラップ（音の始まり）から 3 s）。
+     その窓の**推定方位の中央（単位ベクトル平均）**を 4 象限に丸めて注釈と比べる。発火時刻の方位ではない。窓に推定が無ければ「方向は評価不能（未検出）」
 
 分母（W7）: 到達・抑制は「採点対象イベント」を分母に。方向は「全イベント（未検出は不一致扱い）」と「推定があった例だけ」の両方を出す。
 前方 F（R02）: 既定で主要評価から除外し「前方（参考）」として別集計（`--include-front` で含める）。
@@ -171,8 +171,11 @@ def evaluate(rows, pred, cfg43, dir_win, min_history, include_front):
             continue
         frames = pred.get(clip, {})
         t0, t1 = float(r["t_start"]) - WIN_PRE, float(r["t_cpa"]) + WIN_POST
-        # ③ 方向: 注釈の窓 [t_cpa − dir_win[0], t_cpa − dir_win[1]] の推定方位の中央
-        az_est = median_az(frames, ci, float(r["t_cpa"]) - dir_win[0], float(r["t_cpa"]) - dir_win[1])
+        # ③ 方向: 距離クラスは注釈の窓 [t_cpa − dir_win[0], t_cpa − dir_win[1]]、警告音クラスは [t_start, t_cpa]（ラップ＝音の始まり）の推定方位の中央
+        if ci in DIST_CLS:
+            az_est = median_az(frames, ci, float(r["t_cpa"]) - dir_win[0], float(r["t_cpa"]) - dir_win[1])
+        else:
+            az_est = median_az(frames, ci, float(r["t_start"]), float(r["t_cpa"]))
         quad_ok = None if not base["quadrant"] else (None if az_est is None else quadrant_of(az_est) == base["quadrant"])
         fires = fires_by_clip[clip]; used = used_by_clip[clip]
         if ci in DIST_CLS:
