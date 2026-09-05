@@ -2,11 +2,12 @@
 # v16 の学習ジョブが pro_6000 の GPU 待ちで 10 分以上止まったら a100（空きがあれば）に振り替える。
 # 本人 2026-09-04 23:09「早いサーバ空いてたら移して」。pro_6000 が最速（31 s/ep）なので基本はそこで待ち、
 # 待ちが長引いたときだけ a100（52 s/ep）へ。サーバ側で nohup 実行:
-#   nohup bash server_sde/_v16_failover.sh > /dev/null 2>&1 &
+#   nohup bash server_sde/_v16_failover.sh <train job> <causal job> [train.sbatch] [causal.sbatch] > /dev/null 2>&1 &
 # 段階ごと（train → causal）に同じ規則を適用する。振り替えたら job 番号を v16_failover.log に書く。
 cd ~/research/outdoor_seld_e2e
 LOG=v16_failover.log
 TRAIN=${1:-3968}; CAUSAL=${2:-3969}
+TRAIN_SB=${3:-server_sde/v16_train.sbatch}; CAUSAL_SB=${4:-server_sde/v16_causal.sbatch}   # 2026-09-05: v17 でも使えるよう sbatch を引数に
 echo "$(date) start train=$TRAIN causal=$CAUSAL" >> $LOG
 
 a100_free() {  # 空いている a100（フル GPU）の枚数
@@ -46,6 +47,6 @@ watch_stage() {  # $1=job id, $2=sbatch file, $3=次段の job id（あれば。
 }
 
 NEXT_ID=$CAUSAL
-watch_stage $TRAIN server_sde/v16_train.sbatch $CAUSAL server_sde/v16_causal.sbatch || exit 1
-watch_stage $NEXT_ID server_sde/v16_causal.sbatch "" ""
+watch_stage $TRAIN $TRAIN_SB $CAUSAL $CAUSAL_SB || exit 1
+watch_stage $NEXT_ID $CAUSAL_SB "" ""
 echo "$(date) all stages done" >> $LOG
