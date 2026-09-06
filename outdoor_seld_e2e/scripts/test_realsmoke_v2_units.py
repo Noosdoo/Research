@@ -812,9 +812,9 @@ with tempfile.TemporaryDirectory() as td:
         sf.write(str(raw / name), np.tile((amp * np.sin(2 * np.pi * 1000.0 * tt))[:, None], (1, 4)).astype(np.float32), fs)
     wav("S1_calib.wav", 0.01); wav("ZOOM0001.wav", 0.01); wav("S2_calib.wav", 0.001); wav("REC_A.wav", 0.001)
     with open(td / "session.csv", "w", newline="", encoding="utf-8") as f:
-        w = _csv45.DictWriter(f, fieldnames=["session_id", "区分", "LAeq_dB", "暗騒音区間_秒", "校正原本"]); w.writeheader()
-        w.writerow({"session_id": "S1", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S1_calib.wav"})
-        w.writerow({"session_id": "S2", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S2_calib.wav"})
+        w = _csv45.DictWriter(f, fieldnames=["session_id", "区分", "LAeq_dB", "暗騒音区間_秒", "校正原本", "マイク高さ_cm"]); w.writeheader()
+        w.writerow({"session_id": "S1", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S1_calib.wav", "マイク高さ_cm": "205"})
+        w.writerow({"session_id": "S2", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S2_calib.wav", "マイク高さ_cm": "205"})
     with open(td / "events.csv", "w", newline="", encoding="utf-8") as f:
         w = _csv45.DictWriter(f, fieldnames=["session_id", "take_id", "event_id", "class", "象限", "ラップ秒", "n_car", "横距離m", "状態", "pair_id", "原本"]); w.writeheader()
         w.writerow({"session_id": "S1", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "9.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": "", "原本": "ZOOM0001.wav"})
@@ -834,7 +834,8 @@ with tempfile.TemporaryDirectory() as td:
             and len(ann_all) == 2 and "ZOOM0001_e1" in g and "REC_A_e1" in g
             and g["ZOOM0001_e1"][0] == "S1_calib" and g["REC_A_e1"][0] == "S2_calib"
             and abs(g["ZOOM0001_e1"][1] - j1.get("gain_db", 99)) < 0.05 and abs(g["REC_A_e1"][1] - j2.get("gain_db", 99)) < 0.05
-            and abs((g["REC_A_e1"][1] - g["ZOOM0001_e1"][1]) - 20.0) < 0.3)
+            and abs((g["REC_A_e1"][1] - g["ZOOM0001_e1"][1]) - 20.0) < 0.3
+            and all(r.get("mic_z") == "2.050" for r in ann_all))
     check("T45 現場CSV→変換→校正→切り出し→検査を 2 セッション・任意の原本名で通し、各原本に自分の校正の補正量（差 20 dB）が付く",
           ok45, f"(rc={[r.returncode for r in (r1, r2, r3, r4, r5)]}, rows={len(ann_all)}, g={g}, j1={j1.get('gain_db')}, j2={j2.get('gain_db')})"
           + ("" if ok45 else f"\n  step19b: {r4.stdout[-600:]} {r4.stderr[-400:]}\n  step19c: {r5.stdout[-400:]}"))
