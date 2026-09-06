@@ -90,11 +90,14 @@ def load_dist_table(path):
     return (np.array(t["centers"], dtype=float), np.array(t["values"], dtype=float))
 
 
+DIST_TABLE_MAX = 5.0   # --dist-table-max <m>: この予測距離以下だけ補正する（既定 5 m = 表の全域）
+
+
 def corr_d(d):
     if DIST_TABLE is None or not (d == d):
         return d
     import numpy as np
-    if d >= 5.0:
+    if d >= min(5.0, DIST_TABLE_MAX):
         return d
     return float(np.interp(d, DIST_TABLE[0], DIST_TABLE[1]))
 
@@ -214,10 +217,12 @@ def main() -> int:
     if flow:
         flow = (int(flow[0]), flow[1], flow[2])
     split = a[a.index("--split") + 1] if "--split" in a else None
-    global DIST_TABLE
+    global DIST_TABLE, DIST_TABLE_MAX
     if "--dist-table" in a:
         DIST_TABLE = load_dist_table(a[a.index("--dist-table") + 1])
-        print(f"# 距離の補正表を適用: {a[a.index('--dist-table') + 1]}")
+        if "--dist-table-max" in a:
+            DIST_TABLE_MAX = float(a[a.index("--dist-table-max") + 1])
+        print(f"# 距離の補正表を適用: {a[a.index('--dist-table') + 1]}（予測 ≤{DIST_TABLE_MAX:g} m だけ）")
     plan = {r["clip_id"]: r for r in csv.DictReader(open(DS / "plan/assignment_long_v1.csv", encoding="utf-8"))}
     clips = [c for c in plan if (DS / "metadata_dist" / f"{c}.csv").exists() and (split is None or plan[c]["split"] == split)]
     preds = None if "--oracle" in a else load_pred_long(a[a.index("--pred") + 1])
