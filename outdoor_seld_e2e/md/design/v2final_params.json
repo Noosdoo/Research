@@ -1,0 +1,23 @@
+{
+  "_doc": "確定評価 v2 の最終学習データのつまみ（D1〜D13）。10 月末に数値を確定して status を fixed にし、確定評価v2_事前登録テンプレートと一緒にコミットする（発効）。実行計画 = md/design/確定評価v2_最終学習_実行計画_2026-09-07.md",
+  "status": "draft",
+  "declared_at": null,
+  "base_recipe": "v17b（v13 の束 S1〜S4 ＋ D10 至近低速 ＋ D13 高さ 1.4〜2.1 m ＋ 高さ増強 ×2 ＋ 装着高さ入力 FiLM・学習ゆらぎ 0.10 m・水平距離ラベル）",
+  "D1_SIREN_MIX": {"near": 0.5, "far": 0.3, "recede": 0.2},
+  "D1_note": "v13 の既定は near 0 / far 0.8 / recede 0.2（近接例の半減で 0-50 m が −2pt）。v2 案 = 0.5/0.3/0.2",
+  "D2_RAIN_DBA": {"light": [45.0, 50.0], "moderate": [50.0, 58.0], "heavy": [60.0, 68.0]},
+  "D2_note": "仮置き。10 月の騒音計測定値（雨の日の LAeq）で置き換える",
+  "D3_RAIN_FRAC": 0.20,
+  "RAIN_KIND_P": {"light": 0.50, "moderate": 0.35, "heavy": 0.15},
+  "D4_WALK_FRAC": 0.70,
+  "D4_note": "10 月の連続録音 100 分の実測（静止:歩行）で更新。±10pt 以内なら据え置き",
+  "D7_WIND": "none",
+  "D7_note": "10 月の実録で残留量を測って判断（none / 追加する場合は別途宣言）",
+  "D10_CLOSE_SLOW_FRAC": 0.50,
+  "D13_MIC_Z_RANGE": [1.4, 2.1],
+  "HEIGHT_AUG_COPIES": 2,
+  "HEIGHT_JITTER_TRAIN": 0.10,
+  "N_ROWS_EXPECTED": 18000,
+  "SALTS": {"v13": 20260913, "v16": 20260917},
+  "_regression": "D1 以外を v16 と同じ値にすると plan は assignment_v16.csv と一致する（step10_v2final_plan.py --check-v16）。D1 は描画側のつまみなので plan には出ない"
+}
