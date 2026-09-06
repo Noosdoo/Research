@@ -852,6 +852,40 @@ rows46, _ = s19d.convert(sessions46, events46, 6.0, 0.0, None)
 check("T46 用途列: 調整用セッションの行に 用途=調整用 が付く（変換器の出力で最終評価と分離できる）",
       len(rows46) == 2 and {r["用途"] for r in rows46} == {"最終評価", "調整用"}, f"(用途={[r['用途'] for r in rows46]})")
 
+# ---------------- T47: step19e 校正の点検 — 指パッチン 4 方位の方位読み・取り違えの言い当て・--yaw の符号（監査 R09） ----------------
+import numpy as _np47, soundfile as _sf47, math as _m47, json
+_s19 = _load("s19_47", "step19_realsmoke_convert.py")
+def _snaps47(azs, sr=48000, ysign=1.0):
+    """SN3D で衝撃音を az（左＋）に置く。W=s, Y=s·sin, Z=0, X=s·cos。1 秒間隔、暗騒音つき。"""
+    rng = _np47.random.default_rng(47); n = sr * (len(azs) + 1)
+    out = rng.normal(0, 1e-4, (n, 4)).astype(_np47.float32)
+    t = _np47.arange(int(sr * 0.02)) / sr
+    s = (_np47.sin(2 * _np47.pi * 3000 * t) * _np47.exp(-t / 0.004)).astype(_np47.float32)
+    for k, az in enumerate(azs):
+        o = sr * (k + 1); r = _m47.radians(az)
+        out[o:o + len(s), 0] += s; out[o:o + len(s), 1] += ysign * s * _m47.sin(r); out[o:o + len(s), 3] += s * _m47.cos(r)
+    return out, sr
+import tempfile as _tf47
+td47 = Path(_tf47.mkdtemp())
+def _run47(x, sr, expect="前,右,後,左"):
+    p = td47 / "snap47.wav"; _sf47.write(str(p), x, sr, subtype="PCM_24")
+    return subprocess.run([py, str(sc / "step19e_check_azimuth.py"), "--in", str(p), "--expect", expect, "--json", str(td47 / "snap47.json")], capture_output=True, text=True, encoding="utf-8", errors="replace")
+x47, sr47 = _snaps47([0, -90, 180, 90]); r47 = _run47(x47, sr47)
+j47 = json.loads((td47 / "snap47.json").read_text(encoding="utf-8"))
+check("T47a 正しい並び（前 0 / 右 −90 / 後 180 / 左 +90）を 4 打とも ±3° で読み、合格（rc=0）",
+      r47.returncode == 0 and j47["ok"] and len(j47["impulses"]) == 4 and all(abs(((r["az"] - e + 180) % 360) - 180) <= 3 for r, e in zip(j47["impulses"], [0, -90, 180, 90])),
+      f"(rc={r47.returncode}, az={[r['az'] for r in j47['impulses']]})")
+x47b, _ = _snaps47([0, -90, 180, 90], ysign=-1.0); r47b = _run47(x47b, sr47)
+check("T47b Y の符号が逆だと「左右が反転」と言い当てて不合格（rc=1）", r47b.returncode == 1 and "左右が反転" in r47b.stdout, f"(rc={r47b.returncode})")
+x47c, _ = _snaps47([12.0]); r47c = _run47(x47c, sr47, expect="前")
+j47c = json.loads((td47 / "snap47.json").read_text(encoding="utf-8"))
+R47 = _s19.rot_matrix(0, 0, j47c["yaw_for_step19"])
+v = R47 @ _np47.array([_m47.cos(_m47.radians(12.0)), _m47.sin(_m47.radians(12.0)), 0.0])   # (X,Y,Z) の順で回す
+az_after = _m47.degrees(_m47.atan2(v[1], v[0]))
+check("T47c 正面が +12° にずれた 1 打: 正面ズレ_deg=+12、--yaw=−12 を提示し、step19 の rot_matrix にその値を渡すと 0° に戻る（符号が一致）",
+      r47c.returncode == 1 and abs(j47c["front_offset_deg"] - 12.0) <= 1.5 and abs(j47c["yaw_for_step19"] + 12.0) <= 1.5 and abs(az_after) <= 1.5,
+      f"(front={j47c['front_offset_deg']}, yaw={j47c['yaw_for_step19']}, after={az_after:.1f})")
+
 if fails:
     print(f"NG: {len(fails)}件 {fails}")
     sys.exit(1)
