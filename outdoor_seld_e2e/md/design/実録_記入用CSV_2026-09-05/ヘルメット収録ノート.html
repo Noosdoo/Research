@@ -98,7 +98,7 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
 
 <div class="app">
 <header>
-  <div class="brand"><h1>ヘルメット収録ノート</h1><span class="sid"><span class="mono" id="hdrSid">セッションなし</span> · <span id="savedAt">自動保存</span></span></div>
+  <div class="brand"><h1>ヘルメット収録ノート</h1><span class="sid"><span class="mono" id="hdrSid">セッションなし</span> · <span id="savedAt">自動保存</span> · <span id="srvAt">サーバ —</span></span></div>
   <div class="next"><span class="lbl">次</span><span class="txt" id="nextTxt">セッションを作る</span></div>
 </header>
 
@@ -268,6 +268,19 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
 <!-- ================= 出力 ================= -->
 <section class="tab" id="tab-out">
   <div id="issues"></div>
+  <h2>保存先（3 か所）</h2>
+  <div class="card">
+    <div class="small" id="storeStatus">端末: 自動保存 / サーバ: — / ファイル: 下のボタン</div>
+    <div class="row" style="margin-top:10px"><button class="btn" style="flex:1" id="btnFileS">session.csv を保存</button><button class="btn" style="flex:1" id="btnFileE">events.csv を保存</button></div>
+    <div class="row" style="margin-top:8px"><button class="btn primary" style="flex:1" id="btnFileB">バックアップ（全記録・json）を保存</button></div>
+    <p class="small muted" style="margin:8px 0 0">保存したファイルは「ファイル」アプリ（iCloud Drive）に置くと PC にも同期される。バックアップ json は別の端末や別の URL でも「読み込む」で戻せる。</p>
+    <div class="row" style="margin-top:8px"><button class="btn" style="flex:1" id="btnImport">バックアップを読み込む（今の記録と置き換え）</button><input type="file" id="inImport" accept=".json,application/json" hidden></div>
+    <div id="srvBox" hidden>
+      <div class="hint" style="margin-top:10px">サーバ（claude.ai）にも保存のたびに自動で写している。端末を変えたときはここから戻せる。</div>
+      <div class="row" style="margin-top:8px"><button class="btn" style="flex:1" id="btnSrvList">サーバの記録を一覧</button></div>
+      <div id="srvList"></div>
+    </div>
+  </div>
   <h2>session.csv</h2>
   <div class="card">
     <div class="row"><button class="btn primary" style="flex:1" id="btnCopyS">コピー</button><button class="btn" id="btnShareS">共有</button></div>
@@ -330,7 +343,7 @@ try{const raw=localStorage.getItem(KEY); if(raw){const p=JSON.parse(raw); if(p&&
 S.sessions.forEach(s=>{if(!s.excluded)s.excluded=[];if(!s.ritual)s.ritual={calib:false,check:false};if(s.checkMode!=='1'&&s.checkMode!=='4')s.checkMode='4';});
 const $=id=>document.getElementById(id);
 function nowHM(){const d=new Date();return pad(d.getHours(),2)+':'+pad(d.getMinutes(),2);}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));const el=$('savedAt');if(el)el.textContent='保存 '+nowHM();}catch(e){const el=$('savedAt');if(el)el.textContent='保存できない';}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));const el=$('savedAt');if(el)el.textContent='端末 '+nowHM();}catch(e){const el=$('savedAt');if(el)el.textContent='端末に保存できない';}try{dbSync();}catch(e){}}
 function cur(){return S.sessions.find(s=>s.id===S.cur)||null;}
 function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),2200);}
 function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}}
@@ -550,10 +563,12 @@ function issuesOf(s){const out=[];if(s.take&&s.take.running)out.push({s:s,type:'
     Object.keys(byPair).forEach(p=>{if(!(byPair[p].has('静止')&&byPair[p].has('歩行')))out.push({s:s,type:'warn',text:s.id+' '+p+' は 静止と歩行の 2 本そろっていない（'+[...byPair[p]].join('・')+' だけ）。検査で止まる。もう 1 本録るか、その事象の pair を「なし」に'});});}
   return out;}
 function allIssues(){return S.sessions.flatMap(issuesOf);}
-function sessionCsv(){const rows=[S_COLS.join(',')];S.sessions.forEach(s=>{const note=s.note+(s.excluded.length?(s.note?'／':'')+'除外: '+s.excluded.map(x=>x.file).join(' '):'');
+function sessionCsv(){return sessionCsvOf(S.sessions);}
+function eventsCsv(){return eventsCsvOf(S.sessions);}
+function sessionCsvOf(list){const rows=[S_COLS.join(',')];list.forEach(s=>{const note=s.note+(s.excluded.length?(s.note?'／':'')+'除外: '+s.excluded.map(x=>x.file).join(' '):'');
   const r={session_id:s.id,'日付':s.date,'開始時刻':s.time,'場所':s.place,'区分':s.kubun,'用途':s.yoto,'装着':'ヘルメット','マイク高さ_cm':s.height,'校正原本':s.calibFile,'点検原本':s.checkFile,'点検方式':(s.checkMode==='1'?'前1打':'4方位'),'LAeq_dB':s.laeq,'暗騒音区間_秒':s.win,'水準器OK':s.level,'正面ズレ_deg':s.front,'天候':s.weather,'風_3段':s.wind,'協力者':s.helper,'備考':note};
   rows.push(S_COLS.map(c=>q(r[c])).join(','));});return rows.join('\n')+'\n';}
-function eventsCsv(){const rows=[E_COLS.join(',')];S.sessions.forEach(s=>{s.takes.forEach(t=>{t.events.forEach(ev=>{
+function eventsCsvOf(list){const rows=[E_COLS.join(',')];list.forEach(s=>{s.takes.forEach(t=>{t.events.forEach(ev=>{
   const ncar=ev.cls==='none'?0:(ev.group?t.events.filter(e=>e.group===ev.group).length:1);const car=ev.cls==='car_drive';
   const r={session_id:s.id,take_id:t.take_id,event_id:ev.event_id,'原本':t.file,'class':ev.cls,'象限':ev.quad,'ラップ秒':ev.lap===''?'':String(ev.lap),n_car:ncar,overlap_group_id:ev.group,'車種':car?ev.power:'','車両区分':car?ev.vtype:'','確認方法':car?ev.confirm:'','速度':car?ev.speed:'','横距離m':DIST_CLASSES.has(ev.cls)?ev.dist:'','状態':ev.stand,pair_id:ev.pair,'特記':ev.note};
   rows.push(E_COLS.map(c=>q(r[c])).join(','));});});});return rows.join('\n')+'\n';}
@@ -577,13 +592,55 @@ function renderOut(){const box=$('issues');box.innerHTML='';const iss=allIssues(
         r.appendChild(b1);r.appendChild(b2);}
       d.appendChild(r);c.appendChild(d);});box.appendChild(c);}
   ['btnCopyS','btnShareS','btnCopyE','btnShareE'].forEach(id=>$(id).disabled=hard.length>0);
-  $('outS').value=sessionCsv();$('outE').value=eventsCsv();$('outCmd').textContent=cmdText();}
+  $('outS').value=sessionCsv();$('outE').value=eventsCsv();$('outCmd').textContent=cmdText();try{renderSaved();}catch(e){}}
 async function copyText(text,el){if(el){el.focus();el.select();}try{await navigator.clipboard.writeText(text);toast('コピーした');return;}catch(e){}
   try{if(el&&document.execCommand('copy')){toast('コピーした');return;}}catch(e){}toast('コピーできない。長押しで選択して');}
 async function shareText(title,text){try{if(navigator.share){await navigator.share({title:title,text:text});return;}}catch(e){if(e&&e.name==='AbortError')return;}toast('共有が使えない端末。コピーを使って');}
 $('btnCopyS').onclick=()=>copyText(sessionCsv(),$('outS'));$('btnCopyE').onclick=()=>copyText(eventsCsv(),$('outE'));$('btnCopyC').onclick=()=>copyText(cmdText(),null);
 $('btnShareS').onclick=()=>shareText('session.csv',sessionCsv());$('btnShareE').onclick=()=>shareText('events.csv',eventsCsv());
-$('btnWipe').onclick=()=>{if(!armed('btnWipe','PC に貼り終えた？ もう一度押すと全部消す'))return;S={sessions:[],cur:null,prep:{},tab:'flow',check4Done:false};save();toast('消した');render();};
+$('btnWipe').onclick=()=>{if(!armed('btnWipe','PC に貼り終えた？ もう一度押すと全部消す'))return;S={sessions:[],cur:null,prep:{},tab:'flow',check4Done:false};selEv=null;editTakeId=null;save();toast('消した（サーバの写しも空になる。ファイルのバックアップは残る）');render();};
+
+// ---------- 保存先の 3 層: 端末（localStorage・即時）→ サーバ（claude.ai の db・自動）→ ファイル（downloads・手動） ----------
+let DBNS=null,DLNS=null,dbTimer=null,srv={ok:false,at:'',err:'',ready:false};
+const DEVICE=(()=>{try{let d=localStorage.getItem('helmet_note_device');if(!d){d='d'+Math.random().toString(36).slice(2,10);localStorage.setItem('helmet_note_device',d);}return d;}catch(e){return 'd'+Math.random().toString(36).slice(2,10);}})();
+function today8(){return today().replace(/-/g,'');}
+function renderSaved(){const el=$('srvAt');if(el)el.textContent=!srv.ready?'サーバ —':(srv.ok?'サーバ ✓ '+srv.at:'サーバ ✗ '+(srv.err||''));
+  const st=$('storeStatus');if(st)st.textContent='端末: 自動保存 / サーバ: '+(!srv.ready?'この画面では使えない（claude.ai の URL で開くと自動）':(srv.ok?'✓ '+srv.at+' に写した':'✗ '+(srv.err||'まだ')))+' / ファイル: 下のボタン';
+  const sb=$('srvBox');if(sb)sb.hidden=!srv.ready;}
+function dbSync(){if(!DBNS)return;clearTimeout(dbTimer);dbTimer=setTimeout(async()=>{try{
+  const snap=JSON.parse(JSON.stringify(S));const now=new Date().toISOString();
+  await DBNS.doc('notes/'+DEVICE).set({device:DEVICE,savedAt:now,n_sessions:S.sessions.length,cur:S.cur||'',state:snap});
+  const s=cur();if(s){await DBNS.doc('sessions/'+s.id).set({session_id:s.id,device:DEVICE,updatedAt:now,n_takes:s.takes.length,session_csv:sessionCsvOf([s]),events_csv:eventsCsvOf([s]),excluded:s.excluded.map(x=>x.file)});}
+  srv={ok:true,at:nowHM(),err:'',ready:true};}catch(e){srv={ok:false,at:nowHM(),err:(e&&e.code)||'error',ready:true};}renderSaved();},1500);}
+function backupJson(){return JSON.stringify({app:'helmet_note',version:1,device:DEVICE,savedAt:new Date().toISOString(),state:S},null,1);}
+function importBackup(text){const o=JSON.parse(text);const st=o&&o.state&&Array.isArray(o.state.sessions)?o.state:(o&&Array.isArray(o.sessions)?o:null);if(!st)throw new Error('バックアップの形式が違う');
+  S={sessions:st.sessions,cur:st.cur||null,prep:st.prep||{},tab:'flow',check4Done:!!st.check4Done};S.sessions.forEach(s=>{if(!s.excluded)s.excluded=[];if(!s.ritual)s.ritual={calib:false,check:false};if(s.checkMode!=='1'&&s.checkMode!=='4')s.checkMode='4';});
+  selEv=null;editTakeId=null;save();render();return S.sessions.length;}
+async function saveFile(name,text){
+  if(DLNS){try{await DLNS.save({filename:name,data:text});toast('保存した: '+name);}catch(e){const c=e&&e.code;if(c==='declined')return;toast('保存できない（'+(c||'')+'）');}return;}
+  try{const blob=new Blob([text],{type:'text/plain'});
+    if(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([blob],name)]})){await navigator.share({files:[new File([blob],name,{type:'text/plain'})],title:name});return;}
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{try{URL.revokeObjectURL(a.href);a.remove();}catch(e){}},3000);toast('ダウンロードした: '+name);
+  }catch(e){if(!(e&&e.name==='AbortError'))toast('保存できない。コピーを使って');}}
+$('btnFileS').onclick=()=>saveFile('session_'+today8()+'.csv',sessionCsv());
+$('btnFileE').onclick=()=>saveFile('events_'+today8()+'.csv',eventsCsv());
+$('btnFileB').onclick=()=>saveFile('helmet_note_backup_'+today8()+'.json',backupJson());
+$('btnImport').onclick=()=>{if(!armed('btnImport','今の記録と置き換える。もう一度押すとファイルを選ぶ'))return;$('inImport').value='';$('inImport').click();};
+$('inImport').onchange=()=>{const f=$('inImport').files&&$('inImport').files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const n=importBackup(String(r.result));toast('読み込んだ: セッション '+n+' 件');}catch(e){toast('読み込めない: '+e.message);}};r.readAsText(f);};
+$('btnSrvList').onclick=async()=>{if(!DBNS)return;const box=$('srvList');box.innerHTML='<p class="small muted">読み込み中…</p>';
+  try{const q=await DBNS.collection('notes').orderBy('savedAt','desc').limit(20).get();box.innerHTML='';
+    if(q.empty){box.innerHTML='<p class="small muted">サーバに記録はまだ無い</p>';return;}
+    q.docs.forEach(d=>{const x=d.data();const row=document.createElement('div');row.className='ev';row.innerHTML='<span class="l">'+(x.device===DEVICE?'この端末':'別の端末 '+x.device)+' <span class="badge">'+(x.n_sessions||0)+' セッション</span></span><span class="r mono">'+String(x.savedAt||'').replace('T',' ').slice(0,16)+'</span>';
+      const b=document.createElement('button');b.type='button';b.className='btn';b.style.cssText='min-height:36px;padding:6px 10px;font-size:13px';b.textContent='復元';const bid='rs_'+d.id;b.id=bid;
+      b.onclick=()=>{if(!armed(bid,'今の記録と置き換える。もう一度押す'))return;try{const n=importBackup(JSON.stringify({state:x.state}));toast('サーバから復元: セッション '+n+' 件');}catch(e){toast('復元できない: '+e.message);}};
+      row.appendChild(b);box.appendChild(row);});
+  }catch(e){box.innerHTML='<p class="small muted">読めない（'+((e&&e.code)||'error')+'）</p>';}};
+(async()=>{try{if(window.claude&&typeof window.claude.use==='function'){DBNS=await window.claude.use('db');DLNS=await window.claude.use('downloads');}}catch(e){DBNS=null;DLNS=null;}
+  srv.ready=!!DBNS;renderSaved();
+  if(DBNS){dbSync();
+    if(!S.sessions.length){try{const q=await DBNS.collection('notes').orderBy('savedAt','desc').limit(1).get();
+      if(!q.empty&&(q.docs[0].data().n_sessions||0)>0){toast('サーバに保存された記録がある。「出力」→「サーバの記録を一覧」から戻せる');}}catch(e){}}}})();
+try{window.__note={backupJson:backupJson,importBackup:importBackup,sessionCsv:sessionCsv,eventsCsv:eventsCsv};}catch(e){}
 
 // ---------- 全体 ----------
 function render(){const s=cur();$('hdrSid').textContent=s?s.id+(s.take&&s.take.running?' ● 記録中':''):'セッションなし';
