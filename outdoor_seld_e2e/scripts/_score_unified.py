@@ -187,7 +187,8 @@ def aggregate(stats: list) -> dict:
         crit=100 * T("crit", 0) / max(n_crit, 1), strong=100 * N("n_strong") / max(n_crit, 1),
         caut=100 * T("caut", 0) / max(n_caut, 1), safe=100 * T("safe", 0) / max(n_safe, 1),
         n_crit=n_crit, n_caut=n_caut, n_safe=n_safe,
-        lead=float(np.nanmedian(leads)), lead25=float(100 * np.nanmean(leads >= 2.5)), n_fire=N("n_fire"),
+        lead=(float(np.nanmedian(leads)) if np.isfinite(leads).any() else float("nan")),
+        lead25=(float(100 * np.nanmean(leads >= 2.5)) if np.isfinite(leads).any() else float("nan")), n_fire=N("n_fire"),
         det_close=100 * N("n_close_det") / max(N("n_close_gt"), 1), cap_all=100 * N("n_close_cap") / max(N("n_close_gt"), 1),
         cap_cond=100 * N("n_close_cap") / max(N("n_close_det"), 1), n_close_gt=N("n_close_gt"),
         fp=100 * N("n_safe_fp") / max(N("n_safe_pairs"), 1), close_med=float(np.median(close_est)) if close_est else float("nan"),
@@ -232,8 +233,13 @@ def main() -> int:
     mic_z = {r["clip_id"]: float(r["mic_z"]) for r in rows if r.get("mic_z")}
     bands = [float(x) for x in bands_s.split(",")] if bands_s else []
 
+    def _rel(p: Path) -> str:
+        try:
+            return str(p.relative_to(ROOT))
+        except ValueError:
+            return str(p)
     R = [f"# 統一採点（v4.3＋hold・方位帰属・manifest 固定・1対1・全GT分母） — {out_md.stem}", "",
-         f"plan= {plan.relative_to(ROOT)} ({split}{f', mix≤{clip_max}' if clip_max else ''}) = {len(clips):,} 本 / GT= {meta.relative_to(ROOT)} / "
+         f"plan= {_rel(plan)} ({split}{f', mix≤{clip_max}' if clip_max else ''}) = {len(clips):,} 本 / GT= {_rel(meta)} / "
          f"frame≥{minframe} / v4.3 = {V43.label43(C43)}", "",
          "本数(予測あり)= manifest の本数（うち予測ファイルにあった本数。無い本は発火ゼロとして採点）。到達・抑制= 車ごとの方位帰属（±0.5 s・≤30°）。",
          "検出率= GT≤1.5 m のフレームのうち 1 対 1 で対応した割合。至近捕捉(全GT)= GT≤1.5 m のうち対応した予測が ≤1.5 m の割合（未検出は不捕捉）。",
