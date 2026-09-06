@@ -96,6 +96,11 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
             if sid in ses and (sid, "mic") not in seen:
                 warns.append(f"{sid}: session.csv に マイク高さ_cm が無い（v17b は装着高さをモデルに入力する。実測して cm で書く）"); seen.add((sid, "mic"))
         kubun = srow.get("区分", "")
+        yoto = (srow.get("用途", "") or "").strip()
+        if yoto not in ("最終評価", "調整用"):
+            if (sid, "yoto") not in seen:
+                warns.append(f"{sid}: 用途 '{yoto}' は 最終評価／調整用 のどちらでもない → 保留（<out>_unresolved.csv）。記録紙を直す（再監査2 Q05）"); seen.add((sid, "yoto"))
+            yoto = "未確定"
         kind = "歩行" if (r.get("pair_id", "") or kubun == "歩行対比") else kubun
         if kubun == "歩行対比" and cls != "none" and not r.get("pair_id", ""):
             warns.append(f"{sid}/take{tk}: 区分=歩行対比 なのに pair_id が無い（静止/歩行の 2 本に同じ P 番号を付ける）")
@@ -107,7 +112,7 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
             warns.append(f"{sid}/take{tk}: event_id {ev} が重複")
         seen.add(key)
         orig = r.get("原本", "") or f"{sid}_take{tk}.wav"
-        clip_key = Path(orig).stem if r.get("原本", "") else f"{sid}_take{tk}"
+        clip_key = f"{sid}__{Path(orig).stem}" if r.get("原本", "") else f"{sid}_take{tk}"   # session__原本: 別セッションの同名原本と衝突しない（再監査2 Q03）
         calib_file = srow.get("校正原本", "") or f"{sid}_calib.wav"
         # 校正 id は校正原本の stem（step19 --calib の既定 calib_id と同じ）。校正原本が無い旧様式だけ <session>_calib
         calib_id = Path(calib_file).stem
@@ -152,7 +157,7 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
             "session_id": sid, "orig_file": orig, "calibration_id": calib_id, "calib_file": calib_file,
             "check_file": check_file, "点検方式": srow.get("点検方式", ""), "excluded_files": excluded,
             "LAeq_dB": srow.get("LAeq_dB", ""), "暗騒音区間_秒": srow.get("暗騒音区間_秒", ""), "t_start_rule": rule,
-            "用途": (srow.get("用途", "") or "最終評価"),
+            "用途": yoto,
             "mic_z": mic_z})
     return out, warns
 
@@ -168,7 +173,13 @@ def main() -> int:
     rows, warns = convert(sessions, events, pre, lap_offset, audio_dir, warn_span)
     out_path.parent.mkdir(parents=True, exist_ok=True)
     tuning = [r for r in rows if r.get("用途") == "調整用"]
-    rows = [r for r in rows if r.get("用途") != "調整用"]
+    unresolved = [r for r in rows if r.get("用途") == "未確定"]
+    rows = [r for r in rows if r.get("用途") == "最終評価"]
+    if unresolved:
+        upath = out_path.with_name(out_path.stem + "_unresolved.csv")
+        with open(upath, "w", newline="", encoding="utf-8") as f:
+            w = csv.DictWriter(f, fieldnames=OUT_COLS); w.writeheader(); w.writerows(unresolved)
+        print(f"用途が未確定の {len(unresolved)} 行は評価用にも調整用にも入れず保留 -> {upath}")
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=OUT_COLS); w.writeheader(); w.writerows(rows)
     # セッション表（<out>_sessions.csv）: 事象が 0 行のセッションでも校正・点検・除外の原本名を step19b に渡す（ノート監査 H01/H02）

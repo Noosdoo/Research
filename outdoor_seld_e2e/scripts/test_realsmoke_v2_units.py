@@ -690,8 +690,8 @@ with tempfile.TemporaryDirectory() as td:
 
 # ---------------- T39: 現場 CSV（2 セッション・同じ take 番号）→ ann_orig（監査 R04） ----------------
 s19d = _load("s19dfield", "step19d_field_csv_to_ann.py")
-sessions = [{"session_id": "S1", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "10-70", "マイク高さ_cm": "205"},
-            {"session_id": "S2", "区分": "A", "LAeq_dB": "50.1", "暗騒音区間_秒": "10-70", "マイク高さ_cm": "205"}]
+sessions = [{"session_id": "S1", "区分": "A", "用途": "最終評価", "LAeq_dB": "52.3", "暗騒音区間_秒": "10-70", "マイク高さ_cm": "205"},
+            {"session_id": "S2", "区分": "A", "用途": "最終評価", "LAeq_dB": "50.1", "暗騒音区間_秒": "10-70", "マイク高さ_cm": "205"}]
 events = [{"session_id": "S1", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "8.4", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""},
           {"session_id": "S1", "take_id": "2", "event_id": "1", "class": "car_drive", "象限": "F", "ラップ秒": "7.0", "n_car": "1", "横距離m": "1.0", "状態": "静止", "pair_id": ""},
           {"session_id": "S1", "take_id": "3", "event_id": "1", "class": "none", "象限": "", "ラップ秒": "", "n_car": "0", "横距離m": "", "状態": "静止", "pair_id": ""},
@@ -776,7 +776,7 @@ rows43 = [dict(base43, clip_id="clipA", take_id="A-1", pair_id="", 状態="静�
           dict(base43, clip_id="clipP1w", take_id="W-2", pair_id="P1", 状態="歩行", 区分="歩行", trial="walk")]
 ev43, _, _ = v3.evaluate(rows43, pred43, cfg43, (2.5, 1.5), 7.5, False)
 main43, side43, _ = v3.summarize(ev43, False)
-pairs43, diffs43 = v3.walk_pairs_summary(side43["walk"])
+pairs43, diffs43, _amb43 = v3.walk_pairs_summary(side43["walk"])
 check("T43 歩行対比: A 1 本だけが主要評価、静止側も含めた対 1 組は別集計、検出フレーム率が出る（歩行 < 静止）",
       len(main43) == 1 and len(side43["walk"]) == 2 and len(pairs43) == 1 and pairs43[0][3] is not None and pairs43[0][4] is not None
       and pairs43[0][4] < pairs43[0][3] and diffs43 and diffs43[0] < 0,
@@ -812,9 +812,9 @@ with tempfile.TemporaryDirectory() as td:
         sf.write(str(raw / name), np.tile((amp * np.sin(2 * np.pi * 1000.0 * tt))[:, None], (1, 4)).astype(np.float32), fs)
     wav("S1_calib.wav", 0.01); wav("ZOOM0001.wav", 0.01); wav("S2_calib.wav", 0.001); wav("REC_A.wav", 0.001)
     with open(td / "session.csv", "w", newline="", encoding="utf-8") as f:
-        w = _csv45.DictWriter(f, fieldnames=["session_id", "区分", "LAeq_dB", "暗騒音区間_秒", "校正原本", "マイク高さ_cm"]); w.writeheader()
-        w.writerow({"session_id": "S1", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S1_calib.wav", "マイク高さ_cm": "205"})
-        w.writerow({"session_id": "S2", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S2_calib.wav", "マイク高さ_cm": "205"})
+        w = _csv45.DictWriter(f, fieldnames=["session_id", "区分", "用途", "LAeq_dB", "暗騒音区間_秒", "校正原本", "マイク高さ_cm"]); w.writeheader()
+        w.writerow({"session_id": "S1", "区分": "A", "用途": "最終評価", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S1_calib.wav", "マイク高さ_cm": "205"})
+        w.writerow({"session_id": "S2", "区分": "A", "用途": "最終評価", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S2_calib.wav", "マイク高さ_cm": "205"})
     with open(td / "events.csv", "w", newline="", encoding="utf-8") as f:
         w = _csv45.DictWriter(f, fieldnames=["session_id", "take_id", "event_id", "class", "象限", "ラップ秒", "n_car", "横距離m", "状態", "pair_id", "原本"]); w.writeheader()
         w.writerow({"session_id": "S1", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "9.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": "", "原本": "ZOOM0001.wav"})
@@ -827,14 +827,14 @@ with tempfile.TemporaryDirectory() as td:
     r4 = subprocess.run([py, str(sc / "step19b_realsmoke_cut.py"), "--mode", "event", "--in", str(raw), "--ann", str(td / "ann_orig.csv"), "--calib-dir", str(conv), "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", str(td / "clips"), "--ann-out", str(td / "ann_all.csv")], capture_output=True, text=True, encoding="utf-8", errors="replace")
     r5 = subprocess.run([py, str(sc / "step19c_ann_validate.py"), "--ann", str(td / "ann_all.csv"), "--cut", "--plan", "A=2"], capture_output=True, text=True, encoding="utf-8", errors="replace")
     ann_all = list(_csv45.DictReader(open(td / "ann_all.csv", encoding="utf-8-sig"))) if (td / "ann_all.csv").exists() else []
-    g = {r["clip_id"]: (r.get("calibration_id"), float(r.get("gain_db") or 0)) for r in ann_all}
+    g = {r["orig_file"]: (r.get("calibration_id"), float(r.get("gain_db") or 0)) for r in ann_all}
     j1 = _json42.loads((conv / "calibration_S1_calib.json").read_text(encoding="utf-8")) if (conv / "calibration_S1_calib.json").exists() else {}
     j2 = _json42.loads((conv / "calibration_S2_calib.json").read_text(encoding="utf-8")) if (conv / "calibration_S2_calib.json").exists() else {}
     ok45 = (r1.returncode == 0 and r2.returncode == 0 and r3.returncode == 0 and r4.returncode == 0 and r5.returncode == 0
-            and len(ann_all) == 2 and "ZOOM0001_e1" in g and "REC_A_e1" in g
-            and g["ZOOM0001_e1"][0] == "S1_calib" and g["REC_A_e1"][0] == "S2_calib"
-            and abs(g["ZOOM0001_e1"][1] - j1.get("gain_db", 99)) < 0.05 and abs(g["REC_A_e1"][1] - j2.get("gain_db", 99)) < 0.05
-            and abs((g["REC_A_e1"][1] - g["ZOOM0001_e1"][1]) - 20.0) < 0.3
+            and len(ann_all) == 2 and "ZOOM0001" in g and "REC_A" in g and {r["clip_id"] for r in ann_all} == {"S1__ZOOM0001_e1", "S2__REC_A_e1"}
+            and g["ZOOM0001"][0] == "S1_calib" and g["REC_A"][0] == "S2_calib"
+            and abs(g["ZOOM0001"][1] - j1.get("gain_db", 99)) < 0.05 and abs(g["REC_A"][1] - j2.get("gain_db", 99)) < 0.05
+            and abs((g["REC_A"][1] - g["ZOOM0001"][1]) - 20.0) < 0.3
             and all(r.get("mic_z") == "2.050" for r in ann_all))
     check("T45 現場CSV→変換→校正→切り出し→検査を 2 セッション・任意の原本名で通し、各原本に自分の校正の補正量（差 20 dB）が付く",
           ok45, f"(rc={[r.returncode for r in (r1, r2, r3, r4, r5)]}, rows={len(ann_all)}, g={g}, j1={j1.get('gain_db')}, j2={j2.get('gain_db')})"
@@ -918,6 +918,132 @@ ev49 = [{"session_id": "W1", "take_id": "1", "event_id": "1", "class": "car_driv
 rows49, warns49 = s19d.convert(sess49, ev49, 6.0, 0.0, None)
 check("T49 歩行対比: 2 行とも 区分=歩行・trial=walk、pair 無しの行だけ警告", len(rows49) == 2 and all(r["区分"] == "歩行" and r["trial"] == "walk" for r in rows49)
       and sum("pair_id が無い" in w for w in warns49) == 1, f"(区分={[r['区分'] for r in rows49]}, warns={warns49})")
+
+# ---------------- T50: 再監査2 残条件1 — 96 kHz 原本・2 セッション（校正が違う）・正例・負例 2 本・統合注釈で、追加引数なしに 変換→校正→切り出し(event/negative --append)→検査 が通る（Q01） ----------------
+_td50 = tempfile.mkdtemp(); td50 = Path(_td50); raw50 = td50 / "raw"; raw50.mkdir(); conv50 = td50 / "conv"
+import soundfile as _sf50, subprocess as _sp50, csv as _csv50, json as _json50
+_fs50 = 96000; _tt50 = np.arange(_fs50 * 11) / _fs50
+def _wav50(name, amp, fs=_fs50, tt=_tt50, d=raw50):
+    _sf50.write(str(d / name), np.tile((amp * np.sin(2 * np.pi * 1000.0 * tt))[:, None], (1, 4)).astype(np.float32), fs)
+for _n, _a in (("S1_calib.wav", 0.01), ("ZOOM0003.wav", 0.01), ("NEG1.wav", 0.01), ("NEG2.wav", 0.01), ("S2_calib.wav", 0.001), ("REC_A.wav", 0.001)):
+    _wav50(_n, _a)
+with open(td50 / "session.csv", "w", newline="", encoding="utf-8") as f:
+    w = _csv50.DictWriter(f, fieldnames=["session_id", "区分", "用途", "LAeq_dB", "暗騒音区間_秒", "校正原本", "マイク高さ_cm", "備考"]); w.writeheader()
+    w.writerow({"session_id": "S1", "区分": "A", "用途": "最終評価", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-11", "校正原本": "S1_calib.wav", "マイク高さ_cm": "205", "備考": ""})
+    w.writerow({"session_id": "S2", "区分": "A", "用途": "最終評価", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-11", "校正原本": "S2_calib.wav", "マイク高さ_cm": "205", "備考": "ゲイン変更後は新セッション"})
+with open(td50 / "events.csv", "w", newline="", encoding="utf-8") as f:
+    w = _csv50.DictWriter(f, fieldnames=["session_id", "take_id", "event_id", "原本", "class", "象限", "ラップ秒", "n_car", "横距離m", "状態", "pair_id"]); w.writeheader()
+    w.writerow({"session_id": "S1", "take_id": "1", "event_id": "1", "原本": "ZOOM0003.wav", "class": "car_drive", "象限": "R", "ラップ秒": "8.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""})
+    w.writerow({"session_id": "S1", "take_id": "2", "event_id": "1", "原本": "NEG1.wav", "class": "none", "象限": "", "ラップ秒": "", "n_car": "0", "横距離m": "", "状態": "静止", "pair_id": ""})
+    w.writerow({"session_id": "S1", "take_id": "3", "event_id": "1", "原本": "NEG2.wav", "class": "none", "象限": "", "ラップ秒": "", "n_car": "0", "横距離m": "", "状態": "静止", "pair_id": ""})
+    w.writerow({"session_id": "S2", "take_id": "1", "event_id": "1", "原本": "REC_A.wav", "class": "car_drive", "象限": "L", "ラップ秒": "8.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""})
+py = sys.executable; sc = ROOT / "scripts"
+def _run50(args):
+    return _sp50.run([py] + [str(a) for a in args], capture_output=True, text=True, encoding="utf-8", errors="replace")
+b1 = _run50([sc / "step19d_field_csv_to_ann.py", "--session", td50 / "session.csv", "--events", td50 / "events.csv", "--out", td50 / "ann_orig.csv", "--audio-dir", raw50])
+b2 = _run50([sc / "step19_realsmoke_convert.py", "--in", raw50, "--calib", raw50 / "S1_calib.wav", "--laeq", "52.3", "--gain-only", "--out", conv50])
+b3 = _run50([sc / "step19_realsmoke_convert.py", "--in", raw50, "--calib", raw50 / "S2_calib.wav", "--laeq", "52.3", "--gain-only", "--out", conv50])
+b4 = _run50([sc / "step19b_realsmoke_cut.py", "--mode", "event", "--in", raw50, "--ann", td50 / "ann_orig.csv", "--calib-dir", conv50, "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", td50 / "clips", "--ann-out", td50 / "ann_all.csv"])
+b5 = _run50([sc / "step19b_realsmoke_cut.py", "--mode", "negative", "--in", raw50 / "NEG1.wav", "--ann", td50 / "ann_orig.csv", "--calib-dir", conv50, "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", td50 / "clips", "--ann-out", td50 / "ann_all.csv", "--append"])
+b6 = _run50([sc / "step19b_realsmoke_cut.py", "--mode", "negative", "--in", raw50 / "NEG2.wav", "--ann", td50 / "ann_orig.csv", "--calib-dir", conv50, "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", td50 / "clips", "--ann-out", td50 / "ann_all.csv", "--append"])
+b7 = _run50([sc / "step19c_ann_validate.py", "--ann", td50 / "ann_all.csv", "--cut", "--plan", "A=2"])
+rows50 = list(_csv50.DictReader(open(td50 / "ann_all.csv", encoding="utf-8-sig"))) if (td50 / "ann_all.csv").exists() else []
+_pos50 = [r for r in rows50 if r["class"] != "none" and r.get("scored") == "1"]; _neg50 = [r for r in rows50 if r["class"] == "none"]
+_gain50 = {r["orig_file"]: float(r.get("gain_db") or 0) for r in rows50}
+_flac50 = sorted(p.name for p in (td50 / "clips").glob("*.flac")) if (td50 / "clips").exists() else []
+_sr50 = _sf50.info(str(td50 / "clips" / _flac50[0])).samplerate if _flac50 else 0
+check("T50 96 kHz・2 セッション・正例 2・負例 2 本（1 本ずつ --append）を追加引数なし（--gain-db なし・校正 json）で通し、clip_id が session__原本、校正が各セッションの補正量（差 20 dB）、負例 4 クリップ、出力 24 kHz、検査 rc=0",
+      all(x.returncode == 0 for x in (b1, b2, b3, b4, b5, b6, b7)) and len(_pos50) == 2 and len(_neg50) == 4
+      and {r["clip_id"] for r in _pos50} == {"S1__ZOOM0003_e1", "S2__REC_A_e1"} and all(r["clip_id"].startswith("S1__NEG") for r in _neg50)
+      and {r["calibration_id"] for r in rows50 if r["orig_file"].startswith(("ZOOM", "NEG"))} == {"S1_calib"} and {r["calibration_id"] for r in rows50 if r["orig_file"] == "REC_A"} == {"S2_calib"}
+      and abs((_gain50.get("REC_A", 0) - _gain50.get("ZOOM0003", 0)) - 20.0) < 0.3 and len(_flac50) == 6 and _sr50 == 24000,
+      f"(rc={[x.returncode for x in (b1, b2, b3, b4, b5, b6, b7)]}, pos={[r['clip_id'] for r in _pos50]}, neg={len(_neg50)}, gains={_gain50}, flac={len(_flac50)}@{_sr50})"
+      + ("" if all(x.returncode == 0 for x in (b4, b5, b6, b7)) else f"\n  19b: {b4.stdout[-300:]}{b4.stderr[-300:]}\n  neg1: {b5.stdout[-300:]}{b5.stderr[-300:]}\n  19c: {b7.stdout[-300:]}"))
+
+# ---------------- T51: Q02 — 校正 json の欠落・CLI id の食い違い・記録紙の暗騒音区間と json の窓の不一致は停止 ----------------
+_empty51 = td50 / "conv_empty"; _empty51.mkdir()
+c1 = _run50([sc / "step19b_realsmoke_cut.py", "--mode", "event", "--in", raw50, "--ann", td50 / "ann_orig.csv", "--calib-dir", _empty51, "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", td50 / "c51a", "--ann-out", td50 / "c51a.csv"])
+c2 = _run50([sc / "step19b_realsmoke_cut.py", "--mode", "event", "--in", raw50, "--ann", td50 / "ann_orig.csv", "--calib-dir", td50 / "no_such_dir", "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", td50 / "c51b", "--ann-out", td50 / "c51b.csv"])
+c3 = _run50([sc / "step19b_realsmoke_cut.py", "--mode", "event", "--in", raw50, "--ann", td50 / "ann_orig.csv", "--calib-dir", conv50, "--calibration-id", "S2_calib", "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", td50 / "c51c", "--ann-out", td50 / "c51c.csv"])
+_ann51 = list(_csv50.DictReader(open(td50 / "ann_orig.csv", encoding="utf-8-sig")))
+for r in _ann51: r["暗騒音区間_秒"] = "10-70"
+with open(td50 / "ann_win.csv", "w", newline="", encoding="utf-8") as f:
+    w = _csv50.DictWriter(f, fieldnames=list(_ann51[0].keys())); w.writeheader(); w.writerows(_ann51)
+c4 = _run50([sc / "step19b_realsmoke_cut.py", "--mode", "event", "--in", raw50, "--ann", td50 / "ann_win.csv", "--calib-dir", conv50, "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", td50 / "c51d", "--ann-out", td50 / "c51d.csv"])
+check("T51 Q02: 空の --calib-dir／無いフォルダ → rc=1（0 dB で続行しない）、--calibration-id が注釈と食い違う → rc=1、記録紙の暗騒音区間 10-70 と json の窓 0-11 が違う → rc=1",
+      c1.returncode == 1 and "calibration_*.json がありません" in c1.stdout and c2.returncode == 1
+      and c3.returncode != 0 and "違います" in (c3.stdout + c3.stderr) and c4.returncode != 0 and "暗騒音区間" in (c4.stdout + c4.stderr),
+      f"(rc={[c1.returncode, c2.returncode, c3.returncode, c4.returncode]}, c3={(c3.stdout + c3.stderr)[-160:]!r}, c4={(c4.stdout + c4.stderr)[-160:]!r})")
+
+# ---------------- T52: Q03 — 別セッションの同名原本（ZOOM0001.wav）は clip_id が session__原本 で区別され、--session なしでは停止、--append で前の行と音声が残る ----------------
+td52 = Path(tempfile.mkdtemp()); rawA = td52 / "rawA"; rawB = td52 / "rawB"; rawA.mkdir(); rawB.mkdir()
+_fs52 = 24000; _tt52 = np.arange(_fs52 * 12) / _fs52
+_wav50("ZOOM0001.wav", 0.01, _fs52, _tt52, rawA); _wav50("ZOOM0001.wav", 0.001, _fs52, _tt52, rawB)
+_wav50("S1_calib.wav", 0.01, _fs52, _tt52, rawA); _wav50("S2_calib.wav", 0.001, _fs52, _tt52, rawB)
+conv52 = td52 / "conv"
+with open(td52 / "session.csv", "w", newline="", encoding="utf-8") as f:
+    w = _csv50.DictWriter(f, fieldnames=["session_id", "区分", "用途", "LAeq_dB", "暗騒音区間_秒", "校正原本", "マイク高さ_cm"]); w.writeheader()
+    w.writerow({"session_id": "S1", "区分": "A", "用途": "最終評価", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S1_calib.wav", "マイク高さ_cm": "205"})
+    w.writerow({"session_id": "S2", "区分": "A", "用途": "最終評価", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "S2_calib.wav", "マイク高さ_cm": "205"})
+with open(td52 / "events.csv", "w", newline="", encoding="utf-8") as f:
+    w = _csv50.DictWriter(f, fieldnames=["session_id", "take_id", "event_id", "原本", "class", "象限", "ラップ秒", "n_car", "横距離m", "状態", "pair_id"]); w.writeheader()
+    w.writerow({"session_id": "S1", "take_id": "1", "event_id": "1", "原本": "ZOOM0001.wav", "class": "car_drive", "象限": "R", "ラップ秒": "8.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""})
+    w.writerow({"session_id": "S2", "take_id": "1", "event_id": "1", "原本": "ZOOM0001.wav", "class": "car_drive", "象限": "L", "ラップ秒": "8.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""})
+d1 = _run50([sc / "step19d_field_csv_to_ann.py", "--session", td52 / "session.csv", "--events", td52 / "events.csv", "--out", td52 / "ann_orig.csv"])
+_run50([sc / "step19_realsmoke_convert.py", "--in", rawA, "--calib", rawA / "S1_calib.wav", "--laeq", "52.3", "--gain-only", "--out", conv52])
+_run50([sc / "step19_realsmoke_convert.py", "--in", rawB, "--calib", rawB / "S2_calib.wav", "--laeq", "52.3", "--gain-only", "--out", conv52])
+d2 = _run50([sc / "step19b_realsmoke_cut.py", "--mode", "event", "--in", rawA, "--ann", td52 / "ann_orig.csv", "--calib-dir", conv52, "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", td52 / "clips", "--ann-out", td52 / "ann_all.csv"])
+d3 = _run50([sc / "step19b_realsmoke_cut.py", "--mode", "event", "--session", "S1", "--in", rawA, "--ann", td52 / "ann_orig.csv", "--calib-dir", conv52, "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", td52 / "clips", "--ann-out", td52 / "ann_all.csv"])
+d4 = _run50([sc / "step19b_realsmoke_cut.py", "--mode", "event", "--session", "S2", "--in", rawB, "--ann", td52 / "ann_orig.csv", "--calib-dir", conv52, "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", td52 / "clips", "--ann-out", td52 / "ann_all.csv", "--append"])
+rows52 = list(_csv50.DictReader(open(td52 / "ann_all.csv", encoding="utf-8-sig"))) if (td52 / "ann_all.csv").exists() else []
+_flac52 = sorted(p.name for p in (td52 / "clips").glob("*.flac")) if (td52 / "clips").exists() else []
+check("T52 Q03: 同名原本が 2 セッション → --session なしは rc=1、--session S1 → S2 --append で 2 行（S1__ZOOM0001_e1 / S2__ZOOM0001_e1）と 2 本の音声が両方残り、校正もそれぞれ",
+      d1.returncode == 0 and d2.returncode == 1 and "複数セッション" in d2.stdout and d3.returncode == 0 and d4.returncode == 0
+      and {r["clip_id"] for r in rows52} == {"S1__ZOOM0001_e1", "S2__ZOOM0001_e1"} and {r["calibration_id"] for r in rows52} == {"S1_calib", "S2_calib"}
+      and _flac52 == ["S1__ZOOM0001_e1.flac", "S2__ZOOM0001_e1.flac"],
+      f"(rc={[d1.returncode, d2.returncode, d3.returncode, d4.returncode]}, clips={[r['clip_id'] for r in rows52]}, flac={_flac52}, d2={d2.stdout[-160:]!r})")
+
+# ---------------- T53: Q04 — 歩行対は (pair, class) で対応づけ、同じ状態に 2 件ある対は未集計＋警告（最後の 1 件に置き換えない） ----------------
+s20q = _load("s20q", "step20_realsmoke_score_v3.py")
+_we = lambda pid, st, cls, fr: {"pair_id": pid, "state": st, "class": cls, "frame_recall": fr, "notified": True}
+w53 = [_we("P1", "静止", "car_drive", 1.0), _we("P1", "静止", "horn", 0.0), _we("P1", "歩行", "car_drive", 0.5), _we("P1", "歩行", "horn", 1.0),
+       _we("P2", "静止", "car_drive", 0.8), _we("P2", "静止", "car_drive", 0.6), _we("P2", "歩行", "car_drive", 0.7)]
+r53, dif53, amb53 = s20q.walk_pairs_summary(w53)
+check("T53 Q04: P1 は 車 −0.5 と クラクション +1.0 の 2 対、P2（静止に車 2 件）は未集計として返る",
+      [x[0] for x in r53] == ["P1/car_drive", "P1/horn"] and sorted(round(d, 3) for d in dif53) == [-0.5, 1.0] and len(amb53) == 1 and amb53[0][0] == "P2",
+      f"(rows={[x[0] for x in r53]}, diffs={dif53}, amb={amb53})")
+
+# ---------------- T54: Q05 — 用途が空欄・未知（「調整」）の行は評価用にも調整用にも入れず保留（rc=1・_unresolved.csv） ----------------
+sess54 = [{"session_id": "U1", "区分": "A", "用途": "", "マイク高さ_cm": "205"}, {"session_id": "U2", "区分": "A", "用途": "調整", "マイク高さ_cm": "205"}, {"session_id": "U3", "区分": "A", "用途": "最終評価", "マイク高さ_cm": "205"}]
+ev54 = [{"session_id": sid, "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "8.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""} for sid in ("U1", "U2", "U3")]
+rows54, warns54 = s19d.convert(sess54, ev54, 6.0, 0.0, None)
+td54 = Path(tempfile.mkdtemp())
+with open(td54 / "session.csv", "w", newline="", encoding="utf-8") as f:
+    w = _csv50.DictWriter(f, fieldnames=list(sess54[0].keys())); w.writeheader(); w.writerows(sess54)
+with open(td54 / "events.csv", "w", newline="", encoding="utf-8") as f:
+    w = _csv50.DictWriter(f, fieldnames=list(ev54[0].keys())); w.writeheader(); w.writerows(ev54)
+e54 = _run50([sc / "step19d_field_csv_to_ann.py", "--session", td54 / "session.csv", "--events", td54 / "events.csv", "--out", td54 / "ann_orig.csv"])
+main54 = list(_csv50.DictReader(open(td54 / "ann_orig.csv", encoding="utf-8-sig")))
+unres54 = list(_csv50.DictReader(open(td54 / "ann_orig_unresolved.csv", encoding="utf-8-sig"))) if (td54 / "ann_orig_unresolved.csv").exists() else []
+check("T54 Q05: 用途 空欄／「調整」は 未確定 として警告、CLI では評価用 CSV に入らず保留ファイルへ（rc=1）。最終評価だけが本体に残る",
+      [r["用途"] for r in rows54] == ["未確定", "未確定", "最終評価"] and sum("用途" in w for w in warns54) == 2
+      and e54.returncode == 1 and [r["session_id"] for r in main54] == ["U3"] and sorted(r["session_id"] for r in unres54) == ["U1", "U2"],
+      f"(用途={[r['用途'] for r in rows54]}, rc={e54.returncode}, main={[r['session_id'] for r in main54]}, unres={[r['session_id'] for r in unres54]})")
+
+# ---------------- T55: Q06 — 警告音の方向は「通知が出た瞬間の推定方位」を鳴り始めの向きと比べる（1 秒の平均ではない） ----------------
+_cfg55 = s20q.V43.Cfg43(**_json50.loads((ROOT / "out/notify_v43_sweep/winner.json").read_text(encoding="utf-8")))
+_ci55 = s20q.CLS_IDX["horn"]; _fps55 = s20q.FPS
+_frames55 = {}
+_k0 = int(round(3.0 * _fps55))
+for k in range(_k0, _k0 + int(_fps55) + 1):          # 鳴り始め 3.0 s から 1 秒: 最初の 3 フレームは −110°（右）、その後 −170°（後）へ移る
+    _frames55[k] = [(_ci55, -110.0 if k < _k0 + 3 else -170.0, 0.0, float("nan"))]
+_rows55 = [{"clip_id": "w1", "event_id": "1", "trial": "t1", "class": "horn", "quadrant": "R", "t_start": "3.00", "t_cpa": "6.00", "take_id": "W/01", "pair_id": "", "区分": "D", "状態": "静止", "横距離m": "", "n_car": "1", "scored": "1"}]
+_ev55, _, _ = s20q.evaluate(_rows55, {"w1": _frames55}, _cfg55, (2.5, 1.5), 7.5, False, 1.0)
+_e55 = _ev55[0]
+_med55 = s20q.median_az(_frames55, _ci55, 3.0, 4.0)
+check("T55 Q06: 鳴り始め −110°（右）→ 1 秒で −170° に動く音: 1 秒平均は −140°（後）で不一致になるが、通知が出た瞬間の推定は右で一致（quad_ok=True）",
+      _e55["notified"] is True and _e55["quad_ok"] is True and abs(_e55["az_est"] + 110.0) < 1.0 and s20q.quadrant_of(_med55) == "B",
+      f"(notified={_e55['notified']}, az_est={_e55['az_est']}, quad_ok={_e55['quad_ok']}, 1秒平均={_med55:.0f}°→{s20q.quadrant_of(_med55)})")
 
 if fails:
     print(f"NG: {len(fails)}件 {fails}")

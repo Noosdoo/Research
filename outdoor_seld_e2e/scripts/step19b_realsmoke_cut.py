@@ -38,10 +38,11 @@
       --in out/realsmoke/converted --ann ann_orig.csv \
       --out out/realsmoke/clips --ann-out out/realsmoke/ann_clips.csv
 
-  # ②長時間負例の分割（96kHz原本＋別途求めたゲインを入力）
+  # ②長時間負例の分割（96kHz原本＋校正 json）。--in が 1 ファイルなら照合はそのファイルだけ（--only a.wav,b.wav でも同じ）
   python scripts/step19b_realsmoke_cut.py --mode negative \
-      --in raw/neg_shizuka.wav --ann ann_orig.csv --gain-db 12.3 \
-      --out out/realsmoke/clips --ann-out out/realsmoke/ann_neg.csv
+      --in raw/neg_shizuka.wav --ann ann_orig.csv --calib-dir out/realsmoke/conv --pitch 0 --roll 0 --yaw 0 \
+      --out out/realsmoke/clips --ann-out out/realsmoke/ann_all.csv --append
+  # 同じ原本名が複数セッションにあるときは --session <session_id> で 1 セッションずつ（出力名は session__原本_eN）
 """
 from __future__ import annotations
 
@@ -96,15 +97,17 @@ def orig_key(name: str) -> str:
     return stem[:-5] if stem.endswith("_conv") else stem
 
 
-def require_raw_metadata(input_fs: int, argv=None) -> None:
+def require_raw_metadata(input_fs: int, argv=None, have_calib: bool = False) -> None:
     """24kHz変換済みでない入力では、較正値と3軸角の明示指定を必須にする。
+
+    have_calib=True（--calib-dir の有効な校正 json がある）なら --gain-db は不要（補正量は json から取る・再監査2 Q01）。
 
     角度0°やゲイン0dB自体は有効なので値ではなく、CLIで明示された事実を検査する。
     これにより原本を直接切る際の「指定し忘れ」を黙って通さない。"""
     if input_fs == FS_OUT:
         return
     argv = sys.argv if argv is None else argv
-    required = ("--gain-db", "--pitch", "--roll", "--yaw")
+    required = ("--pitch", "--roll", "--yaw") if have_calib else ("--gain-db", "--pitch", "--roll", "--yaw")
     missing = [name for name in required if name not in argv]
     if missing:
         raise ValueError("原本から直接切り出す場合は較正ゲインと回転角を明示してください: "
@@ -274,13 +277,19 @@ def _load_ann(path: Path):
 
 
 def load_calib_dir(calib_dir: Path) -> dict:
-    """step19 --calib が書いた calibration_<id>.json を全部読む: id -> gain_db（再監査 N04）。"""
+    """step19 --calib が書いた calibration_<id>.json を全部読む: id -> 記録（gain_db, laeq_window_s, calib_file）（再監査 N04・Q02）。"""
     import json
     out = {}
     for f in sorted(Path(calib_dir).glob("calibration_*.json")):
         rec = json.loads(f.read_text(encoding="utf-8"))
-        out[rec["calibration_id"]] = float(rec["gain_db"])
+        rec["gain_db"] = float(rec["gain_db"])
+        out[rec["calibration_id"]] = rec
     return out
+
+
+def _parse_win(txt: str):
+    a, b = txt.replace("〜", "-").split("-")
+    return float(a), float(b)
 
 
 def calib_for_rows(rows, calib_map: dict, cli_id: str, cli_gain: float):
@@ -294,9 +303,19 @@ def calib_for_rows(rows, calib_map: dict, cli_id: str, cli_gain: float):
     if calib_map:
         if cid not in calib_map:
             raise ValueError(f"calibration_id {cid!r} の json が --calib-dir にありません（step19 --calib で作る）")
-        gain = calib_map[cid]
+        rec = calib_map[cid]; gain = float(rec["gain_db"])
         if cli_gain and abs(cli_gain - gain) > 0.05:
             raise ValueError(f"--gain-db {cli_gain:+.2f} と json の補正量 {gain:+.2f}（{cid}）が違います")
+        # 記録紙の暗騒音区間（騒音計で測った区間）と json の窓が同じ区間か（再監査2 Q02）
+        jw = rec.get("laeq_window_s")
+        for wtxt in {(r.get("暗騒音区間_秒") or "").strip() for r in rows} - {""}:
+            try:
+                a, b = _parse_win(wtxt)
+            except ValueError:
+                raise ValueError(f"暗騒音区間_秒 '{wtxt}' の形式が違います（例 0-60）")
+            if jw and (abs(a - float(jw[0])) > 0.5 or abs(b - float(jw[1])) > 0.5):
+                raise ValueError(f"校正 {cid}: 記録紙の暗騒音区間 {wtxt} と json の窓 {float(jw[0]):g}-{float(jw[1]):g} が違います"
+                                 f"（騒音計で測った区間を step19 --laeq-window に渡す・再監査2 Q02）")
         return cid, gain
     return cid, cli_gain
 
@@ -308,6 +327,12 @@ def _write_ann(path: Path, rows, append: bool = False):
     同じ注釈CSVへ追記できないと採点前の統合作業が手作業になる。"""
     if append and path.exists():
         prev = list(csv.DictReader(open(path, encoding="utf-8-sig")))
+        # 同じ clip_id が別セッションの既存行を上書きしない（再監査2 Q03）
+        prev_sess = {r["clip_id"]: r.get("session_id", "") for r in prev if r.get("session_id")}
+        for r in rows:
+            ps = prev_sess.get(r["clip_id"])
+            if ps and r.get("session_id") and ps != r.get("session_id"):
+                raise ValueError(f"--append: clip_id {r['clip_id']} は既存の別セッション {ps} の行と衝突します（再監査2 Q03）")
         seen = {(r["clip_id"], r.get("event_id", "")) for r in rows}
         rows = [r for r in prev
                 if (r["clip_id"], r.get("event_id", "")) not in seen] + list(rows)
@@ -341,8 +366,17 @@ def main() -> int:
     overlap = float(_arg("--overlap", str(OVERLAP)))
     gain_db = float(_arg("--gain-db", "0"))
     calibration_id = _arg("--calibration-id", "")
-    calib_map = load_calib_dir(Path(_arg("--calib-dir"))) if _arg("--calib-dir") else {}
+    cli_calib_id = calibration_id          # CLI で宣言した id（ファイルごとの id とは別に保持する）
+    calib_map = {}
+    if _arg("--calib-dir"):
+        cdir = Path(_arg("--calib-dir"))
+        calib_map = load_calib_dir(cdir) if cdir.is_dir() else {}
+        if not calib_map:
+            print(f"❌ --calib-dir {cdir} に calibration_*.json がありません（step19 --calib で作る）。0 dB で続行しない（再監査2 Q02）")
+            return 1
     allow_unmatched = "--allow-unmatched" in sys.argv
+    only_set = {orig_key(x.strip()) for x in _arg("--only", "").split(",") if x.strip()}   # この呼出しで扱う原本だけ（再監査2 Q01）
+    session_filter = _arg("--session", "")                                                # 同名原本が複数セッションにあるとき（再監査2 Q03）
     if gain_db and not calibration_id and not calib_map:
         print("  ⚠️ --gain-db を渡すときは --calibration-id（step19 --calib の id）か --calib-dir も渡してください（校正の引継ぎ・監査 R01/N04）")
     pitch = float(_arg("--pitch", "0"))
@@ -358,12 +392,23 @@ def main() -> int:
 
     files = sorted(list(src.glob("*.flac")) + list(src.glob("*.wav"))) \
         if src.is_dir() else [src]
+    if only_set:
+        files = [f for f in files if orig_key(f.name) in only_set]
     assert files, f"音声が見つかりません: {src}"
-    _, by_orig = _load_ann(ann_path)
+    _all_rows, by_orig = _load_ann(ann_path)
+    if session_filter:
+        _all_rows = [r for r in _all_rows if (r.get("session_id") or "") == session_filter]
+        by_orig = {}
+        for r in _all_rows:
+            by_orig.setdefault(orig_key((r.get("orig_file") or "").strip() or r["clip_id"]), []).append(r)
+        print(f"--session {session_filter}: 注釈 {len(_all_rows)} 行に限定")
+    dup = {k: sorted({r.get("session_id", "") for r in rs}) for k, rs in by_orig.items() if len({r.get("session_id", "") for r in rs}) > 1}
+    if dup:
+        print(f"❌ 同じ原本名が複数セッションにあります {dict(list(dup.items())[:3])} → --session <session_id> で 1 セッションずつ切り出す（再監査2 Q03）")
+        return 1
 
     out_rows, n_clip = [], 0
     matched_origs, skipped_files = set(), []
-    _all_rows = _load_ann(ann_path)[0]
     calib_names = {orig_key(r.get("calib_file", "")) for r in _all_rows if r.get("calib_file")}
     check_names = {orig_key(r.get("check_file", "")) for r in _all_rows if r.get("check_file")}   # 点検録音（step19e で使う・監査 H01）
     excl_names = {orig_key(x) for r in _all_rows for x in (r.get("excluded_files", "") or "").split()}   # 記録紙の備考「除外: ...」（監査 H02/H04）
@@ -386,15 +431,16 @@ def main() -> int:
         with sf.SoundFile(str(path)) as f:
             length = len(f) / f.samplerate
             input_fs = f.samplerate
-        require_raw_metadata(input_fs)
+        require_raw_metadata(input_fs, have_calib=bool(calib_map))
         rows = by_orig.get(orig, [])
+        base = ((rows[0].get("clip_id") or "").strip() or orig) if rows else orig   # 出力名の土台 = 注釈の clip_id（session__原本・再監査2 Q03）
         if not rows:
             skipped_files.append(path.name)
         else:
             matched_origs.add(orig)
         file_gain = gain_db
         if rows:
-            calibration_id, file_gain = calib_for_rows(rows, calib_map, calibration_id if not calib_map else "", gain_db)
+            calibration_id, file_gain = calib_for_rows(rows, calib_map, cli_calib_id, gain_db)
             gain_db_file = file_gain
         else:
             gain_db_file = gain_db
@@ -406,7 +452,7 @@ def main() -> int:
             for r in events:
                 ev = str(r.get("event_id", "1"))
                 off = plan_event_cut(float(r["t_cpa"]), length, dur, cpa_at)
-                new_clip = f"{orig}_e{ev}"
+                new_clip = f"{base}_e{ev}"
                 cut_audio(path, off, dur, out_dir / f"{new_clip}.flac", gain_db_file,
                           **rot)
                 out_rows += rebase_rows(rows, off, dur, orig, new_clip,
@@ -420,7 +466,7 @@ def main() -> int:
             plan = plan_negative_split(length, dur, overlap)
             tmpl = next((r for r in rows if r["class"].strip() == "none"), None)
             for i, (off, own0, own1) in enumerate(plan):
-                new_clip = f"{orig}_s{i:03d}"
+                new_clip = f"{base}_s{i:03d}"
                 cut_audio(path, off, dur, out_dir / f"{new_clip}.flac", gain_db_file,
                           **rot)
                 out_rows.append(negative_row(new_clip, orig, off, own0, own1, tmpl,
@@ -438,6 +484,8 @@ def main() -> int:
     print(f"注釈CSV -> {ann_out}" + ("（既存行へ追記）" if append else ""))
     # 原本と注釈の対応の照合（再監査 N01）: 注釈があるのに音声が無い原本、音声があるのに注釈が無いファイル
     want = {k for k, rs in by_orig.items() if any(r["class"].strip() != "none" for r in rs)} if mode == "event" else set(by_orig)
+    if only_set or not src.is_dir():
+        want &= {orig_key(f.name) for f in files}   # 1 回の処理対象だけを照合（全体の完全性は step19c --cut で見る・再監査2 Q01）
     missing_audio = sorted(want - matched_origs)
     if skipped_files or missing_audio:
         print(f"⚠️ 対応の不一致: 注釈があるのに音声が見つからない原本 {len(missing_audio)} 件 {missing_audio[:5]} / "

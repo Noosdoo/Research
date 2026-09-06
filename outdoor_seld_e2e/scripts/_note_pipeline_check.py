@@ -14,8 +14,15 @@ for s in sess:
     names |= {s["校正原本"], s["点検原本"]}
     m = re.search(r"除外[:：]\s*([^／\n]+)", s.get("備考", "")); names |= set(m.group(1).split()) if m else set()
 names |= {e["原本"] for e in evs}
-fs = 24000; tt = np.arange(fs * 12) / fs
+fs = 24000
+dur = {n: 12.0 for n in names}
+for s in sess:   # 校正ファイルは記録紙の暗騒音区間（例 0-60）と同じ長さにする（切り出しが区間を照合する・再監査2 Q02）
+    try:
+        a, b = (float(x) for x in (s.get("暗騒音区間_秒") or "0-60").split("-")); dur[s["校正原本"]] = b - a
+    except ValueError:
+        pass
 for n in sorted(names):
+    tt = np.arange(int(fs * dur[n])) / fs
     sf.write(str(raw / n), np.tile((0.01 * np.sin(2 * np.pi * 1000.0 * tt))[:, None], (1, 4)).astype(np.float32), fs)
 print("raw/:", sorted(names))
 def run(args):

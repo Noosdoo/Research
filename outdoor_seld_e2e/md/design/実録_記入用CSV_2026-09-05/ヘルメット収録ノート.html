@@ -557,7 +557,7 @@ function cmdText(){const L=[];S.sessions.forEach(s=>{L.push('# ---- '+s.id+' ---
   if(s.excluded.length)L.push('# 除外（切り出さない・備考に記載済み）: '+s.excluded.map(x=>x.file).join(' '));
   L.push('python scripts/step19e_check_azimuth.py --in raw/'+s.checkFile+(s.checkMode==='1'?' --expect 前':'')+'   # 点検（'+(s.checkMode==='1'?'前 1 打':'4 方位')+'）→ 正面ズレ_deg を session.csv に');
   L.push('python scripts/step19_realsmoke_convert.py --in raw/ --calib raw/'+s.calibFile+' --laeq '+(s.laeq||'<LAeq_dB>')+(s.win&&s.win!=='0-60'?' --laeq-window '+s.win:'')+' --gain-only --out out/realsmoke/conv   # 校正 id = '+s.calibFile.replace(/\.wav$/i,''));});
-  L.push('# ---- 全セッション共通 ----');
+  L.push('# ---- 全セッション共通（別の日と原本名が重なるときは step19b に --session <session_id> を付けて 1 セッションずつ。出力名は session__原本_eN）----');
   L.push('python scripts/step19d_field_csv_to_ann.py --session session.csv --events events.csv --audio-dir raw/ --out out/realsmoke/ann_orig.csv');
   L.push('python scripts/step19b_realsmoke_cut.py --mode event --in raw/ --ann out/realsmoke/ann_orig.csv --calib-dir out/realsmoke/conv --pitch 0 --roll 0 --yaw <正面ズレが10°超なら道具の値> --out out/realsmoke/clips --ann-out out/realsmoke/ann_all.csv');
   L.push('python scripts/step19b_realsmoke_cut.py --mode negative --in raw/ --ann out/realsmoke/ann_orig.csv --calib-dir out/realsmoke/conv --pitch 0 --roll 0 --yaw 0 --out out/realsmoke/clips --ann-out out/realsmoke/ann_neg.csv');

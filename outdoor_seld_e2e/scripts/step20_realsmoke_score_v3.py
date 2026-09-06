@@ -11,7 +11,7 @@
 3 つの時点・窓を分けて定義する（R03）:
   ① 型分類の窓（記述用のみ・CPA の 2.5〜1.5 秒前）: ここでは使わない（GT の連続方位が無い）
   ② **通知成功の窓** = [t_start − 1 s, t_cpa ＋ 1 s]（合成の採点器と同じ）。critical は強、caution は中か強、safe は強も中も無いこと
-  ③ **方向の比較時点** = 注釈の象限を書いた窓（距離クラス: CPA の 2.5〜1.5 秒前 = 記入用 CSV の定義。警告音クラス: [t_start, t_cpa] = ラップ（音の始まり）から 3 s）。
+  ③ **方向の比較時点** = 注釈の象限を書いた窓（距離クラス: CPA の 2.5〜1.5 秒前 = 記入用 CSV の定義。警告音クラス: 通知が出た瞬間の推定方位を「鳴り始めの向き」と比べる・再監査2 Q06）。
      その窓の**推定方位の中央（単位ベクトル平均）**を 4 象限に丸めて注釈と比べる。発火時刻の方位ではない。窓に推定が無ければ「方向は評価不能（未検出）」
 
 分母（W7）: 到達・抑制は「採点対象イベント」を分母に。方向は「全イベント（未検出は不一致扱い）」と「推定があった例だけ」の両方を出す。
@@ -226,9 +226,12 @@ def evaluate(rows, pred, cfg43, dir_win, min_history, include_front, warn_dir_sp
             in_w = [i for i, (t, az, ft, c) in enumerate(fires) if c == ci and ft == "警告" and t0 <= t <= t1 and not used[i]]
             if in_w:
                 used[in_w[0]] = True
+                # 方向 = 通知が出た瞬間の推定方位（記録紙の「鳴り始めの向き」と、その瞬間の推定を比べる・再監査2 Q06）。窓の平均は使わない
+                az_fire = fires[in_w[0]][1]
+                quad_ok_f = None if not base["quadrant"] else quadrant_of(az_fire) == base["quadrant"]
                 events.append({**base, "gt_tier": "warn", "notified": True, "fired_tier": "警告",
                                "lead": None, "delay": round(fires[in_w[0]][0] - float(r["t_start"]), 2),   # 遅れ = 発火 − 鳴り始め（N02）
-                               "quad_ok": quad_ok, "az_est": az_est})
+                               "quad_ok": quad_ok_f, "az_est": az_fire})
             else:
                 events.append({**base, "gt_tier": "warn", "notified": False, "fired_tier": None, "lead": None, "quad_ok": quad_ok, "az_est": az_est})
     return events, {"n_false": n_false, "exposure_s": exposure_s}, extras
@@ -256,18 +259,23 @@ EVENT_FIELDS = ["clip", "session", "take_id", "pair_id", "state", "trial", "even
 
 
 def walk_pairs_summary(walk_events):
-    """歩行対比: pair_id ごとに静止側・歩行側の検出フレーム率と到達を並べ、対応差を出す。"""
-    by_pair = defaultdict(dict)
+    """歩行対比: (pair_id, class) ごとに静止側・歩行側を対応づけ、検出フレーム率の差を出す。
+
+    同じ (pair, 状態, class) に事象が 2 件以上ある対は「対象が 1 件に決まらない」として未集計にし、ambiguous に返す（黙って最後の 1 件に置き換えない・再監査2 Q04）。"""
+    by = defaultdict(lambda: defaultdict(list))
     for e in walk_events:
-        by_pair[e["pair_id"]][e["state"]] = e
-    rows, diffs = [], []
-    for pid, d in sorted(by_pair.items()):
-        a, b = d.get("静止"), d.get("歩行")
+        by[(e["pair_id"], e["class"])][e["state"]].append(e)
+    rows, diffs, ambiguous = [], [], []
+    for (pid, cls), d in sorted(by.items()):
+        if any(len(v) > 1 for v in d.values()):
+            ambiguous.append((pid, cls, {k: len(v) for k, v in d.items()}))
+            continue
+        a = d.get("静止", [None])[0]; b = d.get("歩行", [None])[0]
         fa = a["frame_recall"] if a else None; fb = b["frame_recall"] if b else None
         if fa is not None and fb is not None:
             diffs.append(fb - fa)
-        rows.append((pid, a, b, fa, fb))
-    return rows, diffs
+        rows.append((f"{pid}/{cls}", a, b, fa, fb))
+    return rows, diffs, ambiguous
 
 
 def main() -> int:
@@ -292,7 +300,7 @@ def main() -> int:
            f"- 通知規則: v4.3（{winner.name}）＋警告音 hold。成功の窓 [開始−{WIN_PRE:.0f} s, CPA＋{WIN_POST:.0f} s]。方向の比較時点 = CPA の {dir_win[0]:.1f}〜{dir_win[1]:.1f} 秒前の推定方位の中央（発火時刻ではない）",
            f"- イベント {len(events)} 件（採点対象 {len([e for e in events if e['notified'] is not None])} 件）。主要評価（ablation・A〜F）{len(main_ev)} 件 = "
            f"{'前方を含む' if include_front else '前方 F を除外'}・履歴不足（CPA<{min_history:.1f} s）除外・n_car≥2 除外・歩行対比（pair_id あり）除外",
-           f"- 警告音の時間指標 = 遅れ（発火 − 鳴り始め）。方向は鳴り始めから {warn_dir_span:.1f} s の推定方位（鳴り始め＝気づいた瞬間、という観測上の限界あり）", ""]
+           f"- 警告音の時間指標 = 遅れ（発火 − 鳴り始め）。方向 = 通知が出た瞬間の推定方位を記録紙の「鳴り始めの向き」と比べる（未発火なら鳴り始めから {warn_dir_span:.1f} s の中央・参考）", ""]
     rep.append("## 主要評価（イベント単位・分母 = 採点対象）")
     for t in ("critical", "caution", "safe", "warn"):
         if by[t][1]:
@@ -321,18 +329,20 @@ def main() -> int:
             rep.append(f"- {name}: 0 件"); continue
         r_ = rates(evs); parts = [f"{t} {r_[t][0]}/{r_[t][1]}" for t in ("critical", "caution", "safe", "warn") if r_[t][1]]
         rep.append(f"- {name}: {len(evs)} 件（" + "、".join(parts) + "）")
-    wrows, wdiffs = walk_pairs_summary(side["walk"])
-    if wrows:
+    wrows, wdiffs, wamb = walk_pairs_summary(side["walk"])
+    if wrows or wamb:
         r_w = rates(side["walk"])
-        rep += ["", f"## 歩行対比（pair_id あり・{len(side['walk'])} 件・{len(wrows)} ペア）— 主指標 = 検出フレーム率",
+        rep += ["", f"## 歩行対比（pair_id あり・{len(side['walk'])} 件・{len(wrows)} 対（pair×クラス）・対象が決まらず未集計 {len(wamb)} 対）— 主指標 = 検出フレーム率",
                 "- 到達: " + "、".join(f"{t} {r_w[t][0]}/{r_w[t][1]}" for t in ("critical", "caution", "safe", "warn") if r_w[t][1])]
         fa = [x[3] for x in wrows if x[3] is not None]; fb = [x[4] for x in wrows if x[4] is not None]
         if fa and fb:
             rep.append(f"- 検出フレーム率 中央値: 静止 {np.median(fa):.3f} / 歩行 {np.median(fb):.3f}（対 {len(wdiffs)} 組の差 歩行−静止 中央値 {np.median(wdiffs):+.3f}）")
-        rep += ["", "| pair | 静止: 成功/検出率 | 歩行: 成功/検出率 |", "| --- | --- | --- |"]
+        rep += ["", "| pair/クラス | 静止: 成功/検出率 | 歩行: 成功/検出率 |", "| --- | --- | --- |"]
         for pid, a, b, fa1, fb1 in wrows:
             fmt = lambda e, f: ("—" if e is None else f"{'○' if e['notified'] else '×'} / {f if f is not None else '—'}")
             rep.append(f"| {pid} | {fmt(a, fa1)} | {fmt(b, fb1)} |")
+        for pid, cls, cnt in wamb:
+            rep.append(f"| {pid}/{cls} | 未集計: 同じ状態に事象 {cnt} 件（対象が 1 件に決まらない） | |")
     if extras["n_unscored"]:
         rep.append(f"- 横距離 m 欠落で未採点: {extras['n_unscored']} 件")
     if extras["n_maskonly"]:
