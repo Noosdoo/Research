@@ -1045,6 +1045,36 @@ check("T55 Q06: 鳴り始め −110°（右）→ 1 秒で −170° に動く音
       _e55["notified"] is True and _e55["quad_ok"] is True and abs(_e55["az_est"] + 110.0) < 1.0 and s20q.quadrant_of(_med55) == "B",
       f"(notified={_e55['notified']}, az_est={_e55['az_est']}, quad_ok={_e55['quad_ok']}, 1秒平均={_med55:.0f}°→{s20q.quadrant_of(_med55)})")
 
+# ---------------- T56: R11 — 横距離の幅記入（1.5-2.5）の読み取り・検査（単一値／幅は有効、abc・3-1・負は無効） ----------------
+s20v2r = _load("s20v2r", "step20_realsmoke_score_v2.py")
+val_r = _load("val_r11", "step19c_ann_validate.py")
+_pl = s20v2r.parse_lateral
+check("T56 R11: parse_lateral が 2.0→(2,2)、1.5-2.5→(1.5,2.5)、全角「１.５〜２.５」→(1.5,2.5)、abc/3-1/-1 は None。step19c の lateral_of も幅を有効とし abc を無効とする",
+      _pl("2.0") == (2.0, 2.0) and _pl("1.5-2.5") == (1.5, 2.5) and _pl("１.５〜２.５") == (1.5, 2.5) and _pl("abc") is None and _pl("3-1") is None and _pl("-1") is None
+      and val_r.lateral_of({"横距離m": "1.5-2.5"}) == 1.5 and val_r.lateral_of({"横距離m": "abc"}) is None and val_r.lateral_of({"横距離m": "3-1"}) is None
+      and s20v2r.lateral_of({"横距離m": "1.5-2.5"}) is None and s20v2r.lateral_of({"横距離m": "2.0"}) == 2.0,
+      f"(parse={[_pl(x) for x in ('2.0', '1.5-2.5', '１.５〜２.５', 'abc', '3-1', '-1')]})")
+_r56, _w56 = s19d.convert([{"session_id": "R1", "区分": "A", "用途": "最終評価", "マイク高さ_cm": "205"}],
+                          [{"session_id": "R1", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "8.0", "n_car": "1", "横距離m": "1.5-2.5", "状態": "静止", "pair_id": ""},
+                           {"session_id": "R1", "take_id": "2", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "8.0", "n_car": "1", "横距離m": "3-1", "状態": "静止", "pair_id": ""}], 6.0, 0.0, None)
+check("T56b R11: step19d は幅をそのまま通し（1.5-2.5）、3-1 のような逆順は警告する", _r56[0]["横距離m"] == "1.5-2.5" and sum("横距離m" in w for w in _w56) == 1, f"(warns={_w56})")
+
+# ---------------- T57: R11 — 採点 v3: 幅が区分の境界（1.5 / 3.2 m）をまたぐ行は「境界例」として主要評価から外し別掲、またがない幅は通常どおり区分に入る ----------------
+_ci57 = s20q.CLS_IDX["car_drive"]; _fps57 = s20q.FPS
+def _frames57(d):
+    return {k: [(_ci57, -90.0, 0.0, d)] for k in range(int(4 * _fps57), int(8.5 * _fps57))}
+_rows57 = [{"clip_id": "b1", "event_id": "1", "trial": "t1", "class": "car_drive", "quadrant": "R", "t_start": "2.00", "t_cpa": "8.00", "take_id": "B/01", "pair_id": "", "区分": "A", "状態": "静止", "横距離m": "1.0-2.0", "n_car": "1", "scored": "1"},
+           {"clip_id": "b2", "event_id": "1", "trial": "t1", "class": "car_drive", "quadrant": "R", "t_start": "2.00", "t_cpa": "8.00", "take_id": "B/02", "pair_id": "", "区分": "A", "状態": "静止", "横距離m": "2.0-3.0", "n_car": "1", "scored": "1"},
+           {"clip_id": "b3", "event_id": "1", "trial": "t1", "class": "car_drive", "quadrant": "R", "t_start": "2.00", "t_cpa": "8.00", "take_id": "B/03", "pair_id": "", "区分": "A", "状態": "静止", "横距離m": "3.0-4.0", "n_car": "1", "scored": "1"}]
+_ev57, _, _ex57 = s20q.evaluate(_rows57, {"b1": _frames57(1.4), "b2": _frames57(2.5), "b3": _frames57(3.5)}, _cfg55, (2.5, 1.5), 7.5, False, 1.0)
+_main57, _side57, _ = s20q.summarize(_ev57, False)
+_by57 = {e["clip"]: e for e in _ev57}
+check("T57 R11: 1.0-2.0（critical/caution をまたぐ）と 3.0-4.0（caution/safe をまたぐ）は境界例として主要評価から外れ、2.0-3.0 は caution として主要評価に入る",
+      _by57["b1"]["gt_tier"] == "boundary:critical/caution" and _by57["b3"]["gt_tier"] == "boundary:caution/safe" and _by57["b2"]["gt_tier"] == "caution"
+      and [e["clip"] for e in _main57] == ["b2"] and sorted(e["clip"] for e in _side57["boundary"]) == ["b1", "b3"] and _ex57["n_boundary"] == 2
+      and _by57["b1"]["notified"] in (True, False),
+      f"(tiers={[(c, _by57[c]['gt_tier'], _by57[c]['notified']) for c in ('b1', 'b2', 'b3')]}, main={[e['clip'] for e in _main57]})")
+
 if fails:
     print(f"NG: {len(fails)}件 {fails}")
     sys.exit(1)

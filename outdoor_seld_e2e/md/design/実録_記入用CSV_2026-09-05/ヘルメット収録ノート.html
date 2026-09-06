@@ -242,7 +242,7 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
           <div class="field"><label>確認方法</label><div class="chips" id="chipConfirm"></div></div>
           <div class="field"><label>速度（目視 3 段）</label><div class="chips" id="chipSpeed"></div></div>
         </div>
-        <div class="field" id="fDist"><label>横距離 m（目測）</label><div class="chips" id="chipDist"></div></div>
+        <div class="field" id="fDist"><label>横距離 m（目測。境界で迷ったら幅で: 例 1.5-2.5）</label><div class="chips" id="chipDist"></div><input type="text" inputmode="decimal" id="inDist" placeholder="幅なら 1.5-2.5 と書く"></div>
         <div class="field"><label>状態</label><div class="chips" id="chipStand"></div></div>
         <div class="field"><label>歩行対比の組（pair_id）<span id="pairNote"></span></label><div class="chips" id="chipPair"></div></div>
         <div class="field"><label>特記</label><div class="chips" id="chipNoteQ"></div><input type="text" id="inEvNote" placeholder="自由記入"></div>
@@ -479,6 +479,9 @@ function lapChanged(){const c=curEv();if(!c.ev)return;const m=$('inLapMin').valu
   const prev=c.t.events.find(e=>e.event_id===c.ev.event_id-1);if(prev&&prev.lap!==''&&lap<Number(prev.lap))toast('前の事象（'+prev.lap+' s）より小さい。順番を確認');
   save();render();}
 $('inLapMin').onchange=lapChanged;$('inLapSec').onchange=lapChanged;
+function distOk(v){v=String(v).trim().replace(/[〜～]/g,'-').replace(/[０-９．－]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));if(v==='')return '';
+  const m=v.match(/^(\d+(?:\.\d+)?)(?:-(\d+(?:\.\d+)?))?$/);if(!m)return null;if(m[2]!==undefined&&Number(m[2])<=Number(m[1]))return null;return m[2]!==undefined?m[1]+'-'+m[2]:m[1];}
+$('inDist').onchange=()=>{const c=curEv();if(!c.ev)return;const v=distOk($('inDist').value);if(v===null){toast('横距離は 2.0 か 幅 1.5-2.5 の形で');render();return;}c.ev.dist=v;save();render();};
 
 function groupChips(el,t,ev){const others=t.events.filter(e=>e!==ev&&e.cls===ev.cls&&e.cls!=='none');el.innerHTML='';
   const mk=(lab,on,fn)=>{const b=document.createElement('button');b.type='button';b.className='chip'+(on?' on':'');b.textContent=lab;b.onclick=fn;el.appendChild(b);};
@@ -515,6 +518,7 @@ function renderTake(){const s=cur();$('takeNeedSession').hidden=!!s;$('takeArea'
   chips($('chipConfirm'),CONFIRM,ev.confirm,v=>{ev.confirm=v;save();render();},{toggle:true});
   chips($('chipSpeed'),SPEED,ev.speed,v=>{ev.speed=v;save();render();},{toggle:true});
   $('fDist').hidden=!DIST_CLASSES.has(ev.cls);chips($('chipDist'),DIST,ev.dist,v=>{ev.dist=v;save();render();},{toggle:true});
+  if(document.activeElement!==$('inDist'))$('inDist').value=ev.dist;
   chips($('chipStand'),STAND,ev.stand,v=>{ev.stand=v;s.stand=v;save();render();});
   $('pairNote').textContent=s.kubun==='歩行対比'?'（歩行対比では必須。静止と歩行の 2 本に同じ値）':'（歩行対比のときだけ）';
   const pairs=['','P1','P2','P3','P4','P5','P6'];chips($('chipPair'),pairs.map(p=>[p,p||'なし']),ev.pair,v=>{ev.pair=v;if(v)s.lastPair=v;save();render();});

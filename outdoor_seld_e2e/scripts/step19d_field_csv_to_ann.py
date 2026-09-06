@@ -107,6 +107,18 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
         if kubun == "歩行対比" and cls != "none" and not (r.get("状態", "") or "").strip():
             warns.append(f"{sid}/take{tk}: 区分=歩行対比 なのに 状態（静止/歩行）が無い")
         ev = r.get("event_id", "1") or "1"
+        lat_txt = (r.get("横距離m", "") or "").strip()
+        if lat_txt:
+            t_ = lat_txt.replace("〜", "-").replace("～", "-").replace("－", "-")
+            t_ = "".join(chr(ord(c) - 0xFEE0) if "０" <= c <= "９" or c == "．" else c for c in t_)
+            parts_ = t_.split("-")
+            try:
+                vals_ = [float(x) for x in parts_]
+                ok_ = len(vals_) in (1, 2) and all(v >= 0 for v in vals_) and (len(vals_) == 1 or vals_[0] < vals_[1])
+            except ValueError:
+                ok_ = False
+            if not ok_:
+                warns.append(f"{sid}/take{tk}: 横距離m '{lat_txt}' は 2.0 か 幅 1.5-2.5 の形で（R11）")
         key = (sid, tk, ev)
         if key in seen:
             warns.append(f"{sid}/take{tk}: event_id {ev} が重複")

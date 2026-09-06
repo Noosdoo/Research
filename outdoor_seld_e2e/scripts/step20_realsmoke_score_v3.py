@@ -65,6 +65,13 @@ WIN_PRE, WIN_POST = 1.0, 1.0
 CLS_IDX = V2.CLS_IDX
 DIST_CLS = V2.DIST_CLS
 quadrant_of, gt_tier_of, is_scored, lateral_of = V2.quadrant_of, V2.gt_tier_of, V2.is_scored, V2.lateral_of
+lateral_range_of = V2.lateral_range_of
+
+
+def tier_of_range(rng):
+    """横距離の幅 (lo, hi) → GT 区分。lo と hi が同じ区分ならその区分、区分の境界（1.5 / 3.2 m）をまたぐ幅は "boundary:<lo側>/<hi側>"（R11）。"""
+    a, b = gt_tier_of(rng[0]), gt_tier_of(rng[1])
+    return a if a == b else f"boundary:{a}/{b}"
 
 
 def _arg(name, default=None):
@@ -175,7 +182,7 @@ def evaluate(rows, pred, cfg43, dir_win, min_history, include_front, warn_dir_sp
                 "history_short": int(float(r["t_cpa"]) < min_history), "front": int(r.get("quadrant", r.get("象限", "")).strip() == "F"),
                 "multi": int(str(r.get("n_car", "1")).strip() not in ("", "1")),
                 "walk": int(bool(r.get("pair_id", "").strip()) or r.get("区分", "").strip() == "歩行"),
-                "delay": None, "frame_recall": None}
+                "delay": None, "frame_recall": None, "boundary": 0}
         if not is_scored(r):
             extras["n_maskonly"] += 1
             events.append({**base, "gt_tier": "mask", "notified": None, "fired_tier": None, "lead": None, "quad_ok": None, "az_est": None})
@@ -195,13 +202,19 @@ def evaluate(rows, pred, cfg43, dir_win, min_history, include_front, warn_dir_sp
         quad_ok = None if not base["quadrant"] else (None if az_est is None else quadrant_of(az_est) == base["quadrant"])
         fires = fires_by_clip[clip]; used = used_by_clip[clip]
         if ci in DIST_CLS:
-            lat = lateral_of(r)
-            if lat is None:
+            rng = lateral_range_of(r)
+            if rng is None:
                 extras["n_unscored"] += 1
                 events.append({**base, "gt_tier": "-", "notified": None, "fired_tier": None, "lead": None, "quad_ok": quad_ok, "az_est": az_est})
                 continue
-            tier = gt_tier_of(lat)
+            tier = tier_of_range(rng)
             in_w = [i for i, (t, az, ft, c) in enumerate(fires) if c == ci and ft in ("強", "中") and t0 <= t <= t1]
+            if tier.startswith("boundary"):
+                # 境界例（幅が区分の境界をまたぐ）: 区分別の主要評価には入れず、「強・中の通知が出たか」だけを別掲する（R11）
+                extras["n_boundary"] += 1
+                events.append({**base, "gt_tier": tier, "notified": bool(in_w), "fired_tier": (fires[in_w[0]][2] if in_w else None),
+                               "lead": (round(float(r["t_cpa"]) - fires[in_w[0]][0], 2) if in_w else None), "quad_ok": quad_ok, "az_est": az_est, "boundary": 1})
+                continue
             if tier == "safe":
                 extras["n_mid_on_safe"] += sum(1 for i in in_w if fires[i][2] == "中")
                 events.append({**base, "gt_tier": tier, "notified": not in_w, "fired_tier": (fires[in_w[0]][2] if in_w else None),
@@ -240,8 +253,9 @@ def evaluate(rows, pred, cfg43, dir_win, min_history, include_front, warn_dir_sp
 def summarize(events, include_front):
     """主要評価（前方除外・履歴不足除外・単車）と参考集計を分ける。"""
     scored = [e for e in events if e["notified"] is not None]
-    main = [e for e in scored if (include_front or not e["front"]) and not e["history_short"] and not e["multi"] and not e["walk"]]
-    side = {"front": [e for e in scored if e["front"] and not include_front and not e["walk"]],
+    main = [e for e in scored if (include_front or not e["front"]) and not e["history_short"] and not e["multi"] and not e["walk"] and not e.get("boundary")]
+    side = {"boundary": [e for e in scored if e.get("boundary")],
+            "front": [e for e in scored if e["front"] and not include_front and not e["walk"]],
             "history_short": [e for e in scored if e["history_short"] and not e["walk"]],
             "multi": [e for e in scored if e["multi"] and not e["walk"]],
             "walk": [e for e in scored if e["walk"]]}
@@ -255,7 +269,7 @@ def summarize(events, include_front):
 
 
 EVENT_FIELDS = ["clip", "session", "take_id", "pair_id", "state", "trial", "event_id", "class", "n_car", "quadrant",
-                "gt_tier", "notified", "fired_tier", "lead", "delay", "frame_recall", "az_est", "quad_ok", "front", "history_short", "multi", "walk"]
+                "gt_tier", "notified", "fired_tier", "lead", "delay", "frame_recall", "az_est", "quad_ok", "front", "history_short", "multi", "walk", "boundary"]
 
 
 def walk_pairs_summary(walk_events):
@@ -323,6 +337,10 @@ def main() -> int:
     else:
         rep.append("- 負例露出なし")
     rep += ["", "## 参考集計（主要評価から外したもの）"]
+    bd = side["boundary"]
+    if bd:
+        rep.append(f"- 境界例（横距離の幅が区分の境界をまたぐ・R11）: {len(bd)} 件、強・中の通知あり {sum(1 for e in bd if e['notified'])} 件（区分別の率には入れない）: "
+                   + "、".join(f"{e['clip']}/{e['event_id']} {e['gt_tier'].split(':')[1]}" for e in bd[:8]))
     for key, name in (("front", "前方 F（視野内・参考）"), ("history_short", f"履歴不足（CPA < {min_history:.1f} s）"), ("multi", "多重車 n_car≥2（群のいずれかへの通知）")):
         evs = side[key]
         if not evs:

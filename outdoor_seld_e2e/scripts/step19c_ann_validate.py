@@ -10,7 +10,7 @@
   S2 (clip_id, event_id) の一意性
   S3 class が既知クラス∪none／quadrant が F/B/L/R（正例のみ）
   S4 t_start ≤ t_cpa、いずれも [0, --dur] の範囲内
-  S5 距離クラス(car_drive/kick/bike)の採点対象行に有限・非負の 横距離m がある
+  S5 距離クラス(car_drive/kick/bike)の採点対象行に有限・非負の 横距離m がある（単一値 2.0 か 幅 1.5-2.5・R11）
   S6 cut_offset_s / orig_duration_s が有効、orig_file が非空、scored が0/1
      （**負例行も含め全行**）
   S7 **負例の担当区間が原録音上で先頭0sから末尾まで隙間なく・重なりなくタイルすること**
@@ -93,10 +93,20 @@ def is_scored(row) -> bool:
 
 
 def lateral_of(row):
+    """横距離: 単一値か幅（1.5-2.5）。幅は (lo, hi) の lo を返す（有効性の判定用・R11）。"""
     for k in LATERAL_KEYS:
         if row.get(k) not in (None, ""):
-            x = fnum(row[k])
-            return x if x is not None and x >= 0 else None
+            t = str(row[k]).strip().replace("〜", "-").replace("～", "-").replace("－", "-")
+            t = "".join(chr(ord(c) - 0xFEE0) if "０" <= c <= "９" or c == "．" else c for c in t)
+            parts = t.split("-")
+            if len(parts) not in (1, 2):
+                return None
+            xs = [fnum(x) for x in parts]
+            if any(x is None or x < 0 for x in xs):
+                return None
+            if len(xs) == 2 and not xs[0] < xs[1]:
+                return None
+            return xs[0]
     return None
 
 
