@@ -34,7 +34,8 @@ if hasattr(sys.stdout, "reconfigure"):
 
 OUT_COLS = ["clip_id", "event_id", "trial", "class", "quadrant", "t_start", "t_cpa",
             "take_id", "pair_id", "区分", "状態", "横距離m", "n_car", "車種", "速度", "特記",
-            "session_id", "orig_file", "calibration_id", "calib_file", "LAeq_dB", "暗騒音区間_秒", "t_start_rule", "用途", "mic_z"]
+            "session_id", "orig_file", "calibration_id", "calib_file", "LAeq_dB", "暗騒音区間_秒", "t_start_rule", "用途", "mic_z",
+            "overlap_group_id", "車両区分", "確認方法"]
 CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "car_drive", "crossing", "kick", "bike", "none"}
 WARN_CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "crossing"}
 QUADS = {"F", "B", "L", "R", ""}
@@ -134,6 +135,7 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
             "take_id": f"{sid}/{tk}", "pair_id": (f"{sid}/{r['pair_id']}" if r.get("pair_id") else ""),
             "区分": kind, "状態": state, "横距離m": r.get("横距離m", ""), "n_car": r.get("n_car", ""),
             "車種": r.get("車種", ""), "速度": r.get("速度", ""), "特記": r.get("特記", ""),
+            "overlap_group_id": r.get("overlap_group_id", ""), "車両区分": r.get("車両区分", ""), "確認方法": r.get("確認方法", ""),
             "session_id": sid, "orig_file": orig, "calibration_id": f"{sid}_calib", "calib_file": calib_file,
             "LAeq_dB": srow.get("LAeq_dB", ""), "暗騒音区間_秒": srow.get("暗騒音区間_秒", ""), "t_start_rule": rule,
             "用途": (srow.get("用途", "") or "最終評価"),
