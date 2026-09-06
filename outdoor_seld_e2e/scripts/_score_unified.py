@@ -64,8 +64,18 @@ def arg(argv, key, default=None):
     return default
 
 
+DIST_TABLE = None       # --dist-table <json>: 予測距離を規則・対応付けの前で補正する（v2 束 §6.1 判断 1・_dist_calib_proto.py の表）
+DIST_TABLE_MAX = 5.0    # --dist-table-max <m>: この予測距離以下だけ補正
+
+
+def corr_d(d: float) -> float:
+    if DIST_TABLE is None or not math.isfinite(d) or d >= min(5.0, DIST_TABLE_MAX):
+        return d
+    return float(np.interp(d, DIST_TABLE[0], DIST_TABLE[1]))
+
+
 def load_pred_rows(path: Path, horiz: bool):
-    """clip -> frame -> [(cls, az, el, d)]。horiz なら d を d×cos(el) に。"""
+    """clip -> frame -> [(cls, az, el, d)]。horiz なら d を d×cos(el) に。DIST_TABLE があれば（水平化の後で）補正。"""
     out = defaultdict(lambda: defaultdict(list))
     for line in open(path, encoding="utf-8"):
         p = line.strip().split(",")
@@ -79,6 +89,8 @@ def load_pred_rows(path: Path, horiz: bool):
             continue
         if horiz and math.isfinite(d):
             d = d * math.cos(math.radians(el))
+        if c in DIST_CLS:
+            d = corr_d(d)
         out[clip][k].append((c, az, el, d))
     return out
 
@@ -216,6 +228,12 @@ def main() -> int:
     meta = ROOT / arg(argv, "--meta")
     minframe = int(arg(argv, "--minframe", "40"))
     bands_s = arg(argv, "--bands", "")
+    global DIST_TABLE, DIST_TABLE_MAX
+    dt = arg(argv, "--dist-table", "")
+    DIST_TABLE_MAX = float(arg(argv, "--dist-table-max", "5.0"))
+    if dt:
+        t = json.loads((ROOT / dt if not Path(dt).is_absolute() else Path(dt)).read_text(encoding="utf-8"))
+        DIST_TABLE = (np.array(t["centers"], dtype=float), np.array(t["values"], dtype=float))
     out_md = Path(argv[0])
     items = [a.split("=", 1) for a in argv[1:]]
 
@@ -240,7 +258,7 @@ def main() -> int:
             return str(p)
     R = [f"# 統一採点（v4.3＋hold・方位帰属・manifest 固定・1対1・全GT分母） — {out_md.stem}", "",
          f"plan= {_rel(plan)} ({split}{f', mix≤{clip_max}' if clip_max else ''}) = {len(clips):,} 本 / GT= {_rel(meta)} / "
-         f"frame≥{minframe} / v4.3 = {V43.label43(C43)}", "",
+         f"frame≥{minframe} / v4.3 = {V43.label43(C43)}" + (f" / 距離の補正表 {dt}（予測 ≤{DIST_TABLE_MAX:g} m）" if dt else ""), "",
          "本数(予測あり)= manifest の本数（うち予測ファイルにあった本数。無い本は発火ゼロとして採点）。到達・抑制= 車ごとの方位帰属（±0.5 s・≤30°）。",
          "検出率= GT≤1.5 m のフレームのうち 1 対 1 で対応した割合。至近捕捉(全GT)= GT≤1.5 m のうち対応した予測が ≤1.5 m の割合（未検出は不捕捉）。",
          "至近捕捉(条件付)= 旧定義相当（対応したペアだけが分母）。誤捕捉= GT>3.2 m の対応ペアで予測 ≤1.5 m。距離誤差= 1 対 1 ペアの相対誤差中央値(ペア数)。", ""]

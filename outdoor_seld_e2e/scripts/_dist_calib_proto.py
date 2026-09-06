@@ -92,6 +92,12 @@ def metrics(P, corr=None):
 
 def main() -> int:
     a = sys.argv[1:]
+    out_json = "out/hp_sweep/dist_calib_proto.json"
+    if "--out" in a:
+        i = a.index("--out"); out_json = a[i + 1]; del a[i:i + 2]
+    labels = ("作成データ(fold32)", "別データ")
+    if "--labels" in a:
+        i = a.index("--labels"); labels = tuple(a[i + 1].split(",")); del a[i:i + 2]
     fit_csv = a[0] if a else "out/predictions_v43tune/val_all_causal.csv"
     fit_meta = a[1] if len(a) > 1 else "out/dataset_outdoor_siren_v43tune/metadata_dist"
     ev_csv = a[2] if len(a) > 2 else "out/hp_sweep/C/ft2_e079_causal.csv"
@@ -106,9 +112,11 @@ def main() -> int:
         if hi <= 3.0:
             print(f"| {lo:.2f}–{hi:.2f} m | {n:,} | {v:.2f} m | {v - c:+.2f} m |")
     out = {"edges": EDGES.tolist(), "centers": centers.tolist(), "values": vals.tolist(), "counts": cnt.tolist(),
-           "fit": fit_csv, "note": "試作。v2 では v2 モデルで作り直す"}
-    (ROOT / "out/hp_sweep/dist_calib_proto.json").write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
-    for label, P in [("作成データ(fold32)", Pf), ("別データ(fold2 val)", Pe)]:
+           "fit": fit_csv, "eval": ev_csv, "note": "0.25 m ビンの実距離中央値を単調化（ペア<30 は恒等・5 m 超は恒等）。v2 では v2 モデルで作り直す"}
+    (ROOT / out_json).parent.mkdir(parents=True, exist_ok=True)
+    (ROOT / out_json).write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"-> {out_json}")
+    for label, P in [(labels[0], Pf), (labels[1], Pe)]:
         b = metrics(P)
         c = metrics(P, apply_table(P[:, 0], centers, vals))
         print(f"\n{label}: 至近捕捉 {b[0]:.1f}→{c[0]:.1f}%  誤捕捉 {b[1]:.2f}→{c[1]:.2f}%  至近推定中央値 {b[2]:.2f}→{c[2]:.2f}m  距離誤差 {b[3]:.1f}→{c[3]:.1f}%")
