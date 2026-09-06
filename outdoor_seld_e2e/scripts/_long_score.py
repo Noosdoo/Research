@@ -81,8 +81,26 @@ def gt_as_pred(gt):
     return dict(fd), dict(fw)
 
 
+DIST_TABLE = None      # --dist-table <json>（_dist_calib_proto.py の表）: 予測距離を規則の前で補正する（v2 束 §6.1 判断 1）
+
+
+def load_dist_table(path):
+    import numpy as np
+    t = json.loads(Path(path).read_text(encoding="utf-8"))
+    return (np.array(t["centers"], dtype=float), np.array(t["values"], dtype=float))
+
+
+def corr_d(d):
+    if DIST_TABLE is None or not (d == d):
+        return d
+    import numpy as np
+    if d >= 5.0:
+        return d
+    return float(np.interp(d, DIST_TABLE[0], DIST_TABLE[1]))
+
+
 def load_pred_long(path):
-    """予測 csv → clip → (frames_dist, frames_warn)"""
+    """予測 csv → clip → (frames_dist, frames_warn)。DIST_TABLE があれば距離を補正して読む。"""
     out = defaultdict(lambda: (defaultdict(list), defaultdict(list)))
     for line in Path(path).read_text(encoding="utf-8").splitlines():
         q = line.strip().split(",")
@@ -91,6 +109,7 @@ def load_pred_long(path):
         clip, k, cls, az = q[0], int(q[1]), int(q[2]), float(q[4])
         if cls in DIST_CLASSES:
             d = float(q[6]) if len(q) > 6 and q[6] != "" else float("nan")
+            d = corr_d(d)
             out[clip][0][k].append((cls, az, d))
         else:
             out[clip][1][k].append((cls, az, float(q[5]) if len(q) > 5 else 0.0))
@@ -195,6 +214,10 @@ def main() -> int:
     if flow:
         flow = (int(flow[0]), flow[1], flow[2])
     split = a[a.index("--split") + 1] if "--split" in a else None
+    global DIST_TABLE
+    if "--dist-table" in a:
+        DIST_TABLE = load_dist_table(a[a.index("--dist-table") + 1])
+        print(f"# 距離の補正表を適用: {a[a.index('--dist-table') + 1]}")
     plan = {r["clip_id"]: r for r in csv.DictReader(open(DS / "plan/assignment_long_v1.csv", encoding="utf-8"))}
     clips = [c for c in plan if (DS / "metadata_dist" / f"{c}.csv").exists() and (split is None or plan[c]["split"] == split)]
     preds = None if "--oracle" in a else load_pred_long(a[a.index("--pred") + 1])

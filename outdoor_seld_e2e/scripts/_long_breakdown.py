@@ -31,6 +31,8 @@ def tier_of_car(fr):
 
 def main() -> int:
     a = sys.argv
+    if "--dist-table" in a:
+        LS.DIST_TABLE = LS.load_dist_table(a[a.index("--dist-table") + 1])
     pred = LS.load_pred_long(a[a.index("--pred") + 1])
     split = a[a.index("--split") + 1] if "--split" in a else None
     scene = a[a.index("--scene") + 1] if "--scene" in a else None
