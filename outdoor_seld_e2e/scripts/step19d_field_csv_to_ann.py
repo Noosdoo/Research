@@ -17,6 +17,7 @@
   - 校正: session.csv の LAeq_dB・暗騒音区間_秒・校正ファイル名（`校正原本` 列。無ければ "<session_id>_calib.wav"）から
     calibration_id="<session_id>_calib" を付ける（補正量そのものは step19 --calib が計算）
   - pair_id は "<session_id>/<pair_id>"、trial は 区分（歩行対比は "walk"）
+  - session.csv の `マイク高さ_cm`（実測・必須）→ `mic_z`[m]。推論（_causal_infer_v17.py）は HEIGHT_TABLE にこの csv（clip_id, mic_z）を渡す（v17b・2026-09-06）
 
 使い方: python scripts/step19d_field_csv_to_ann.py --session session.csv --events events.csv --out ann_orig.csv
         [--pre 6] [--lap-offset 0] [--warn-span 3] [--audio-dir raw/]
@@ -33,7 +34,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 OUT_COLS = ["clip_id", "event_id", "trial", "class", "quadrant", "t_start", "t_cpa",
             "take_id", "pair_id", "区分", "状態", "横距離m", "n_car", "車種", "速度", "特記",
-            "session_id", "orig_file", "calibration_id", "calib_file", "LAeq_dB", "暗騒音区間_秒", "t_start_rule", "用途"]
+            "session_id", "orig_file", "calibration_id", "calib_file", "LAeq_dB", "暗騒音区間_秒", "t_start_rule", "用途", "mic_z"]
 CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "car_drive", "crossing", "kick", "bike", "none"}
 WARN_CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "crossing"}
 QUADS = {"F", "B", "L", "R", ""}
@@ -85,6 +86,13 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
         if quad not in QUADS:
             warns.append(f"{sid}/take{tk}: 象限 '{quad}' は F/B/L/R")
         state = r.get("状態", "") or "静止"
+        mic_cm = srow.get("マイク高さ_cm", "")
+        try:
+            mic_z = f"{float(mic_cm) / 100.0:.3f}"
+        except ValueError:
+            mic_z = ""
+            if sid in ses and (sid, "mic") not in seen:
+                warns.append(f"{sid}: session.csv に マイク高さ_cm が無い（v17b は装着高さをモデルに入力する。実測して cm で書く）"); seen.add((sid, "mic"))
         kind = "歩行" if r.get("pair_id", "") else srow.get("区分", "")
         ev = r.get("event_id", "1") or "1"
         key = (sid, tk, ev)
@@ -128,7 +136,8 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
             "車種": r.get("車種", ""), "速度": r.get("速度", ""), "特記": r.get("特記", ""),
             "session_id": sid, "orig_file": orig, "calibration_id": f"{sid}_calib", "calib_file": calib_file,
             "LAeq_dB": srow.get("LAeq_dB", ""), "暗騒音区間_秒": srow.get("暗騒音区間_秒", ""), "t_start_rule": rule,
-            "用途": (srow.get("用途", "") or "最終評価")})
+            "用途": (srow.get("用途", "") or "最終評価"),
+            "mic_z": mic_z})
     return out, warns
 
 

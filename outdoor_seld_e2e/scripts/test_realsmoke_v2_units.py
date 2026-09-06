@@ -690,8 +690,8 @@ with tempfile.TemporaryDirectory() as td:
 
 # ---------------- T39: 現場 CSV（2 セッション・同じ take 番号）→ ann_orig（監査 R04） ----------------
 s19d = _load("s19dfield", "step19d_field_csv_to_ann.py")
-sessions = [{"session_id": "S1", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "10-70"},
-            {"session_id": "S2", "区分": "A", "LAeq_dB": "50.1", "暗騒音区間_秒": "10-70"}]
+sessions = [{"session_id": "S1", "区分": "A", "LAeq_dB": "52.3", "暗騒音区間_秒": "10-70", "マイク高さ_cm": "205"},
+            {"session_id": "S2", "区分": "A", "LAeq_dB": "50.1", "暗騒音区間_秒": "10-70", "マイク高さ_cm": "205"}]
 events = [{"session_id": "S1", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "8.4", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""},
           {"session_id": "S1", "take_id": "2", "event_id": "1", "class": "car_drive", "象限": "F", "ラップ秒": "7.0", "n_car": "1", "横距離m": "1.0", "状態": "静止", "pair_id": ""},
           {"session_id": "S1", "take_id": "3", "event_id": "1", "class": "none", "象限": "", "ラップ秒": "", "n_car": "0", "横距離m": "", "状態": "静止", "pair_id": ""},
@@ -705,7 +705,7 @@ r_s2t1 = next(r for r in rows39 if r["session_id"] == "S2" and r["take_id"].ends
 r_horn = next(r for r in rows39 if r["class"] == "horn")
 check("T39 現場 CSV→ann_orig: session×take が一意・列名対応・t_start 規則・校正 id・歩行対比の区分・警告音はラップ＝始まり",
       len(rows39) == 6 and len(takes39) == 5 and r_s1t1["take_id"] != r_s2t1["take_id"]
-      and r_horn["t_start"] == "12.00" and r_horn["t_cpa"] == "15.00"
+      and r_horn["t_start"] == "12.00" and r_horn["t_cpa"] == "15.00" and r_s1t1["mic_z"] == "2.050"
       and r_s1t1["quadrant"] == "R" and r_s1t1["t_cpa"] == "8.40" and r_s1t1["t_start"] == "2.40"
       and r_s1t1["calibration_id"] == "S1_calib" and r_s1t1["orig_file"] == "S1_take01.wav"
       and r_s2t1["区分"] == "歩行" and r_s2t1["pair_id"] == "S2/P1" and r_s2t1["trial"] == "walk"
