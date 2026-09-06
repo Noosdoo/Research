@@ -1,0 +1,505 @@
+<title>ヘルメット収録ノート</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#EEF1EC; --panel:#FFFFFF; --panel2:#F6F8F5; --ink:#182019; --muted:#5C6862; --line:#CBD3CD;
+  --accent:#E8641B; --accent-ink:#FFFFFF; --accent-soft:#FBE9DD;
+  --good:#2C7A4B; --good-soft:#DDEFE3; --warn:#9A7B12; --warn-soft:#F5EBC7; --bad:#B83A2E; --bad-soft:#F6DDD9;
+  --chip:#E3E8E2; --chip-ink:#182019; --shadow:0 1px 2px rgba(20,30,25,.08), 0 6px 18px rgba(20,30,25,.06);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101517; --panel:#1A2124; --panel2:#151B1E; --ink:#E6EBE7; --muted:#98A49E; --line:#2E3A3D;
+    --accent:#FF7A2F; --accent-ink:#161212; --accent-soft:#3A2417;
+    --good:#5CC088; --good-soft:#1E3A2A; --warn:#E0B93A; --warn-soft:#3A3114; --bad:#F07A6C; --bad-soft:#3E1F1B;
+    --chip:#263034; --chip-ink:#E6EBE7; --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101517; --panel:#1A2124; --panel2:#151B1E; --ink:#E6EBE7; --muted:#98A49E; --line:#2E3A3D;
+  --accent:#FF7A2F; --accent-ink:#161212; --accent-soft:#3A2417;
+  --good:#5CC088; --good-soft:#1E3A2A; --warn:#E0B93A; --warn-soft:#3A3114; --bad:#F07A6C; --bad-soft:#3E1F1B;
+  --chip:#263034; --chip-ink:#E6EBE7; --shadow:0 1px 2px rgba(0,0,0,.4), 0 6px 18px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans JP","Hiragino Sans","Yu Gothic UI","Noto Sans JP",system-ui,sans-serif;font-size:16px;line-height:1.5;overscroll-behavior-y:none}
+.mono{font-family:"IBM Plex Mono","SFMono-Regular",Consolas,monospace;font-variant-numeric:tabular-nums}
+.app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:10px 16px 8px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.brand h1{font-size:17px;font-weight:700;margin:0;letter-spacing:.02em}
+.brand .sid{font-size:13px;color:var(--muted)}
+.next{margin-top:6px;display:flex;align-items:center;gap:8px;font-size:14px}
+.next .lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:700;white-space:nowrap}
+.next .txt{font-weight:500}
+main{flex:1;padding:14px 16px 96px}
+.tab{display:none}.tab.on{display:block}
+h2{font-size:15px;font-weight:700;margin:18px 0 8px;letter-spacing:.02em;text-wrap:balance}
+h2:first-child{margin-top:4px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+.card+.card{margin-top:12px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:6px;margin-top:10px}
+.field>label{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:700}
+input[type=text],input[type=number],input[type=date],input[type=time],textarea,select{
+  font:inherit;font-size:16px;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%}
+input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+textarea{min-height:120px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--chip);color:var(--chip-ink);border-radius:999px;padding:9px 14px;font:inherit;font-size:15px;min-height:44px;cursor:pointer;line-height:1.2}
+.chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.chip.wide{flex:1 1 40%;text-align:center}
+button.btn{font:inherit;font-size:16px;font-weight:700;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);padding:12px 16px;min-height:48px;cursor:pointer}
+button.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button.btn.ghost{background:transparent}
+button.btn.danger{color:var(--bad);border-color:var(--bad)}
+button.btn:disabled{opacity:.45;cursor:not-allowed}
+.big{width:100%;min-height:76px;font-size:22px;border-radius:14px}
+.lap{width:100%;min-height:150px;font-size:34px;border-radius:18px;letter-spacing:.06em}
+.clock{font-size:52px;font-weight:700;text-align:center;line-height:1;padding:6px 0 2px}
+.clock.small{font-size:30px}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.steps li{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.steps li.done{border-color:var(--good);background:var(--good-soft)}
+.steps li.now{border-color:var(--accent);background:var(--accent-soft)}
+.steps .n{font-weight:700;color:var(--muted)}
+.steps li.done .n{color:var(--good)}.steps li.now .n{color:var(--accent)}
+.steps .t{font-weight:700}
+.steps .d{font-size:13px;color:var(--muted);margin-top:2px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{text-align:left;padding:6px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:11px;letter-spacing:.08em;color:var(--muted)}
+.tw{overflow-x:auto}
+.evlist{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.ev{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel2);display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer}
+.ev.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.ev .l{font-weight:700}.ev .r{font-size:13px;color:var(--muted);text-align:right}
+.badge{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--chip-ink);font-weight:700}
+.badge.good{background:var(--good-soft);color:var(--good)}.badge.warn{background:var(--warn-soft);color:var(--warn)}.badge.bad{background:var(--bad-soft);color:var(--bad)}
+.hint{font-size:13px;color:var(--muted);border-left:3px solid var(--accent);padding:4px 10px;margin-top:8px}
+.prompt{font-size:64px;font-weight:700;text-align:center;padding:16px 0;letter-spacing:.1em}
+nav{position:fixed;bottom:0;left:0;right:0;z-index:6;background:var(--panel);border-top:1px solid var(--line)}
+nav .in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+nav button{font:inherit;font-size:12px;font-weight:700;background:none;border:0;color:var(--muted);padding:10px 4px 14px;cursor:pointer;min-height:56px}
+nav button.on{color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+nav button .ic{display:block;font-size:18px;line-height:1.2}
+.toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+.toast.show{opacity:1}
+.sep{height:1px;background:var(--line);margin:12px 0}
+code{font-family:"IBM Plex Mono",Consolas,monospace;font-size:13px;background:var(--panel2);padding:1px 5px;border-radius:4px}
+pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;overflow-x:auto;margin:6px 0}
+@media (prefers-reduced-motion: reduce){.toast{transition:none}}
+</style>
+
+<div class="app">
+<header>
+  <div class="brand"><h1>ヘルメット収録ノート</h1><span class="sid mono" id="hdrSid">セッションなし</span></div>
+  <div class="next"><span class="lbl">次</span><span class="txt" id="nextTxt">セッションを作る</span></div>
+</header>
+
+<main>
+<!-- ================= 流れ ================= -->
+<section class="tab" id="tab-flow">
+  <h2>今日の流れ（1 セッション）</h2>
+  <ol class="steps" id="flowSteps"></ol>
+
+  <h2>ラップを押す瞬間（クラスごと）</h2>
+  <div class="card tw">
+    <table>
+      <tr><th>クラス</th><th>ラップ</th><th>象限に書く向き</th></tr>
+      <tr><td>車</td><td><b>前端（バンパー）が肩の線を通った瞬間</b></td><td>最接近の 2.5〜1.5 秒前</td></tr>
+      <tr><td>キックボード</td><td>乗っている人の体が肩の線</td><td>同上</td></tr>
+      <tr><td>バイク</td><td>前輪が肩の線</td><td>同上</td></tr>
+      <tr><td>サイレン</td><td><b>音が始まった瞬間</b>。通過は特記に</td><td>鳴り始めの向き</td></tr>
+      <tr><td>クラクション / ベル</td><td>鳴った瞬間</td><td>鳴った向き</td></tr>
+      <tr><td>バック音</td><td>ピーピーが始まった瞬間</td><td>向き</td></tr>
+      <tr><td>踏切</td><td>鳴り始め。開始時から鳴っていたら 0</td><td>警報機の向き</td></tr>
+      <tr><td>何もなし</td><td>押さない（「何も来なかった」ボタン）</td><td>—</td></tr>
+    </table>
+  </div>
+
+  <h2>出る前のチェック</h2>
+  <div class="card">
+    <div class="chips" id="prepChips"></div>
+  </div>
+
+  <h2>帰宅後（PC で）</h2>
+  <div class="card small">
+    <ol style="margin:0;padding-left:20px">
+      <li>SD の wav を <code>raw/</code> に入れる</li>
+      <li>「出力」タブの 2 つの CSV を <code>session.csv</code> / <code>events.csv</code> に貼る</li>
+      <li>点検: <code>step19e_check_azimuth.py --in raw/&lt;点検原本&gt;</code> → 正面ズレ_deg を書く</li>
+      <li>校正: <code>step19 --calib raw/&lt;校正原本&gt; --laeq &lt;LAeq&gt; --gain-only</code></li>
+      <li>変換: <code>step19d</code> → 切り出し <code>step19b</code> → 検査 <code>step19c</code> → 採点 <code>step20 v3</code></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ================= セッション ================= -->
+<section class="tab" id="tab-session">
+  <div id="sessNone">
+    <h2>セッションを作る</h2>
+    <div class="card">
+      <div class="field"><label>区分</label><div class="chips" id="chipKubun"></div></div>
+      <div class="field"><label>用途</label><div class="chips" id="chipYoto"></div></div>
+      <div class="field"><label>場所</label><input type="text" id="inPlace" placeholder="○○町の生活道路"></div>
+      <div class="row" style="margin-top:10px">
+        <div class="field" style="flex:1"><label>日付</label><input type="date" id="inDate"></div>
+        <div class="field" style="flex:1"><label>開始時刻</label><input type="time" id="inTime"></div>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <div class="field" style="flex:1"><label>録音機の次のファイル番号</label><input type="number" id="inFileNo" min="1" step="1" placeholder="1"></div>
+        <div class="field" style="flex:1"><label>ファイル名の頭</label><input type="text" id="inPrefix" value="ZOOM"></div>
+      </div>
+      <p class="small muted" style="margin:8px 0 0">H3-VR の画面で次に作られる番号を見て入れる。以後 校正→点検→テイクの順に自動で振る。</p>
+      <div class="field"><label>天候</label><div class="chips" id="chipWeather"></div></div>
+      <div class="field"><label>風（3 段・強なら中止）</label><div class="chips" id="chipWind"></div></div>
+      <div class="field"><label>協力者</label><input type="text" id="inHelper" placeholder="なし"></div>
+      <div style="margin-top:14px"><button class="btn primary big" id="btnNewSession">セッション開始</button></div>
+    </div>
+  </div>
+
+  <div id="sessOn" hidden>
+    <h2>儀式（セッション冒頭に 1 回）</h2>
+    <div class="card" id="cardCalib">
+      <div class="row" style="justify-content:space-between"><b>① 校正 60 秒</b><span class="badge" id="bdCalib">未</span></div>
+      <p class="small muted" style="margin:6px 0">騒音計と並べて、<b>録音ボタンを押す</b>と同時に下のボタン。60 秒間しゃべらない。校正原本 = <span class="mono" id="calibFile">—</span></p>
+      <div class="clock mono small" id="calibClock">60.0</div>
+      <div class="row"><button class="btn primary" style="flex:1" id="btnCalibStart">60 秒を数える</button></div>
+      <div class="field"><label>騒音計の読み（LAeq_dB）</label><input type="number" inputmode="decimal" step="0.1" id="inLaeq" placeholder="52.3"></div>
+      <div class="field"><label>暗騒音区間_秒（校正ファイルの何秒〜何秒）</label><input type="text" id="inWin" value="0-60"></div>
+    </div>
+
+    <div class="card" id="cardCheck">
+      <div class="row" style="justify-content:space-between"><b>② 点検（指パッチン）</b><span class="badge" id="bdCheck">未</span></div>
+      <p class="small muted" style="margin:6px 0">校正の録音を止めてから、<b>別テイク</b>で。録音ボタン → 案内どおりに前・右・後・左で 1 回ずつパチン → 停止。点検原本 = <span class="mono" id="checkFile">—</span></p>
+      <div class="chips"><button class="chip on" data-mode="4" id="chk4">初日: 4 方位</button><button class="chip" data-mode="1" id="chk1">2 日目以降: 前 1 打</button></div>
+      <div class="prompt" id="checkPrompt">—</div>
+      <div class="row"><button class="btn primary" style="flex:1" id="btnCheckStart">案内を始める</button><button class="btn" id="btnCheckDone">できた</button></div>
+    </div>
+
+    <div class="card" id="cardHeight">
+      <div class="row" style="justify-content:space-between"><b>③ マイク高さ・水準器</b><span class="badge" id="bdHeight">未</span></div>
+      <div class="field"><label>マイク高さ_cm（かぶった状態で地面→マイク中心）</label><input type="number" inputmode="numeric" id="inHeight" placeholder="205"></div>
+      <div class="field"><label>水準器がセンターに来ていたか</label><div class="chips" id="chipLevel"></div></div>
+    </div>
+
+    <h2>セッション情報</h2>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><span class="mono" id="sessId2"></span><span class="small muted" id="sessMeta"></span></div>
+      <div class="field"><label>備考</label><input type="text" id="inNote" placeholder="途中で電池交換 など"></div>
+      <div class="row" style="margin-top:12px"><button class="btn" id="btnCloseSession">このセッションを閉じる</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 事象 ================= -->
+<section class="tab" id="tab-take">
+  <div id="takeNeedSession" class="card">セッションを先に作ってください（「セッション」タブ）。</div>
+  <div id="takeArea" hidden>
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <span><span class="muted small">テイク</span> <b class="mono" id="takeNo">1</b></span>
+        <span class="mono small" id="takeFile">—</span>
+        <span class="badge" id="takeState">待機</span>
+      </div>
+      <div class="clock mono" id="clock">0.0</div>
+      <div id="takeIdle">
+        <button class="btn primary big" id="btnRec">録音開始（H3-VR と同時に）</button>
+        <div class="row" style="margin-top:8px"><button class="btn" style="flex:1" id="btnNoneTake">何も来なかったテイクを足す</button></div>
+      </div>
+      <div id="takeRun" hidden>
+        <button class="btn primary lap" id="btnLap">ラップ</button>
+        <div class="hint" id="lapHint">車: 前端（バンパー）が肩の線を通った瞬間</div>
+        <div class="row" style="margin-top:10px"><button class="btn" style="flex:1" id="btnStop">録音停止（テイク終了）</button><button class="btn ghost" id="btnAbort">取り消し</button></div>
+      </div>
+    </div>
+
+    <div id="evEdit" hidden>
+      <div class="card" style="margin-top:12px">
+        <div class="row" style="justify-content:space-between"><b id="evTitle">事象 1</b><span class="mono" id="evLap"></span></div>
+        <div class="field"><label>クラス</label><div class="chips" id="chipClass"></div></div>
+        <div class="field" id="fQuad"><label>象限（マイク基準）</label><div class="chips" id="chipQuad"></div></div>
+        <div class="field" id="fGroup" hidden><label>前の事象と重なっていたか</label><div class="chips" id="chipGroup"></div></div>
+        <div id="fCar">
+          <div class="field"><label>車種（動力）</label><div class="chips" id="chipPower"></div></div>
+          <div class="field"><label>車両区分</label><div class="chips" id="chipVtype"></div></div>
+          <div class="field"><label>確認方法</label><div class="chips" id="chipConfirm"></div></div>
+          <div class="field"><label>速度（目視 3 段）</label><div class="chips" id="chipSpeed"></div></div>
+        </div>
+        <div class="field" id="fDist"><label>横距離 m（目測）</label><div class="chips" id="chipDist"></div></div>
+        <div class="field"><label>状態</label><div class="chips" id="chipStand"></div></div>
+        <div class="field"><label>歩行対比の組（pair_id）</label><div class="chips" id="chipPair"></div></div>
+        <div class="field"><label>特記</label><div class="chips" id="chipNoteQ"></div><input type="text" id="inEvNote" placeholder="自由記入"></div>
+        <div class="row" style="margin-top:12px"><button class="btn danger" id="btnEvDel">この事象を消す</button></div>
+      </div>
+    </div>
+
+    <div class="evlist" id="takeEvents"></div>
+  </div>
+</section>
+
+<!-- ================= 一覧 ================= -->
+<section class="tab" id="tab-list">
+  <h2>このセッションのテイク</h2>
+  <div class="row small muted" id="listSummary" style="margin-bottom:8px"></div>
+  <div class="card tw"><table id="listTable"><tr><th>take</th><th>原本</th><th>事象</th><th></th></tr></table></div>
+  <p class="small muted">行をタップすると「事象」タブで直せます。原本のファイル名を直すのもここ。</p>
+  <h2>過去のセッション</h2>
+  <div class="card tw"><table id="sessTable"><tr><th>session_id</th><th>区分</th><th>テイク</th><th></th></tr></table></div>
+</section>
+
+<!-- ================= 出力 ================= -->
+<section class="tab" id="tab-out">
+  <h2>session.csv</h2>
+  <div class="card">
+    <div class="row"><button class="btn primary" style="flex:1" id="btnCopyS">コピー</button><button class="btn" id="btnShareS">共有</button></div>
+    <textarea class="mono" id="outS" readonly></textarea>
+  </div>
+  <h2>events.csv</h2>
+  <div class="card">
+    <div class="row"><button class="btn primary" style="flex:1" id="btnCopyE">コピー</button><button class="btn" id="btnShareE">共有</button></div>
+    <textarea class="mono" id="outE" readonly></textarea>
+  </div>
+  <p class="small muted">列の順番は記入用 CSV と同じ。PC で <code>md/design/実録_記入用CSV_2026-09-05/</code> の session.csv / events.csv に貼れば、そのまま step19d に入る。データはこの端末のブラウザに残る。</p>
+  <div class="row" style="margin-top:8px"><button class="btn danger" id="btnWipe">全部消す（貼り終えてから）</button></div>
+</section>
+</main>
+
+<nav><div class="in">
+  <button data-tab="flow"><span class="ic">☰</span>流れ</button>
+  <button data-tab="session"><span class="ic">⛑</span>セッション</button>
+  <button data-tab="take"><span class="ic">●</span>事象</button>
+  <button data-tab="list"><span class="ic">≡</span>一覧</button>
+  <button data-tab="out"><span class="ic">↗</span>出力</button>
+</div></nav>
+<div class="toast" id="toast"></div>
+</div>
+
+<script>
+(function(){
+'use strict';
+// ---------- 定数（記入用 CSV と同じ語彙） ----------
+const KUBUN=['A','B','C','D','E','F','歩行対比','負例露出'];
+const YOTO=['最終評価','調整用'];
+const WEATHER=['晴','曇','雨上がり'];
+const WIND=['弱','中','強'];
+const LEVEL=['y','n'];
+const CLASSES=[['car_drive','車'],['kick','キックボード'],['bike','バイク'],['siren','サイレン'],['horn','クラクション'],['backup_beep','バック音'],['bike_bell','ベル'],['crossing','踏切'],['none','何もなし']];
+const CLASS_HINT={car_drive:'車: 前端（バンパー）が肩の線を通った瞬間',kick:'キックボード: 体が肩の線を通った瞬間',bike:'バイク: 前輪が肩の線を通った瞬間',siren:'サイレン: 音が始まった瞬間（通過は特記に「通過 ○秒」）',horn:'クラクション: 鳴った瞬間',backup_beep:'バック音: ピーピーが始まった瞬間',bike_bell:'ベル: 鳴った瞬間',crossing:'踏切: 鳴り始め。開始時から鳴っていたら 0',none:'押さない'};
+const DIST_CLASSES=new Set(['car_drive','kick','bike']);
+const QUAD=[['F','前 F'],['R','右 R'],['B','後 B'],['L','左 L']];
+const POWER=['ガソリン','EV','HV','ディーゼル','不明'];
+const VTYPE=['乗用','大型','二輪','その他'];
+const CONFIRM=['目視','確認済'];
+const SPEED=['徐行','約20','約30'];
+const DIST=['1.0','1.5','2.0','2.5','3.0','4.0','5.0','8.0'];
+const STAND=['静止','歩行'];
+const NOTEQ=['会話が入った','風が強い','自信なし','後続と重なる','開始時から鳴動'];
+const PREP=['H3-VR 電池','SD の空き','ヘルメットの角度','騒音計','スマホの充電','メジャー','このノートを開いた'];
+const S_COLS=['session_id','日付','開始時刻','場所','区分','用途','装着','マイク高さ_cm','校正原本','点検原本','LAeq_dB','暗騒音区間_秒','水準器OK','正面ズレ_deg','天候','風_3段','協力者','備考'];
+const E_COLS=['session_id','take_id','event_id','原本','class','象限','ラップ秒','n_car','overlap_group_id','車種','車両区分','確認方法','速度','横距離m','状態','pair_id','特記'];
+
+// ---------- 状態 ----------
+const KEY='helmet_note_v1';
+let S={sessions:[],cur:null,prep:{},tab:'flow'};
+try{const raw=localStorage.getItem(KEY); if(raw){const p=JSON.parse(raw); if(p&&Array.isArray(p.sessions)) S=Object.assign(S,p);}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+const $=id=>document.getElementById(id);
+function cur(){return S.sessions.find(s=>s.id===S.cur)||null;}
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1600);}
+function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}}
+function pad(n,w){return String(n).padStart(w,'0');}
+function today(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1,2)+'-'+pad(d.getDate(),2);}
+function nowHM(){const d=new Date();return pad(d.getHours(),2)+':'+pad(d.getMinutes(),2);}
+function fileName(s,n){return s.prefix+pad(n,4)+'.wav';}
+
+// ---------- chips ----------
+function chips(el,items,value,onpick,opts){
+  opts=opts||{};el.innerHTML='';
+  items.forEach(it=>{const v=Array.isArray(it)?it[0]:it,lab=Array.isArray(it)?it[1]:it;
+    const b=document.createElement('button');b.type='button';b.className='chip'+(opts.wide?' wide':'')+(v===value?' on':'');b.textContent=lab;
+    b.onclick=()=>{onpick(v===value&&opts.toggle?'':v);};el.appendChild(b);});
+}
+
+// ---------- タブ ----------
+function showTab(t){S.tab=t;save();document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('on',x.id==='tab-'+t));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('on',b.dataset.tab===t));render();}
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
+
+// ---------- 次にやること ----------
+function nextText(){const s=cur();if(!s)return['セッションを作る（「セッション」タブ）','session'];
+  if(!s.ritual.calib)return['校正 60 秒（騒音計と並べて無言）','session'];
+  if(!s.ritual.check)return['点検（指パッチン '+(s.checkMode==='1'?'前 1 打':'前→右→後→左')+'）','session'];
+  if(!s.height)return['マイク高さをメジャーで測って入れる','session'];
+  if(!s.level)return['水準器を確かめて y/n','session'];
+  if(s.take&&s.take.running)return['来たら「ラップ」→ クラスと象限をタップ','take'];
+  return['車の気配がしたら「録音開始」を H3-VR と同時に','take'];}
+
+// ---------- 流れ ----------
+function renderFlow(){const s=cur();const ol=$('flowSteps');ol.innerHTML='';
+  const st=[['セッションを作る','区分・用途・場所・ファイル番号。ヘルメットをかぶる',!!s],
+   ['校正 60 秒','録音ボタン＋「60 秒を数える」。無言。騒音計の値を入れる',!!(s&&s.ritual.calib)],
+   ['点検（指パッチン）','別テイク。前→右→後→左（2 日目以降は前だけ）',!!(s&&s.ritual.check)],
+   ['マイク高さ・水準器','メジャーで cm。水準器がセンターか',!!(s&&s.height&&s.level)],
+   ['事象テイク','車の気配 → 録音開始（H3-VR と同時）→ ラップ → クラス・象限 → 録音停止。来なかったら「何も来なかった」',!!(s&&s.takes.length)],
+   ['出力','「出力」タブの 2 つをコピーして PC に貼る',false]];
+  let nowSet=false;st.forEach((x,i)=>{const li=document.createElement('li');const now=!x[2]&&!nowSet;if(now)nowSet=true;
+    li.className=x[2]?'done':(now?'now':'');li.innerHTML='<span class="n">'+(x[2]?'✓':(i+1))+'</span><div><div class="t">'+x[0]+'</div><div class="d">'+x[1]+'</div></div>';ol.appendChild(li);});
+  const pc=$('prepChips');pc.innerHTML='';PREP.forEach(p=>{const b=document.createElement('button');b.type='button';b.className='chip'+(S.prep[p]?' on':'');b.textContent=(S.prep[p]?'✓ ':'')+p;b.onclick=()=>{S.prep[p]=!S.prep[p];save();renderFlow();};pc.appendChild(b);});
+}
+
+// ---------- セッション ----------
+let form={kubun:'A',yoto:'最終評価',weather:'晴',wind:'弱'};
+function renderSessionForm(){
+  chips($('chipKubun'),KUBUN,form.kubun,v=>{form.kubun=v;renderSessionForm();});
+  chips($('chipYoto'),YOTO,form.yoto,v=>{form.yoto=v;renderSessionForm();});
+  chips($('chipWeather'),WEATHER,form.weather,v=>{form.weather=v;renderSessionForm();});
+  chips($('chipWind'),WIND,form.wind,v=>{form.wind=v;renderSessionForm();});
+  if(!$('inDate').value)$('inDate').value=today();
+  if(!$('inTime').value)$('inTime').value=nowHM();
+}
+$('btnNewSession').onclick=()=>{
+  const date=$('inDate').value||today();const fno=parseInt($('inFileNo').value||'1',10);
+  if(form.wind==='強'){toast('風が強のときは中止');return;}
+  const ymd=date.replace(/-/g,'');const k=form.kubun==='歩行対比'?'W':(form.kubun==='負例露出'?'N':form.kubun);
+  const n=S.sessions.filter(x=>x.id.startsWith(ymd+'_'+k)).length+1;
+  const s={id:ymd+'_'+k+n,date:date,time:$('inTime').value||nowHM(),place:$('inPlace').value.trim(),kubun:form.kubun,yoto:form.yoto,
+    prefix:($('inPrefix').value||'ZOOM').trim(),nextFile:isNaN(fno)?1:fno,weather:form.weather,wind:form.wind,helper:$('inHelper').value.trim()||'なし',note:'',
+    height:'',level:'',laeq:'',win:'0-60',front:'',calibFile:'',checkFile:'',checkMode:S.sessions.length?'1':'4',ritual:{calib:false,check:false},takes:[],take:null,stand:'静止'};
+  s.calibFile=fileName(s,s.nextFile);s.nextFile++;s.checkFile=fileName(s,s.nextFile);s.nextFile++;
+  S.sessions.push(s);S.cur=s.id;save();toast('セッション '+s.id+' を開始');render();};
+
+// 校正 60 秒
+let calibT=null;
+$('btnCalibStart').onclick=()=>{const s=cur();if(!s)return;if(calibT){clearInterval(calibT);calibT=null;$('btnCalibStart').textContent='60 秒を数える';return;}
+  const t0=Date.now();$('btnCalibStart').textContent='止める';
+  calibT=setInterval(()=>{const r=60-(Date.now()-t0)/1000;$('calibClock').textContent=Math.max(0,r).toFixed(1);
+    if(r<=0){clearInterval(calibT);calibT=null;$('calibClock').textContent='0.0';$('btnCalibStart').textContent='60 秒を数える';vib([200,100,200]);toast('60 秒。録音を止めて、騒音計の値を入れる');}},100);};
+$('inLaeq').onchange=()=>{const s=cur();if(!s)return;s.laeq=$('inLaeq').value;s.ritual.calib=!!s.laeq;save();render();};
+$('inWin').onchange=()=>{const s=cur();if(!s)return;s.win=$('inWin').value;save();};
+
+// 点検の案内
+let checkT=null;
+$('chk4').onclick=()=>{const s=cur();if(s){s.checkMode='4';save();render();}};
+$('chk1').onclick=()=>{const s=cur();if(s){s.checkMode='1';save();render();}};
+$('btnCheckStart').onclick=()=>{const s=cur();if(!s||checkT)return;
+  const seq=s.checkMode==='1'?['録音ボタン','前','停止']:['録音ボタン','前','右','後','左','停止'];let i=0;
+  const step=()=>{if(i>=seq.length){checkT=null;$('checkPrompt').textContent='できた？';return;}
+    const w=seq[i++];$('checkPrompt').textContent=w;vib(w==='録音ボタン'||w==='停止'?[80,60,80]:120);checkT=setTimeout(step,w==='録音ボタン'?2000:1500);};
+  step();};
+$('btnCheckDone').onclick=()=>{const s=cur();if(!s)return;s.ritual.check=true;save();toast('点検を記録');render();};
+$('inHeight').onchange=()=>{const s=cur();if(!s)return;s.height=$('inHeight').value;save();render();};
+$('inNote').onchange=()=>{const s=cur();if(!s)return;s.note=$('inNote').value;save();};
+$('btnCloseSession').onclick=()=>{const s=cur();if(!s)return;if(s.take&&s.take.running){toast('録音中のテイクを止めてから');return;}
+  if(!confirm('セッション '+s.id+' を閉じますか？（データは残ります）'))return;S.cur=null;save();render();};
+
+function renderSession(){const s=cur();$('sessNone').hidden=!!s;$('sessOn').hidden=!s;
+  if(!s){renderSessionForm();return;}
+  $('calibFile').textContent=s.calibFile;$('checkFile').textContent=s.checkFile;
+  $('bdCalib').textContent=s.ritual.calib?'済':'未';$('bdCalib').className='badge'+(s.ritual.calib?' good':' warn');
+  $('bdCheck').textContent=s.ritual.check?'済':'未';$('bdCheck').className='badge'+(s.ritual.check?' good':' warn');
+  const h=!!(s.height&&s.level);$('bdHeight').textContent=h?'済':'未';$('bdHeight').className='badge'+(h?' good':' warn');
+  $('chk4').classList.toggle('on',s.checkMode!=='1');$('chk1').classList.toggle('on',s.checkMode==='1');
+  if(document.activeElement!==$('inLaeq'))$('inLaeq').value=s.laeq;$('inWin').value=s.win;
+  if(document.activeElement!==$('inHeight'))$('inHeight').value=s.height;
+  chips($('chipLevel'),LEVEL,s.level,v=>{s.level=v;save();render();});
+  $('sessId2').textContent=s.id;$('sessMeta').textContent=s.kubun+' / '+s.yoto+' / '+s.place+' / 次のファイル '+fileName(s,s.nextFile);
+  if(document.activeElement!==$('inNote'))$('inNote').value=s.note;}
+
+// ---------- 事象テイク ----------
+let clockT=null,wake=null,selEv=null;
+function startClock(){if(clockT)return;clockT=setInterval(()=>{const s=cur();if(!s||!s.take||!s.take.running){$('clock').textContent='0.0';return;}
+  $('clock').textContent=((Date.now()-s.take.t0)/1000).toFixed(1);},100);}
+async function wakeOn(){try{if(navigator.wakeLock&&!wake){wake=await navigator.wakeLock.request('screen');wake.addEventListener('release',()=>{wake=null;});}}catch(e){}}
+function wakeOff(){try{if(wake){wake.release();wake=null;}}catch(e){}}
+function newEvent(s,lap){const take=s.take;const ev={event_id:take.events.length+1,cls:'car_drive',quad:'',lap:lap,group:'',power:'',vtype:'',confirm:'',speed:'',dist:'',stand:s.stand||'静止',pair:'',note:''};
+  take.events.push(ev);selEv=ev.event_id;return ev;}
+$('btnRec').onclick=()=>{const s=cur();if(!s)return;
+  s.take={take_id:s.takes.length+1,file:fileName(s,s.nextFile),t0:Date.now(),running:true,events:[]};selEv=null;save();vib(60);wakeOn();render();};
+$('btnLap').onclick=()=>{const s=cur();if(!s||!s.take||!s.take.running)return;const lap=Math.round((Date.now()-s.take.t0)*10)/10;
+  newEvent(s,lap);save();vib(40);render();};
+$('btnStop').onclick=()=>{const s=cur();if(!s||!s.take)return;
+  if(!s.take.events.length){if(!confirm('事象がありません。「何も来なかった（none）」のテイクとして保存しますか？'))return;s.take.events.push({event_id:1,cls:'none',quad:'',lap:'',group:'',power:'',vtype:'',confirm:'',speed:'',dist:'',stand:s.stand||'静止',pair:'',note:''});}
+  const miss=s.take.events.filter(e=>e.cls!=='none'&&!e.quad);if(miss.length&&!confirm('象限が空の事象が '+miss.length+' 件あります。このまま止めますか？（一覧から直せます）'))return;
+  s.take.running=false;s.take.t_end=Math.round((Date.now()-s.take.t0)/1000);s.takes.push(s.take);s.nextFile++;s.take=null;selEv=null;save();wakeOff();toast('テイク '+s.takes.length+' を保存');render();};
+$('btnAbort').onclick=()=>{const s=cur();if(!s||!s.take)return;if(!confirm('このテイクを取り消しますか？（録音機のファイルも消すか、番号を手で直す）'))return;s.take=null;selEv=null;save();wakeOff();render();};
+$('btnNoneTake').onclick=()=>{const s=cur();if(!s)return;const t={take_id:s.takes.length+1,file:fileName(s,s.nextFile),t0:Date.now(),running:false,events:[{event_id:1,cls:'none',quad:'',lap:'',group:'',power:'',vtype:'',confirm:'',speed:'',dist:'',stand:s.stand||'静止',pair:'',note:''}]};
+  s.takes.push(t);s.nextFile++;save();toast('負例テイクを足した（原本 '+t.file+'）');render();};
+$('btnEvDel').onclick=()=>{const s=cur();const t=editTake(s);if(!t)return;const i=t.events.findIndex(e=>e.event_id===selEv);if(i<0)return;
+  if(!confirm('事象 '+selEv+' を消しますか？'))return;t.events.splice(i,1);t.events.forEach((e,k)=>e.event_id=k+1);selEv=null;save();render();};
+let editTakeId=null; // 一覧から選んだ過去テイク
+function editTake(s){if(!s)return null;if(s.take&&s.take.running)return s.take;if(editTakeId!=null)return s.takes.find(t=>t.take_id===editTakeId)||null;return s.takes[s.takes.length-1]||null;}
+$('inEvNote').onchange=()=>{const s=cur();const t=editTake(s);const ev=t&&t.events.find(e=>e.event_id===selEv);if(ev){ev.note=$('inEvNote').value;save();}};
+
+function renderTake(){const s=cur();$('takeNeedSession').hidden=!!s;$('takeArea').hidden=!s;if(!s)return;
+  const running=!!(s.take&&s.take.running);const t=editTake(s);
+  $('takeNo').textContent=running?s.take.take_id:(t?t.take_id:s.takes.length+1);
+  $('takeFile').textContent=running?s.take.file:(t?t.file:fileName(s,s.nextFile));
+  $('takeState').textContent=running?'録音中':(t?'テイク '+t.take_id+' を編集':'待機');$('takeState').className='badge'+(running?' bad':'');
+  $('takeIdle').hidden=running;$('takeRun').hidden=!running;startClock();
+  const list=$('takeEvents');list.innerHTML='';
+  if(t){t.events.forEach(ev=>{const d=document.createElement('div');d.className='ev'+(ev.event_id===selEv?' on':'');
+    const cl=(CLASSES.find(c=>c[0]===ev.cls)||[ev.cls,ev.cls])[1];
+    d.innerHTML='<span class="l">'+ev.event_id+'. '+cl+(ev.quad?' / '+ev.quad:'')+(ev.group?' <span class="badge">'+ev.group+'</span>':'')+'</span><span class="r mono">'+(ev.lap===''?'—':ev.lap.toFixed(1)+' s')+'</span>';
+    d.onclick=()=>{selEv=ev.event_id;render();};list.appendChild(d);});}
+  const ev=t&&t.events.find(e=>e.event_id===selEv);$('evEdit').hidden=!ev;
+  if(ev){$('evTitle').textContent='事象 '+ev.event_id+(running?'':'（テイク '+t.take_id+'）');$('evLap').textContent=ev.lap===''?'':'ラップ '+ev.lap.toFixed(1)+' s';
+    chips($('chipClass'),CLASSES,ev.cls,v=>{ev.cls=v;if(v==='none'){ev.quad='';}save();render();});
+    $('lapHint').textContent=CLASS_HINT[ev.cls]||'';
+    $('fQuad').hidden=ev.cls==='none';chips($('chipQuad'),QUAD,ev.quad,v=>{ev.quad=v;save();render();},{wide:true});
+    const prev=t.events.find(e=>e.event_id===ev.event_id-1);$('fGroup').hidden=!(prev&&prev.cls===ev.cls&&ev.cls!=='none');
+    if(prev){chips($('chipGroup'),[['y','重なった（同じ群）'],['n','離れていた']],ev.group?'y':(ev.group===''&&ev._sep?'n':''),v=>{if(v==='y'){if(!prev.group){const used=t.events.map(e=>e.group).filter(Boolean);let k=1;while(used.includes('G'+k))k++;prev.group='G'+k;}ev.group=prev.group;ev._sep=false;}else{ev.group='';ev._sep=true;}save();render();});}
+    $('fCar').hidden=ev.cls!=='car_drive';
+    chips($('chipPower'),POWER,ev.power,v=>{ev.power=v;save();render();},{toggle:true});
+    chips($('chipVtype'),VTYPE,ev.vtype,v=>{ev.vtype=v;save();render();},{toggle:true});
+    chips($('chipConfirm'),CONFIRM,ev.confirm,v=>{ev.confirm=v;save();render();},{toggle:true});
+    chips($('chipSpeed'),SPEED,ev.speed,v=>{ev.speed=v;save();render();},{toggle:true});
+    $('fDist').hidden=!DIST_CLASSES.has(ev.cls);chips($('chipDist'),DIST,ev.dist,v=>{ev.dist=v;save();render();},{toggle:true});
+    chips($('chipStand'),STAND,ev.stand,v=>{ev.stand=v;s.stand=v;save();render();});
+    const pairs=['','P1','P2','P3','P4','P5','P6'];chips($('chipPair'),pairs.map(p=>[p,p||'なし']),ev.pair,v=>{ev.pair=v;save();render();});
+    chips($('chipNoteQ'),NOTEQ,'',v=>{ev.note=(ev.note?ev.note+'／':'')+v;save();render();});
+    if(document.activeElement!==$('inEvNote'))$('inEvNote').value=ev.note;}
+  else{$('lapHint').textContent=CLASS_HINT.car_drive;}
+}
+
+// ---------- 一覧 ----------
+function renderList(){const s=cur();const tb=$('listTable');tb.innerHTML='<tr><th>take</th><th>原本</th><th>事象</th><th></th></tr>';
+  if(s){const n=s.takes.length,ne=s.takes.reduce((a,t)=>a+t.events.filter(e=>e.cls!=='none').length,0),nn=s.takes.filter(t=>t.events.every(e=>e.cls==='none')).length;
+    $('listSummary').textContent=s.id+' — テイク '+n+' / 事象 '+ne+' / 負例テイク '+nn;
+    s.takes.forEach(t=>{const tr=document.createElement('tr');const cls=t.events.map(e=>(CLASSES.find(c=>c[0]===e.cls)||[e.cls,e.cls])[1]+(e.quad?'·'+e.quad:'')).join(', ');
+      tr.innerHTML='<td class="mono">'+t.take_id+'</td><td><input type="text" class="mono" value="'+t.file.replace(/"/g,'&quot;')+'" style="padding:6px 8px;font-size:14px;min-width:120px"></td><td>'+cls+'</td><td><button class="btn" style="min-height:36px;padding:6px 10px;font-size:13px">直す</button></td>';
+      tr.querySelector('input').onchange=e=>{t.file=e.target.value.trim();save();};
+      tr.querySelector('button').onclick=()=>{editTakeId=t.take_id;selEv=t.events.length?1:null;showTab('take');};tb.appendChild(tr);});}
+  else $('listSummary').textContent='セッションなし';
+  const st=$('sessTable');st.innerHTML='<tr><th>session_id</th><th>区分</th><th>テイク</th><th></th></tr>';
+  S.sessions.slice().reverse().forEach(x=>{const tr=document.createElement('tr');tr.innerHTML='<td class="mono">'+x.id+'</td><td>'+x.kubun+'</td><td>'+x.takes.length+'</td><td><button class="btn" style="min-height:36px;padding:6px 10px;font-size:13px">'+(x.id===S.cur?'開いている':'開く')+'</button></td>';
+    tr.querySelector('button').onclick=()=>{S.cur=x.id;editTakeId=null;selEv=null;save();showTab('session');};st.appendChild(tr);});}
+
+// ---------- 出力 ----------
+function q(v){v=v==null?'':String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function sessionCsv(){const rows=[S_COLS.join(',')];S.sessions.forEach(s=>{const r={session_id:s.id,'日付':s.date,'開始時刻':s.time,'場所':s.place,'区分':s.kubun,'用途':s.yoto,'装着':'ヘルメット','マイク高さ_cm':s.height,'校正原本':s.calibFile,'点検原本':s.checkFile,'LAeq_dB':s.laeq,'暗騒音区間_秒':s.win,'水準器OK':s.level,'正面ズレ_deg':s.front,'天候':s.weather,'風_3段':s.wind,'協力者':s.helper,'備考':s.note};
+  rows.push(S_COLS.map(c=>q(r[c])).join(','));});return rows.join('\n')+'\n';}
+function eventsCsv(){const rows=[E_COLS.join(',')];S.sessions.forEach(s=>{s.takes.forEach(t=>{t.events.forEach(ev=>{
+  const ncar=ev.cls==='none'?0:(ev.group?t.events.filter(e=>e.group===ev.group).length:1);const car=ev.cls==='car_drive';
+  const r={session_id:s.id,take_id:t.take_id,event_id:ev.event_id,'原本':t.file,'class':ev.cls,'象限':ev.quad,'ラップ秒':ev.lap===''?'':ev.lap.toFixed(1),n_car:ncar,overlap_group_id:ev.group,'車種':car?ev.power:'','車両区分':car?ev.vtype:'','確認方法':car?ev.confirm:'','速度':car?ev.speed:'','横距離m':DIST_CLASSES.has(ev.cls)?ev.dist:'','状態':ev.stand,pair_id:ev.pair,'特記':ev.note};
+  rows.push(E_COLS.map(c=>q(r[c])).join(','));});});});return rows.join('\n')+'\n';}
+function renderOut(){$('outS').value=sessionCsv();$('outE').value=eventsCsv();}
+async function copyText(el){el.focus();el.select();try{await navigator.clipboard.writeText(el.value);toast('コピーした');return;}catch(e){}
+  try{if(document.execCommand('copy')){toast('コピーした');return;}}catch(e){}toast('コピーできない。長押しで選択して');}
+async function shareText(title,text){try{if(navigator.share){await navigator.share({title:title,text:text});return;}}catch(e){if(e&&e.name==='AbortError')return;}toast('共有が使えない端末。コピーを使って');}
+$('btnCopyS').onclick=()=>copyText($('outS'));$('btnCopyE').onclick=()=>copyText($('outE'));
+$('btnShareS').onclick=()=>shareText('session.csv',sessionCsv());$('btnShareE').onclick=()=>shareText('events.csv',eventsCsv());
+$('btnWipe').onclick=()=>{if(!confirm('この端末の記録を全部消します。PC に貼り終えましたか？'))return;if(!confirm('本当に消しますか？'))return;S={sessions:[],cur:null,prep:{},tab:'flow'};save();toast('消した');render();};
+
+// ---------- 全体 ----------
+function render(){const s=cur();$('hdrSid').textContent=s?s.id+(s.take&&s.take.running?' ● 録音中':''):'セッションなし';
+  const nx=nextText();$('nextTxt').textContent=nx[0];
+  renderFlow();renderSession();renderTake();renderList();renderOut();}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const s=cur();if(s&&s.take&&s.take.running)wakeOn();}});
+showTab(S.tab||'flow');
+})();
+</script>
