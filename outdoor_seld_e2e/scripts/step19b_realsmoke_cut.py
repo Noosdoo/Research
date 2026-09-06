@@ -363,11 +363,26 @@ def main() -> int:
 
     out_rows, n_clip = [], 0
     matched_origs, skipped_files = set(), []
-    calib_names = {orig_key(r.get("calib_file", "")) for r in _load_ann(ann_path)[0] if r.get("calib_file")}
+    _all_rows = _load_ann(ann_path)[0]
+    calib_names = {orig_key(r.get("calib_file", "")) for r in _all_rows if r.get("calib_file")}
+    check_names = {orig_key(r.get("check_file", "")) for r in _all_rows if r.get("check_file")}   # 点検録音（step19e で使う・監査 H01）
+    excl_names = {orig_key(x) for r in _all_rows for x in (r.get("excluded_files", "") or "").split()}   # 記録紙の備考「除外: ...」（監査 H02/H04）
+    # step19d が注釈の隣に置くセッション表（<ann>_sessions.csv）。事象が 0 行のセッションでも校正・点検・除外の原本名が分かる
+    side = ann_path.with_name(ann_path.stem + "_sessions.csv")
+    if side.exists():
+        with open(side, encoding="utf-8-sig", newline="") as fh:
+            srows = list(csv.DictReader(fh))
+        calib_names |= {orig_key(r.get("calib_file", "")) for r in srows if r.get("calib_file")}
+        check_names |= {orig_key(r.get("check_file", "")) for r in srows if r.get("check_file")}
+        excl_names |= {orig_key(x) for r in srows for x in (r.get("excluded_files", "") or "").split()}
+        print(f"セッション表 {side.name}: {len(srows)} セッション（校正 {len(calib_names)}・点検 {len(check_names)}・除外 {len(excl_names)} 本を切り出し対象から外す）")
     for path in files:
         orig = orig_key(path.name)
-        if orig.endswith("_calib") or orig in calib_names:
-            continue                      # 校正録音（step19 --calib で使う）は切り出し対象ではない
+        if orig.endswith("_calib") or orig in calib_names or orig in check_names:
+            continue                      # 校正録音（step19 --calib）・点検録音（step19e）は切り出し対象ではない
+        if orig in excl_names:
+            print(f"  除外（記録紙の備考の指示）: {path.name}")
+            continue
         with sf.SoundFile(str(path)) as f:
             length = len(f) / f.samplerate
             input_fs = f.samplerate

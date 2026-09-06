@@ -886,6 +886,39 @@ check("T47c 正面が +12° にずれた 1 打: 正面ズレ_deg=+12、--yaw=−
       r47c.returncode == 1 and abs(j47c["front_offset_deg"] - 12.0) <= 1.5 and abs(j47c["yaw_for_step19"] + 12.0) <= 1.5 and abs(az_after) <= 1.5,
       f"(front={j47c['front_offset_deg']}, yaw={j47c['yaw_for_step19']}, after={az_after:.1f})")
 
+# ---------------- T48: ノートの原本構成（校正 ZOOM0001 / 点検 ZOOM0002 / 事象 ZOOM0003 が同じ raw/）で 変換→校正→切り出し が追加指定なしで通る（ノート監査 H01） ----------------
+with tempfile.TemporaryDirectory() as td48:
+    import soundfile as sf
+    import subprocess, csv as _csv48
+    td48 = Path(td48); raw = td48 / "raw"; raw.mkdir(); conv = td48 / "conv"
+    fs = 24000; tt = np.arange(fs * 12) / fs
+    for name in ("ZOOM0001.wav", "ZOOM0002.wav", "ZOOM0003.wav", "ZOOM0004.wav"):
+        sf.write(str(raw / name), np.tile((0.01 * np.sin(2 * np.pi * 1000.0 * tt))[:, None], (1, 4)).astype(np.float32), fs)
+    with open(td48 / "session.csv", "w", newline="", encoding="utf-8") as f:
+        w = _csv48.DictWriter(f, fieldnames=["session_id", "区分", "用途", "LAeq_dB", "暗騒音区間_秒", "校正原本", "点検原本", "点検方式", "マイク高さ_cm", "備考"]); w.writeheader()
+        w.writerow({"session_id": "20260920_A1", "区分": "A", "用途": "最終評価", "LAeq_dB": "52.3", "暗騒音区間_秒": "0-12", "校正原本": "ZOOM0001.wav", "点検原本": "ZOOM0002.wav", "点検方式": "4方位", "マイク高さ_cm": "205", "備考": "電池交換／除外: ZOOM0004.wav"})
+    with open(td48 / "events.csv", "w", newline="", encoding="utf-8") as f:
+        w = _csv48.DictWriter(f, fieldnames=["session_id", "take_id", "event_id", "原本", "class", "象限", "ラップ秒", "n_car", "横距離m", "状態", "pair_id"]); w.writeheader()
+        w.writerow({"session_id": "20260920_A1", "take_id": "1", "event_id": "1", "原本": "ZOOM0003.wav", "class": "car_drive", "象限": "R", "ラップ秒": "9.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""})
+    py = sys.executable; sc = ROOT / "scripts"
+    a1 = subprocess.run([py, str(sc / "step19d_field_csv_to_ann.py"), "--session", str(td48 / "session.csv"), "--events", str(td48 / "events.csv"), "--out", str(td48 / "ann_orig.csv"), "--audio-dir", str(raw)], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    a2 = subprocess.run([py, str(sc / "step19_realsmoke_convert.py"), "--in", str(raw), "--calib", str(raw / "ZOOM0001.wav"), "--laeq", "52.3", "--gain-only", "--out", str(conv)], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    a3 = subprocess.run([py, str(sc / "step19b_realsmoke_cut.py"), "--mode", "event", "--in", str(raw), "--ann", str(td48 / "ann_orig.csv"), "--calib-dir", str(conv), "--pitch", "0", "--roll", "0", "--yaw", "0", "--out", str(td48 / "clips"), "--ann-out", str(td48 / "ann_all.csv")], capture_output=True, text=True, encoding="utf-8", errors="replace")
+    rows48 = list(_csv48.DictReader(open(td48 / "ann_all.csv", encoding="utf-8"))) if (td48 / "ann_all.csv").exists() else []
+    check("T48 校正 id = 校正原本の stem（ZOOM0001）で step19 の json と一致し、点検原本 ZOOM0002 と備考の除外 ZOOM0004 は未注釈扱いにならず、事象 ZOOM0003 だけ切り出される（rc=0）",
+          a1.returncode == 0 and a2.returncode == 0 and a3.returncode == 0 and (conv / "calibration_ZOOM0001.json").exists()
+          and rows48 and {r["calibration_id"] for r in rows48} == {"ZOOM0001"} and {r["orig_file"] for r in rows48} == {"ZOOM0003"} and rows48[0].get("check_file") == "ZOOM0002.wav" and rows48[0].get("点検方式") == "4方位"
+          and rows48[0].get("excluded_files") == "ZOOM0004.wav" and "除外（記録紙" in a3.stdout,
+          f"(rc={[a1.returncode, a2.returncode, a3.returncode]}, ids={sorted({r.get('calibration_id') for r in rows48})}, origs={sorted({r.get('orig_file') for r in rows48})}, err={(a3.stdout + a3.stderr)[-300:]!r})")
+
+# ---------------- T49: 区分=歩行対比 は pair_id が無くても 区分=歩行 に正規化し、pair 欠落を警告する（ノート監査 H05） ----------------
+sess49 = [{"session_id": "W1", "区分": "歩行対比", "用途": "最終評価", "マイク高さ_cm": "205"}]
+ev49 = [{"session_id": "W1", "take_id": "1", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "8.0", "n_car": "1", "横距離m": "2.0", "状態": "静止", "pair_id": ""},
+        {"session_id": "W1", "take_id": "2", "event_id": "1", "class": "car_drive", "象限": "R", "ラップ秒": "8.0", "n_car": "1", "横距離m": "2.0", "状態": "歩行", "pair_id": "P1"}]
+rows49, warns49 = s19d.convert(sess49, ev49, 6.0, 0.0, None)
+check("T49 歩行対比: 2 行とも 区分=歩行・trial=walk、pair 無しの行だけ警告", len(rows49) == 2 and all(r["区分"] == "歩行" and r["trial"] == "walk" for r in rows49)
+      and sum("pair_id が無い" in w for w in warns49) == 1, f"(区分={[r['区分'] for r in rows49]}, warns={warns49})")
+
 if fails:
     print(f"NG: {len(fails)}件 {fails}")
     sys.exit(1)

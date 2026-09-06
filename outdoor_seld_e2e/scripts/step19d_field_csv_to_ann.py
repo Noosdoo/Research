@@ -15,7 +15,8 @@
     → 成功の窓は [ラップ−1 s, ラップ＋4 s]、方向はこの区間の推定方位で比べる（採点器 v3）
   - class=none の行（負例）は t_start=0、t_cpa=原本の長さ（--audio-dir から読む。無ければ空欄で step19b が埋める）
   - 校正: session.csv の LAeq_dB・暗騒音区間_秒・校正ファイル名（`校正原本` 列。無ければ "<session_id>_calib.wav"）から
-    calibration_id="<session_id>_calib" を付ける（補正量そのものは step19 --calib が計算）
+    calibration_id = 校正原本の stem（例 ZOOM0001）を付ける。step19 --calib raw/ZOOM0001.wav の既定 id と一致する（監査 H01）
+  - 点検原本（`点検原本` 列）と `点検方式` を check_file / 点検方式 として引き継ぐ。step19b は check_file を切り出し対象から外す
   - pair_id は "<session_id>/<pair_id>"、trial は 区分（歩行対比は "walk"）
   - session.csv の `マイク高さ_cm`（実測・必須）→ `mic_z`[m]。推論（_causal_infer_v17.py）は HEIGHT_TABLE にこの csv（clip_id, mic_z）を渡す（v17b・2026-09-06）
 
@@ -34,7 +35,7 @@ if hasattr(sys.stdout, "reconfigure"):
 
 OUT_COLS = ["clip_id", "event_id", "trial", "class", "quadrant", "t_start", "t_cpa",
             "take_id", "pair_id", "区分", "状態", "横距離m", "n_car", "車種", "速度", "特記",
-            "session_id", "orig_file", "calibration_id", "calib_file", "LAeq_dB", "暗騒音区間_秒", "t_start_rule", "用途", "mic_z",
+            "session_id", "orig_file", "calibration_id", "calib_file", "check_file", "点検方式", "excluded_files", "LAeq_dB", "暗騒音区間_秒", "t_start_rule", "用途", "mic_z",
             "overlap_group_id", "車両区分", "確認方法"]
 CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "car_drive", "crossing", "kick", "bike", "none"}
 WARN_CLASSES = {"siren", "horn", "backup_beep", "bike_bell", "crossing"}
@@ -94,7 +95,12 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
             mic_z = ""
             if sid in ses and (sid, "mic") not in seen:
                 warns.append(f"{sid}: session.csv に マイク高さ_cm が無い（v17b は装着高さをモデルに入力する。実測して cm で書く）"); seen.add((sid, "mic"))
-        kind = "歩行" if r.get("pair_id", "") else srow.get("区分", "")
+        kubun = srow.get("区分", "")
+        kind = "歩行" if (r.get("pair_id", "") or kubun == "歩行対比") else kubun
+        if kubun == "歩行対比" and cls != "none" and not r.get("pair_id", ""):
+            warns.append(f"{sid}/take{tk}: 区分=歩行対比 なのに pair_id が無い（静止/歩行の 2 本に同じ P 番号を付ける）")
+        if kubun == "歩行対比" and cls != "none" and not (r.get("状態", "") or "").strip():
+            warns.append(f"{sid}/take{tk}: 区分=歩行対比 なのに 状態（静止/歩行）が無い")
         ev = r.get("event_id", "1") or "1"
         key = (sid, tk, ev)
         if key in seen:
@@ -103,6 +109,13 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
         orig = r.get("原本", "") or f"{sid}_take{tk}.wav"
         clip_key = Path(orig).stem if r.get("原本", "") else f"{sid}_take{tk}"
         calib_file = srow.get("校正原本", "") or f"{sid}_calib.wav"
+        # 校正 id は校正原本の stem（step19 --calib の既定 calib_id と同じ）。校正原本が無い旧様式だけ <session>_calib
+        calib_id = Path(calib_file).stem
+        check_file = srow.get("点検原本", "")
+        # 備考の「除外: a.wav b.wav」（ノートの取り消し・事象 0 件の除外）→ step19b が切り出し対象から外す（ノート監査 H02/H04）
+        import re as _re
+        m_ex = _re.search(r"除外[:：]\s*([^／\n]+)", srow.get("備考", "") or "")
+        excluded = " ".join(m_ex.group(1).split()) if m_ex else ""
         if cls == "none":
             t_start = "0"
             t_cpa = ""
@@ -136,7 +149,8 @@ def convert(sessions, events, pre: float, lap_offset: float, audio_dir: Path | N
             "区分": kind, "状態": state, "横距離m": r.get("横距離m", ""), "n_car": r.get("n_car", ""),
             "車種": r.get("車種", ""), "速度": r.get("速度", ""), "特記": r.get("特記", ""),
             "overlap_group_id": r.get("overlap_group_id", ""), "車両区分": r.get("車両区分", ""), "確認方法": r.get("確認方法", ""),
-            "session_id": sid, "orig_file": orig, "calibration_id": f"{sid}_calib", "calib_file": calib_file,
+            "session_id": sid, "orig_file": orig, "calibration_id": calib_id, "calib_file": calib_file,
+            "check_file": check_file, "点検方式": srow.get("点検方式", ""), "excluded_files": excluded,
             "LAeq_dB": srow.get("LAeq_dB", ""), "暗騒音区間_秒": srow.get("暗騒音区間_秒", ""), "t_start_rule": rule,
             "用途": (srow.get("用途", "") or "最終評価"),
             "mic_z": mic_z})
@@ -157,6 +171,20 @@ def main() -> int:
     rows = [r for r in rows if r.get("用途") != "調整用"]
     with open(out_path, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=OUT_COLS); w.writeheader(); w.writerows(rows)
+    # セッション表（<out>_sessions.csv）: 事象が 0 行のセッションでも校正・点検・除外の原本名を step19b に渡す（ノート監査 H01/H02）
+    spath = out_path.with_name(out_path.stem + "_sessions.csv")
+    with open(spath, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["session_id", "calib_file", "calibration_id", "check_file", "点検方式", "excluded_files", "用途"]); w.writeheader()
+        import re as _re2
+        for srow in sessions:
+            sid = srow.get("session_id", "")
+            if not sid:
+                continue
+            cf = srow.get("校正原本", "") or f"{sid}_calib.wav"
+            m_ex = _re2.search(r"除外[:：]\s*([^／\n]+)", srow.get("備考", "") or "")
+            w.writerow({"session_id": sid, "calib_file": cf, "calibration_id": Path(cf).stem, "check_file": srow.get("点検原本", ""),
+                        "点検方式": srow.get("点検方式", ""), "excluded_files": " ".join(m_ex.group(1).split()) if m_ex else "",
+                        "用途": srow.get("用途", "") or "最終評価"})
     if tuning:
         tpath = out_path.with_name(out_path.stem + "_tuning.csv")
         with open(tpath, "w", newline="", encoding="utf-8") as f:
@@ -166,7 +194,7 @@ def main() -> int:
         print("[WARN]", wmsg)
     n_take = len({(r["session_id"], r["take_id"]) for r in rows})
     print(f"{len(rows)} 行 / {n_take} テイク / {len({r['session_id'] for r in rows})} セッション -> {out_path}")
-    print("次: step19 --calib <校正原本> --laeq <LAeq_dB> --laeq-window <暗騒音区間> --gain-only → step19b --gain-db ... --calibration-id <session>_calib → step19c --ann ... → step20 v3")
+    print("次: step19 --calib raw/<校正原本> --laeq <LAeq_dB> --gain-only --out <calib-dir>（校正 id = 校正原本の stem）→ step19b --calib-dir <calib-dir> → step19c --ann ... → step20 v3")
     return 1 if warns else 0
 
 

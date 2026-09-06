@@ -39,6 +39,7 @@ h2{font-size:15px;font-weight:700;margin:18px 0 8px;letter-spacing:.02em;text-wr
 h2:first-child{margin-top:4px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;box-shadow:var(--shadow)}
 .card+.card{margin-top:12px}
+.card.alert{border-color:var(--bad);background:var(--bad-soft)}
 .muted{color:var(--muted)}
 .small{font-size:13px}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
@@ -47,7 +48,7 @@ h2:first-child{margin-top:4px}
 input[type=text],input[type=number],input[type=date],input[type=time],textarea,select{
   font:inherit;font-size:16px;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px 12px;width:100%}
 input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-textarea{min-height:120px;resize:vertical}
+textarea{min-height:110px;resize:vertical}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{border:1px solid var(--line);background:var(--chip);color:var(--chip-ink);border-radius:999px;padding:9px 14px;font:inherit;font-size:15px;min-height:44px;cursor:pointer;line-height:1.2}
 .chip.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
@@ -58,7 +59,7 @@ button.btn.ghost{background:transparent}
 button.btn.danger{color:var(--bad);border-color:var(--bad)}
 button.btn:disabled{opacity:.45;cursor:not-allowed}
 .big{width:100%;min-height:76px;font-size:22px;border-radius:14px}
-.lap{width:100%;min-height:150px;font-size:34px;border-radius:18px;letter-spacing:.06em}
+.lap{width:100%;min-height:120px;font-size:30px;border-radius:18px;letter-spacing:.06em}
 .clock{font-size:52px;font-weight:700;text-align:center;line-height:1;padding:6px 0 2px}
 .clock.small{font-size:30px}
 .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
@@ -81,16 +82,17 @@ th{font-size:11px;letter-spacing:.08em;color:var(--muted)}
 .badge.good{background:var(--good-soft);color:var(--good)}.badge.warn{background:var(--warn-soft);color:var(--warn)}.badge.bad{background:var(--bad-soft);color:var(--bad)}
 .hint{font-size:13px;color:var(--muted);border-left:3px solid var(--accent);padding:4px 10px;margin-top:8px}
 .prompt{font-size:64px;font-weight:700;text-align:center;padding:16px 0;letter-spacing:.1em}
+.issue{display:flex;flex-direction:column;gap:6px;padding:10px 12px;border:1px solid var(--bad);border-radius:10px;background:var(--bad-soft);margin-top:8px}
+.issue b{color:var(--bad)}
 nav{position:fixed;bottom:0;left:0;right:0;z-index:6;background:var(--panel);border-top:1px solid var(--line)}
 nav .in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
 nav button{font:inherit;font-size:12px;font-weight:700;background:none;border:0;color:var(--muted);padding:10px 4px 14px;cursor:pointer;min-height:56px}
 nav button.on{color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
 nav button .ic{display:block;font-size:18px;line-height:1.2}
-.toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9}
+.toast{position:fixed;left:50%;bottom:76px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s;z-index:9;max-width:90vw;text-align:center}
 .toast.show{opacity:1}
-.sep{height:1px;background:var(--line);margin:12px 0}
 code{font-family:"IBM Plex Mono",Consolas,monospace;font-size:13px;background:var(--panel2);padding:1px 5px;border-radius:4px}
-pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;overflow-x:auto;margin:6px 0}
+pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;overflow-x:auto;margin:6px 0;white-space:pre}
 @media (prefers-reduced-motion: reduce){.toast{transition:none}}
 </style>
 
@@ -122,18 +124,14 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
   </div>
 
   <h2>出る前のチェック</h2>
-  <div class="card">
-    <div class="chips" id="prepChips"></div>
-  </div>
+  <div class="card"><div class="chips" id="prepChips"></div></div>
 
   <h2>帰宅後（PC で）</h2>
   <div class="card small">
     <ol style="margin:0;padding-left:20px">
       <li>SD の wav を <code>raw/</code> に入れる</li>
-      <li>「出力」タブの 2 つの CSV を <code>session.csv</code> / <code>events.csv</code> に貼る</li>
-      <li>点検: <code>step19e_check_azimuth.py --in raw/&lt;点検原本&gt;</code> → 正面ズレ_deg を書く</li>
-      <li>校正: <code>step19 --calib raw/&lt;校正原本&gt; --laeq &lt;LAeq&gt; --gain-only</code></li>
-      <li>変換: <code>step19d</code> → 切り出し <code>step19b</code> → 検査 <code>step19c</code> → 採点 <code>step20 v3</code></li>
+      <li>「出力」タブの session.csv / events.csv を記入用 CSV フォルダの同名ファイルに貼る</li>
+      <li>「出力」タブの<b>コマンド</b>を上から順に実行する（校正原本・点検原本・LAeq・点検方式がセッションの値で入っている）</li>
     </ol>
   </div>
 </section>
@@ -154,7 +152,7 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
         <div class="field" style="flex:1"><label>録音機の次のファイル番号</label><input type="number" id="inFileNo" min="1" step="1" placeholder="1"></div>
         <div class="field" style="flex:1"><label>ファイル名の頭</label><input type="text" id="inPrefix" value="ZOOM"></div>
       </div>
-      <p class="small muted" style="margin:8px 0 0">H3-VR の画面で次に作られる番号を見て入れる。以後 校正→点検→テイクの順に自動で振る。</p>
+      <p class="small muted" style="margin:8px 0 0">H3-VR の画面で次に作られる番号を見て入れる。以後 校正→点検→テイクの順に自動で振る。ずれたら「事象」タブでいつでも直せる。</p>
       <div class="field"><label>天候</label><div class="chips" id="chipWeather"></div></div>
       <div class="field"><label>風（3 段・強なら中止）</label><div class="chips" id="chipWind"></div></div>
       <div class="field"><label>協力者</label><input type="text" id="inHelper" placeholder="なし"></div>
@@ -175,10 +173,11 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
 
     <div class="card" id="cardCheck">
       <div class="row" style="justify-content:space-between"><b>② 点検（指パッチン）</b><span class="badge" id="bdCheck">未</span></div>
-      <p class="small muted" style="margin:6px 0">校正の録音を止めてから、<b>別テイク</b>で。録音ボタン → 案内どおりに前・右・後・左で 1 回ずつパチン → 停止。点検原本 = <span class="mono" id="checkFile">—</span></p>
-      <div class="chips"><button class="chip on" data-mode="4" id="chk4">初日: 4 方位</button><button class="chip" data-mode="1" id="chk1">2 日目以降: 前 1 打</button></div>
+      <p class="small muted" style="margin:6px 0">校正の録音を止めてから、<b>別テイク</b>で。録音ボタン → 案内どおりに 1 回ずつパチン → 停止。点検原本 = <span class="mono" id="checkFile">—</span></p>
+      <div class="chips"><button class="chip" data-mode="4" id="chk4">4 方位（初日・合格前）</button><button class="chip" data-mode="1" id="chk1">前 1 打（4 方位が合格したあと）</button></div>
+      <p class="small muted" id="check4Note" style="margin:6px 0 0"></p>
       <div class="prompt" id="checkPrompt">—</div>
-      <div class="row"><button class="btn primary" style="flex:1" id="btnCheckStart">案内を始める</button><button class="btn" id="btnCheckDone">できた</button></div>
+      <div class="row"><button class="btn primary" style="flex:1" id="btnCheckStart">案内を始める</button><button class="btn" id="btnCheckDone">録れた</button></div>
     </div>
 
     <div class="card" id="cardHeight">
@@ -210,21 +209,33 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
       <div id="takeIdle">
         <button class="btn primary big" id="btnRec">新しいテイク（録音を始めたら押す）</button>
         <div class="row" style="margin-top:8px"><button class="btn" style="flex:1" id="btnNoneTake">何も来なかったテイクを足す</button></div>
+        <div class="field"><label>録音機の次の番号（画面と違ったらここで直す）</label>
+          <div class="row"><input type="number" id="inNextFile" min="1" step="1" style="flex:1"><span class="mono small" id="nextFileName"></span></div></div>
       </div>
       <div id="takeRun" hidden>
         <button class="btn primary lap" id="btnLap">事象を足す</button>
         <div class="row" style="margin-top:10px"><button class="btn" style="flex:1" id="btnStop">テイクを閉じる（録音停止）</button><button class="btn ghost" id="btnAbort">取り消し</button></div>
+        <div id="abortPanel" hidden>
+          <div class="hint">このテイクをどうする？ 録音機に残るファイルと番号を合わせるために選ぶ。</div>
+          <div class="chips" style="margin-top:8px">
+            <button class="chip wide" id="abNotRec">録音していない（番号はそのまま）</button>
+            <button class="chip wide" id="abNone">録音した → 負例として残す</button>
+            <button class="chip wide" id="abExclude">録音した → 除外して次の番号へ</button>
+            <button class="chip wide" id="abCancel">やめる（戻る）</button>
+          </div>
+        </div>
       </div>
     </div>
 
     <div id="evEdit" hidden>
       <div class="card" style="margin-top:12px">
-        <div class="row" style="justify-content:space-between"><b id="evTitle">事象 1</b><span class="mono" id="evLap"></span></div>
-        <div class="field"><label>ラップ秒（ストップウォッチの値をそのまま）</label><input type="number" inputmode="decimal" step="0.1" id="inLap" placeholder="8.4"></div>
+        <div class="row" style="justify-content:space-between"><b id="evTitle">事象 1</b><span class="mono small" id="evLapShow"></span></div>
+        <div class="field"><label>ラップ（ストップウォッチの表示をそのまま。例 01:23.4 → 分 1・秒 23.4）</label>
+          <div class="row"><input type="number" inputmode="numeric" id="inLapMin" placeholder="分" style="flex:1"><input type="number" inputmode="decimal" step="0.1" id="inLapSec" placeholder="秒 (23.4)" style="flex:2"></div></div>
         <div class="hint" id="lapHint">車: 前端（バンパー）が肩の線を通った瞬間</div>
         <div class="field"><label>クラス</label><div class="chips" id="chipClass"></div></div>
         <div class="field" id="fQuad"><label>象限（マイク基準）</label><div class="chips" id="chipQuad"></div></div>
-        <div class="field" id="fGroup" hidden><label>前の事象と重なっていたか</label><div class="chips" id="chipGroup"></div></div>
+        <div class="field" id="fGroup" hidden><label>重なり（同じテイクの同じクラスと）</label><div class="chips" id="chipGroup"></div></div>
         <div id="fCar">
           <div class="field"><label>車種（動力）</label><div class="chips" id="chipPower"></div></div>
           <div class="field"><label>車両区分</label><div class="chips" id="chipVtype"></div></div>
@@ -233,7 +244,7 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
         </div>
         <div class="field" id="fDist"><label>横距離 m（目測）</label><div class="chips" id="chipDist"></div></div>
         <div class="field"><label>状態</label><div class="chips" id="chipStand"></div></div>
-        <div class="field"><label>歩行対比の組（pair_id）</label><div class="chips" id="chipPair"></div></div>
+        <div class="field"><label>歩行対比の組（pair_id）<span id="pairNote"></span></label><div class="chips" id="chipPair"></div></div>
         <div class="field"><label>特記</label><div class="chips" id="chipNoteQ"></div><input type="text" id="inEvNote" placeholder="自由記入"></div>
         <div class="row" style="margin-top:12px"><button class="btn danger" id="btnEvDel">この事象を消す</button></div>
       </div>
@@ -249,12 +260,14 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
   <div class="row small muted" id="listSummary" style="margin-bottom:8px"></div>
   <div class="card tw"><table id="listTable"><tr><th>take</th><th>原本</th><th>事象</th><th></th></tr></table></div>
   <p class="small muted">行をタップすると「事象」タブで直せます。原本のファイル名を直すのもここ。</p>
+  <div id="exclBox" hidden><h2>除外した原本（切り出さない）</h2><div class="card tw"><table id="exclTable"></table></div></div>
   <h2>過去のセッション</h2>
   <div class="card tw"><table id="sessTable"><tr><th>session_id</th><th>区分</th><th>テイク</th><th></th></tr></table></div>
 </section>
 
 <!-- ================= 出力 ================= -->
 <section class="tab" id="tab-out">
+  <div id="issues"></div>
   <h2>session.csv</h2>
   <div class="card">
     <div class="row"><button class="btn primary" style="flex:1" id="btnCopyS">コピー</button><button class="btn" id="btnShareS">共有</button></div>
@@ -265,7 +278,12 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
     <div class="row"><button class="btn primary" style="flex:1" id="btnCopyE">コピー</button><button class="btn" id="btnShareE">共有</button></div>
     <textarea class="mono" id="outE" readonly></textarea>
   </div>
-  <p class="small muted">列の順番は記入用 CSV と同じ。PC で <code>md/design/実録_記入用CSV_2026-09-05/</code> の session.csv / events.csv に貼れば、そのまま step19d に入る。データはこの端末のブラウザに残る。</p>
+  <h2>帰宅後のコマンド（このセッションの値入り）</h2>
+  <div class="card">
+    <div class="row"><button class="btn" style="flex:1" id="btnCopyC">コピー</button></div>
+    <pre id="outCmd"></pre>
+  </div>
+  <p class="small muted">列の順番は記入用 CSV と同じ。PC で <code>md/design/実録_記入用CSV_2026-09-05/</code> の session.csv / events.csv に貼れば、そのまま step19d に入る。記録はこの端末のブラウザに残る。</p>
   <div class="row" style="margin-top:8px"><button class="btn danger" id="btnWipe">全部消す（貼り終えてから）</button></div>
 </section>
 </main>
@@ -301,25 +319,31 @@ const DIST=['1.0','1.5','2.0','2.5','3.0','4.0','5.0','8.0'];
 const STAND=['静止','歩行'];
 const NOTEQ=['会話が入った','風が強い','自信なし','後続と重なる','開始時から鳴動'];
 const PREP=['H3-VR 電池','SD の空き','ヘルメットの角度','騒音計','スマホの充電','メジャー','このノートを開いた'];
-const S_COLS=['session_id','日付','開始時刻','場所','区分','用途','装着','マイク高さ_cm','校正原本','点検原本','LAeq_dB','暗騒音区間_秒','水準器OK','正面ズレ_deg','天候','風_3段','協力者','備考'];
+const S_COLS=['session_id','日付','開始時刻','場所','区分','用途','装着','マイク高さ_cm','校正原本','点検原本','点検方式','LAeq_dB','暗騒音区間_秒','水準器OK','正面ズレ_deg','天候','風_3段','協力者','備考'];
 const E_COLS=['session_id','take_id','event_id','原本','class','象限','ラップ秒','n_car','overlap_group_id','車種','車両区分','確認方法','速度','横距離m','状態','pair_id','特記'];
+const LAP_MAX=600; // 10 分。これを超えたら分・秒の写し間違いを疑う
 
 // ---------- 状態 ----------
 const KEY='helmet_note_v1';
-let S={sessions:[],cur:null,prep:{},tab:'flow'};
+let S={sessions:[],cur:null,prep:{},tab:'flow',check4Done:false};
 try{const raw=localStorage.getItem(KEY); if(raw){const p=JSON.parse(raw); if(p&&Array.isArray(p.sessions)) S=Object.assign(S,p);}}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));const el=document.getElementById('savedAt');if(el)el.textContent='保存 '+nowHM();}catch(e){const el=document.getElementById('savedAt');if(el)el.textContent='保存できない';}}
-const _arm={};
-function armed(id,label){const b=$(id);if(_arm[id]&&Date.now()-_arm[id]<4000){_arm[id]=0;return true;}
-  _arm[id]=Date.now();const old=b.textContent;b.textContent=label;vib(30);setTimeout(()=>{if(b.textContent===label){b.textContent=old;_arm[id]=0;}},4000);return false;}
+S.sessions.forEach(s=>{if(!s.excluded)s.excluded=[];if(!s.ritual)s.ritual={calib:false,check:false};if(s.checkMode!=='1'&&s.checkMode!=='4')s.checkMode='4';});
 const $=id=>document.getElementById(id);
+function nowHM(){const d=new Date();return pad(d.getHours(),2)+':'+pad(d.getMinutes(),2);}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));const el=$('savedAt');if(el)el.textContent='保存 '+nowHM();}catch(e){const el=$('savedAt');if(el)el.textContent='保存できない';}}
 function cur(){return S.sessions.find(s=>s.id===S.cur)||null;}
-function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1600);}
+function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),2200);}
 function vib(ms){try{if(navigator.vibrate)navigator.vibrate(ms);}catch(e){}}
 function pad(n,w){return String(n).padStart(w,'0');}
 function today(){const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1,2)+'-'+pad(d.getDate(),2);}
-function nowHM(){const d=new Date();return pad(d.getHours(),2)+':'+pad(d.getMinutes(),2);}
 function fileName(s,n){return s.prefix+pad(n,4)+'.wav';}
+const _arm={};
+function armed(id,label){const b=$(id);if(_arm[id]&&Date.now()-_arm[id]<4000){_arm[id]=0;return true;}
+  _arm[id]=Date.now();const old=b.textContent;b.textContent=label;vib(30);setTimeout(()=>{if(b.textContent===label){b.textContent=old;_arm[id]=0;}},4000);return false;}
+function blankEvent(s,id){return {event_id:id,cls:'car_drive',quad:'',lap:'',group:'',power:'',vtype:'',confirm:'',speed:'',dist:'',stand:s.stand||'静止',pair:(s.kubun==='歩行対比'?(s.lastPair||'P1'):''),note:''};}
+function noneEvent(s){const e=blankEvent(s,1);e.cls='none';e.pair='';return e;}
+function lapText(ev){return ev.lap===''?'ラップ 未':ev.lap+' s';}
+function fixGroups(t){const cnt={};t.events.forEach(e=>{if(e.group)cnt[e.group]=(cnt[e.group]||0)+1;});t.events.forEach(e=>{if(e.group&&cnt[e.group]<2)e.group='';});}
 
 // ---------- chips ----------
 function chips(el,items,value,onpick,opts){
@@ -335,22 +359,22 @@ function showTab(t){S.tab=t;save();document.querySelectorAll('.tab').forEach(x=>
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>showTab(b.dataset.tab));
 
 // ---------- 次にやること ----------
-function nextText(){const s=cur();if(!s)return['セッションを作る（「セッション」タブ）','session'];
-  if(!s.ritual.calib)return['校正 60 秒（騒音計と並べて無言）','session'];
-  if(!s.ritual.check)return['点検（指パッチン '+(s.checkMode==='1'?'前 1 打':'前→右→後→左')+'）','session'];
-  if(!s.height)return['マイク高さをメジャーで測って入れる','session'];
-  if(!s.level)return['水準器を確かめて y/n','session'];
-  if(s.take&&s.take.running)return['来たらラップ → 「事象を足す」→ ラップ秒・クラス・象限','take'];
-  return['車の気配がしたら 録音ボタン＋ストップウォッチ → 「新しいテイク」','take'];}
+function nextText(){const s=cur();if(!s)return'セッションを作る（「セッション」タブ）';
+  if(!s.ritual.calib)return'校正 60 秒（騒音計と並べて無言）';
+  if(!s.ritual.check)return'点検（指パッチン '+(s.checkMode==='1'?'前 1 打':'前→右→後→左')+'）';
+  if(!s.height)return'マイク高さをメジャーで測って入れる';
+  if(!s.level)return'水準器を確かめて y/n';
+  if(s.take&&s.take.running)return'来たらラップ → 「事象を足す」→ ラップ・クラス・象限';
+  return'車の気配がしたら 録音ボタン＋ストップウォッチ → 「新しいテイク」';}
 
 // ---------- 流れ ----------
 function renderFlow(){const s=cur();const ol=$('flowSteps');ol.innerHTML='';
   const st=[['セッションを作る','区分・用途・場所・ファイル番号。ヘルメットをかぶる',!!s],
    ['校正 60 秒','録音ボタン＋「60 秒を数える」。無言。騒音計の値を入れる',!!(s&&s.ritual.calib)],
-   ['点検（指パッチン）','別テイク。前→右→後→左（2 日目以降は前だけ）',!!(s&&s.ritual.check)],
+   ['点検（指パッチン）','別テイク。前→右→後→左（4 方位が合格したあとは前だけ）',!!(s&&s.ritual.check)],
    ['マイク高さ・水準器','メジャーで cm。水準器がセンターか',!!(s&&s.height&&s.level)],
    ['事象テイク','車の気配 → 録音ボタンとストップウォッチを同時に → 「新しいテイク」→ 来たらラップ → 「事象を足す」で値を写し、クラス・象限 → 「テイクを閉じる」。来なかったら「何も来なかった」',!!(s&&s.takes.length)],
-   ['出力','「出力」タブの 2 つをコピーして PC に貼る',false]];
+   ['出力','「出力」タブで 未処理が 0 になってから、CSV とコマンドをコピーして PC に貼る',false]];
   let nowSet=false;st.forEach((x,i)=>{const li=document.createElement('li');const now=!x[2]&&!nowSet;if(now)nowSet=true;
     li.className=x[2]?'done':(now?'now':'');li.innerHTML='<span class="n">'+(x[2]?'✓':(i+1))+'</span><div><div class="t">'+x[0]+'</div><div class="d">'+x[1]+'</div></div>';ol.appendChild(li);});
   const pc=$('prepChips');pc.innerHTML='';PREP.forEach(p=>{const b=document.createElement('button');b.type='button';b.className='chip'+(S.prep[p]?' on':'');b.textContent=(S.prep[p]?'✓ ':'')+p;b.onclick=()=>{S.prep[p]=!S.prep[p];save();renderFlow();};pc.appendChild(b);});
@@ -373,11 +397,10 @@ $('btnNewSession').onclick=()=>{
   const n=S.sessions.filter(x=>x.id.startsWith(ymd+'_'+k)).length+1;
   const s={id:ymd+'_'+k+n,date:date,time:$('inTime').value||nowHM(),place:$('inPlace').value.trim(),kubun:form.kubun,yoto:form.yoto,
     prefix:($('inPrefix').value||'ZOOM').trim(),nextFile:isNaN(fno)?1:fno,weather:form.weather,wind:form.wind,helper:$('inHelper').value.trim()||'なし',note:'',
-    height:'',level:'',laeq:'',win:'0-60',front:'',calibFile:'',checkFile:'',checkMode:S.sessions.length?'1':'4',ritual:{calib:false,check:false},takes:[],take:null,stand:'静止'};
+    height:'',level:'',laeq:'',win:'0-60',front:'',calibFile:'',checkFile:'',checkMode:S.check4Done?'1':'4',ritual:{calib:false,check:false},takes:[],take:null,excluded:[],stand:'静止',lastPair:''};
   s.calibFile=fileName(s,s.nextFile);s.nextFile++;s.checkFile=fileName(s,s.nextFile);s.nextFile++;
   S.sessions.push(s);S.cur=s.id;save();toast('セッション '+s.id+' を開始');render();};
 
-// 校正 60 秒
 let calibT=null;
 $('btnCalibStart').onclick=()=>{const s=cur();if(!s)return;if(calibT){clearInterval(calibT);calibT=null;$('btnCalibStart').textContent='60 秒を数える';return;}
   const t0=Date.now();$('btnCalibStart').textContent='止める';
@@ -386,16 +409,15 @@ $('btnCalibStart').onclick=()=>{const s=cur();if(!s)return;if(calibT){clearInter
 $('inLaeq').onchange=()=>{const s=cur();if(!s)return;s.laeq=$('inLaeq').value;s.ritual.calib=!!s.laeq;save();render();};
 $('inWin').onchange=()=>{const s=cur();if(!s)return;s.win=$('inWin').value;save();};
 
-// 点検の案内
 let checkT=null;
 $('chk4').onclick=()=>{const s=cur();if(s){s.checkMode='4';save();render();}};
-$('chk1').onclick=()=>{const s=cur();if(s){s.checkMode='1';save();render();}};
+$('chk1').onclick=()=>{const s=cur();if(!s)return;if(!S.check4Done){toast('4 方位の点検がまだ合格していない。初日は 4 方位で');return;}s.checkMode='1';save();render();};
 $('btnCheckStart').onclick=()=>{const s=cur();if(!s||checkT)return;
   const seq=s.checkMode==='1'?['録音ボタン','前','停止']:['録音ボタン','前','右','後','左','停止'];let i=0;
-  const step=()=>{if(i>=seq.length){checkT=null;$('checkPrompt').textContent='できた？';return;}
+  const step=()=>{if(i>=seq.length){checkT=null;$('checkPrompt').textContent='録れた？';return;}
     const w=seq[i++];$('checkPrompt').textContent=w;vib(w==='録音ボタン'||w==='停止'?[80,60,80]:120);checkT=setTimeout(step,w==='録音ボタン'?2000:1500);};
   step();};
-$('btnCheckDone').onclick=()=>{const s=cur();if(!s)return;s.ritual.check=true;save();toast('点検を記録');render();};
+$('btnCheckDone').onclick=()=>{const s=cur();if(!s)return;s.ritual.check=true;if(s.checkMode==='4')S.check4Done=true;save();toast('点検を記録（'+(s.checkMode==='4'?'4 方位':'前 1 打')+'）');render();};
 $('inHeight').onchange=()=>{const s=cur();if(!s)return;s.height=$('inHeight').value;save();render();};
 $('inNote').onchange=()=>{const s=cur();if(!s)return;s.note=$('inNote').value;save();};
 $('btnCloseSession').onclick=()=>{const s=cur();if(!s)return;if(s.take&&s.take.running){toast('記録中のテイクを閉じてから');return;}
@@ -408,6 +430,7 @@ function renderSession(){const s=cur();$('sessNone').hidden=!!s;$('sessOn').hidd
   $('bdCheck').textContent=s.ritual.check?'済':'未';$('bdCheck').className='badge'+(s.ritual.check?' good':' warn');
   const h=!!(s.height&&s.level);$('bdHeight').textContent=h?'済':'未';$('bdHeight').className='badge'+(h?' good':' warn');
   $('chk4').classList.toggle('on',s.checkMode!=='1');$('chk1').classList.toggle('on',s.checkMode==='1');
+  $('check4Note').textContent=S.check4Done?'4 方位の点検は記録済み。PC で step19e が合格なら以後は前 1 打でよい':'4 方位の点検を PC で合格させるまでは 4 方位';
   if(document.activeElement!==$('inLaeq'))$('inLaeq').value=s.laeq;$('inWin').value=s.win;
   if(document.activeElement!==$('inHeight'))$('inHeight').value=s.height;
   chips($('chipLevel'),LEVEL,s.level,v=>{s.level=v;save();render();});
@@ -415,91 +438,152 @@ function renderSession(){const s=cur();$('sessNone').hidden=!!s;$('sessOn').hidd
   if(document.activeElement!==$('inNote'))$('inNote').value=s.note;}
 
 // ---------- 事象テイク ----------
-let selEv=null;
-function newEvent(s,lap){const take=s.take;const ev={event_id:take.events.length+1,cls:'car_drive',quad:'',lap:lap,group:'',power:'',vtype:'',confirm:'',speed:'',dist:'',stand:s.stand||'静止',pair:'',note:''};
-  take.events.push(ev);selEv=ev.event_id;return ev;}
-$('btnRec').onclick=()=>{const s=cur();if(!s)return;
-  s.take={take_id:s.takes.length+1,file:fileName(s,s.nextFile),running:true,events:[]};selEv=null;save();vib(60);render();};
-$('btnLap').onclick=()=>{const s=cur();if(!s||!s.take||!s.take.running)return;
-  newEvent(s,'');save();vib(40);render();try{$('inLap').focus();}catch(e){}};
-$('btnStop').onclick=()=>{const s=cur();if(!s||!s.take)return;
-  if(!s.take.events.length){toast('事象がありません。「事象を足す」か、取り消して「何も来なかった」を使う');return;}
-  const miss=s.take.events.filter(e=>e.cls!=='none'&&(!e.quad||e.lap==='')).length;
-  if(miss&&!armed('btnStop','象限かラップ秒が空の事象 '+miss+' 件。もう一度押すと閉じる'))return;
-  s.take.running=false;s.takes.push(s.take);s.nextFile++;s.take=null;selEv=null;save();toast('テイク '+s.takes.length+' を保存');render();};
-$('btnAbort').onclick=()=>{const s=cur();if(!s||!s.take)return;if(!armed('btnAbort','もう一度押すと取り消し'))return;s.take=null;selEv=null;save();render();};
-$('btnNoneTake').onclick=()=>{const s=cur();if(!s)return;const t={take_id:s.takes.length+1,file:fileName(s,s.nextFile),running:false,events:[{event_id:1,cls:'none',quad:'',lap:'',group:'',power:'',vtype:'',confirm:'',speed:'',dist:'',stand:s.stand||'静止',pair:'',note:''}]};
-  s.takes.push(t);s.nextFile++;save();toast('負例テイクを足した（原本 '+t.file+'）');render();};
-$('btnEvDel').onclick=()=>{const s=cur();const t=editTake(s);if(!t)return;const i=t.events.findIndex(e=>e.event_id===selEv);if(i<0)return;
-  if(!armed('btnEvDel','もう一度押すと消す'))return;t.events.splice(i,1);t.events.forEach((e,k)=>e.event_id=k+1);selEv=null;save();render();};
-let editTakeId=null; // 一覧から選んだ過去テイク
+let selEv=null,editTakeId=null;
 function editTake(s){if(!s)return null;if(s.take&&s.take.running)return s.take;if(editTakeId!=null)return s.takes.find(t=>t.take_id===editTakeId)||null;return s.takes[s.takes.length-1]||null;}
-$('inEvNote').onchange=()=>{const s=cur();const t=editTake(s);const ev=t&&t.events.find(e=>e.event_id===selEv);if(ev){ev.note=$('inEvNote').value;save();}};
-$('inLap').onchange=()=>{const s=cur();const t=editTake(s);const ev=t&&t.events.find(e=>e.event_id===selEv);if(ev){ev.lap=$('inLap').value.trim();save();render();}};
+function curEv(){const s=cur();const t=editTake(s);return t?{s:s,t:t,ev:t.events.find(e=>e.event_id===selEv)||null}:{s:s,t:null,ev:null};}
+$('btnRec').onclick=()=>{const s=cur();if(!s)return;
+  s.take={take_id:s.takes.length+1,file:fileName(s,s.nextFile),running:true,events:[]};selEv=null;editTakeId=null;_arm.btnStop=0;_arm.btnAbort=0;$('abortPanel').hidden=true;save();vib(60);render();};
+$('btnLap').onclick=()=>{const s=cur();if(!s||!s.take||!s.take.running)return;
+  const ev=blankEvent(s,s.take.events.length+1);s.take.events.push(ev);selEv=ev.event_id;save();vib(40);render();try{$('inLapSec').focus();}catch(e){}};
+function closeProblems(s,t){const p=[];t.events.forEach(ev=>{if(ev.cls==='none')return;
+  if(ev.lap==='')p.push('事象 '+ev.event_id+': ラップが空');else if(Number(ev.lap)>LAP_MAX)p.push('事象 '+ev.event_id+': ラップ '+ev.lap+' s は 10 分超（分・秒の写し間違い？）');
+  if(!ev.quad)p.push('事象 '+ev.event_id+': 象限が空');
+  if(DIST_CLASSES.has(ev.cls)&&!ev.dist)p.push('事象 '+ev.event_id+': 横距離が空（検査で止まる）');
+  if(s.kubun==='歩行対比'&&!ev.pair)p.push('事象 '+ev.event_id+': 歩行対比なのに pair_id が無い');});
+  for(let i=1;i<t.events.length;i++){const a=t.events[i-1],b=t.events[i];if(a.lap!==''&&b.lap!==''&&Number(b.lap)<Number(a.lap))p.push('事象 '+b.event_id+' のラップが事象 '+a.event_id+' より小さい（順番？）');}
+  return p;}
+$('btnStop').onclick=()=>{const s=cur();if(!s||!s.take)return;
+  if(!s.take.events.length){toast('事象がありません。「事象を足す」か、「取り消し」で負例・除外を選ぶ');return;}
+  const p=closeProblems(s,s.take);
+  if(p.length&&!armed('btnStop',p[0]+'（'+p.length+' 件）。もう一度押すと閉じる'))return;
+  _arm.btnStop=0;fixGroups(s.take);s.take.running=false;s.takes.push(s.take);s.nextFile++;s.take=null;selEv=null;$('abortPanel').hidden=true;save();toast('テイク '+s.takes.length+' を保存');render();};
+$('btnAbort').onclick=()=>{$('abortPanel').hidden=!$('abortPanel').hidden;};
+$('abCancel').onclick=()=>{$('abortPanel').hidden=true;};
+$('abNotRec').onclick=()=>{const s=cur();if(!s||!s.take)return;s.take=null;selEv=null;$('abortPanel').hidden=true;save();toast('取り消した（番号はそのまま '+fileName(s,s.nextFile)+'）');render();};
+$('abNone').onclick=()=>{const s=cur();if(!s||!s.take)return;const t=s.take;t.events=[noneEvent(s)];t.running=false;s.takes.push(t);s.nextFile++;s.take=null;selEv=null;$('abortPanel').hidden=true;save();toast('負例テイクとして残した（'+t.file+'）');render();};
+$('abExclude').onclick=()=>{const s=cur();if(!s||!s.take)return;s.excluded.push({file:s.take.file,reason:'取り消し',at:nowHM()});s.nextFile++;s.take=null;selEv=null;$('abortPanel').hidden=true;save();toast('除外して次へ（'+fileName(s,s.nextFile)+'）');render();};
+$('btnNoneTake').onclick=()=>{const s=cur();if(!s)return;const t={take_id:s.takes.length+1,file:fileName(s,s.nextFile),running:false,events:[noneEvent(s)]};
+  s.takes.push(t);s.nextFile++;save();toast('負例テイクを足した（原本 '+t.file+'）');render();};
+$('inNextFile').onchange=()=>{const s=cur();if(!s)return;const n=parseInt($('inNextFile').value,10);if(isNaN(n)||n<1){toast('1 以上の整数');render();return;}s.nextFile=n;save();toast('次は '+fileName(s,n));render();};
+$('btnEvDel').onclick=()=>{const c=curEv();if(!c.ev)return;if(!armed('btnEvDel','もう一度押すと消す'))return;
+  const i=c.t.events.indexOf(c.ev);c.t.events.splice(i,1);c.t.events.forEach((e,k)=>e.event_id=k+1);fixGroups(c.t);selEv=null;save();
+  if(!c.t.events.length&&!c.t.running)toast('このテイクは事象 0 件。「出力」タブで負例か除外を選ぶ');render();};
+$('inEvNote').onchange=()=>{const c=curEv();if(c.ev){c.ev.note=$('inEvNote').value;save();}};
+function lapChanged(){const c=curEv();if(!c.ev)return;const m=$('inLapMin').value.trim(),sec=$('inLapSec').value.trim();
+  if(m===''&&sec===''){c.ev.lap='';save();render();return;}
+  const mi=m===''?0:Number(m),se=sec===''?0:Number(sec);
+  if(!isFinite(mi)||!isFinite(se)||mi<0||se<0){toast('数字で入れる');return;}
+  if(m!==''&&se>=60){toast('分を使うときは秒は 60 未満');return;}
+  const lap=Math.round((mi*60+se)*10)/10;c.ev.lap=String(lap);
+  if(lap>LAP_MAX)toast('10 分を超えている。分と秒の欄を確認');
+  const prev=c.t.events.find(e=>e.event_id===c.ev.event_id-1);if(prev&&prev.lap!==''&&lap<Number(prev.lap))toast('前の事象（'+prev.lap+' s）より小さい。順番を確認');
+  save();render();}
+$('inLapMin').onchange=lapChanged;$('inLapSec').onchange=lapChanged;
+
+function groupChips(el,t,ev){const others=t.events.filter(e=>e!==ev&&e.cls===ev.cls&&e.cls!=='none');el.innerHTML='';
+  const mk=(lab,on,fn)=>{const b=document.createElement('button');b.type='button';b.className='chip'+(on?' on':'');b.textContent=lab;b.onclick=fn;el.appendChild(b);};
+  mk('単独（重なりなし）',!ev.group,()=>{ev.group='';fixGroups(t);save();render();});
+  others.forEach(o=>mk('事象 '+o.event_id+'（'+lapText(o)+'）と重なった',!!(ev.group&&o.group===ev.group),()=>{
+    if(ev.group&&o.group===ev.group){return;}
+    if(o.group){ev.group=o.group;}else if(ev.group){o.group=ev.group;}else{const used=t.events.map(e=>e.group).filter(Boolean);let k=1;while(used.includes('G'+k))k++;ev.group=o.group='G'+k;}
+    save();render();}));
+  return others.length>0;}
 
 function renderTake(){const s=cur();$('takeNeedSession').hidden=!!s;$('takeArea').hidden=!s;if(!s)return;
   const running=!!(s.take&&s.take.running);const t=editTake(s);
   $('takeNo').textContent=running?s.take.take_id:(t?t.take_id:s.takes.length+1);
   $('takeFile').textContent=running?s.take.file:(t?t.file:fileName(s,s.nextFile));
   $('takeState').textContent=running?'記録中':(t?'テイク '+t.take_id+' を編集':'待機');$('takeState').className='badge'+(running?' bad':'');
-  $('takeIdle').hidden=running;$('takeRun').hidden=!running;
+  $('takeIdle').hidden=running;$('takeRun').hidden=!running;if(!running)$('abortPanel').hidden=true;
+  if(document.activeElement!==$('inNextFile'))$('inNextFile').value=s.nextFile;$('nextFileName').textContent=fileName(s,s.nextFile);
   const list=$('takeEvents');list.innerHTML='';
   if(t){t.events.forEach(ev=>{const d=document.createElement('div');d.className='ev'+(ev.event_id===selEv?' on':'');
     const cl=(CLASSES.find(c=>c[0]===ev.cls)||[ev.cls,ev.cls])[1];
-    d.innerHTML='<span class="l">'+ev.event_id+'. '+cl+(ev.quad?' / '+ev.quad:'')+(ev.group?' <span class="badge">'+ev.group+'</span>':'')+'</span><span class="r mono">'+(ev.lap===''?'ラップ秒 未':ev.lap+' s')+'</span>';
+    d.innerHTML='<span class="l">'+ev.event_id+'. '+cl+(ev.quad?' / '+ev.quad:'')+(ev.group?' <span class="badge">'+ev.group+'</span>':'')+'</span><span class="r mono">'+lapText(ev)+'</span>';
     d.onclick=()=>{selEv=ev.event_id;render();};list.appendChild(d);});}
   const ev=t&&t.events.find(e=>e.event_id===selEv);$('evEdit').hidden=!ev;
-  if(ev){$('evTitle').textContent='事象 '+ev.event_id+(running?'':'（テイク '+t.take_id+'）');$('evLap').textContent='';if(document.activeElement!==$('inLap'))$('inLap').value=ev.lap;
-    chips($('chipClass'),CLASSES,ev.cls,v=>{ev.cls=v;if(v==='none'){ev.quad='';}save();render();});
-    $('lapHint').textContent=CLASS_HINT[ev.cls]||'';
-    $('fQuad').hidden=ev.cls==='none';chips($('chipQuad'),QUAD,ev.quad,v=>{ev.quad=v;save();render();},{wide:true});
-    const prev=t.events.find(e=>e.event_id===ev.event_id-1);$('fGroup').hidden=!(prev&&prev.cls===ev.cls&&ev.cls!=='none');
-    if(prev){chips($('chipGroup'),[['y','重なった（同じ群）'],['n','離れていた']],ev.group?'y':(ev.group===''&&ev._sep?'n':''),v=>{if(v==='y'){if(!prev.group){const used=t.events.map(e=>e.group).filter(Boolean);let k=1;while(used.includes('G'+k))k++;prev.group='G'+k;}ev.group=prev.group;ev._sep=false;}else{ev.group='';ev._sep=true;}save();render();});}
-    $('fCar').hidden=ev.cls!=='car_drive';
-    chips($('chipPower'),POWER,ev.power,v=>{ev.power=v;save();render();},{toggle:true});
-    chips($('chipVtype'),VTYPE,ev.vtype,v=>{ev.vtype=v;save();render();},{toggle:true});
-    chips($('chipConfirm'),CONFIRM,ev.confirm,v=>{ev.confirm=v;save();render();},{toggle:true});
-    chips($('chipSpeed'),SPEED,ev.speed,v=>{ev.speed=v;save();render();},{toggle:true});
-    $('fDist').hidden=!DIST_CLASSES.has(ev.cls);chips($('chipDist'),DIST,ev.dist,v=>{ev.dist=v;save();render();},{toggle:true});
-    chips($('chipStand'),STAND,ev.stand,v=>{ev.stand=v;s.stand=v;save();render();});
-    const pairs=['','P1','P2','P3','P4','P5','P6'];chips($('chipPair'),pairs.map(p=>[p,p||'なし']),ev.pair,v=>{ev.pair=v;save();render();});
-    chips($('chipNoteQ'),NOTEQ,'',v=>{ev.note=(ev.note?ev.note+'／':'')+v;save();render();});
-    if(document.activeElement!==$('inEvNote'))$('inEvNote').value=ev.note;}
-
+  if(!ev)return;
+  $('evTitle').textContent='事象 '+ev.event_id+(running?'':'（テイク '+t.take_id+'）');$('evLapShow').textContent=ev.lap===''?'':'= '+ev.lap+' 秒';
+  if(document.activeElement!==$('inLapMin')&&document.activeElement!==$('inLapSec')){const v=ev.lap===''?null:Number(ev.lap);$('inLapMin').value=(v===null||v<60)?'':String(Math.floor(v/60));$('inLapSec').value=v===null?'':String(Math.round((v%60)*10)/10);}
+  chips($('chipClass'),CLASSES,ev.cls,v=>{ev.cls=v;if(v==='none'){ev.quad='';ev.group='';fixGroups(t);}save();render();});
+  $('lapHint').textContent=CLASS_HINT[ev.cls]||'';
+  $('fQuad').hidden=ev.cls==='none';chips($('chipQuad'),QUAD,ev.quad,v=>{ev.quad=v;save();render();},{wide:true});
+  $('fGroup').hidden=ev.cls==='none'||!groupChips($('chipGroup'),t,ev);
+  $('fCar').hidden=ev.cls!=='car_drive';
+  chips($('chipPower'),POWER,ev.power,v=>{ev.power=v;save();render();},{toggle:true});
+  chips($('chipVtype'),VTYPE,ev.vtype,v=>{ev.vtype=v;save();render();},{toggle:true});
+  chips($('chipConfirm'),CONFIRM,ev.confirm,v=>{ev.confirm=v;save();render();},{toggle:true});
+  chips($('chipSpeed'),SPEED,ev.speed,v=>{ev.speed=v;save();render();},{toggle:true});
+  $('fDist').hidden=!DIST_CLASSES.has(ev.cls);chips($('chipDist'),DIST,ev.dist,v=>{ev.dist=v;save();render();},{toggle:true});
+  chips($('chipStand'),STAND,ev.stand,v=>{ev.stand=v;s.stand=v;save();render();});
+  $('pairNote').textContent=s.kubun==='歩行対比'?'（歩行対比では必須。静止と歩行の 2 本に同じ値）':'（歩行対比のときだけ）';
+  const pairs=['','P1','P2','P3','P4','P5','P6'];chips($('chipPair'),pairs.map(p=>[p,p||'なし']),ev.pair,v=>{ev.pair=v;if(v)s.lastPair=v;save();render();});
+  chips($('chipNoteQ'),NOTEQ,'',v=>{ev.note=(ev.note?ev.note+'／':'')+v;save();render();});
+  if(document.activeElement!==$('inEvNote'))$('inEvNote').value=ev.note;
 }
 
 // ---------- 一覧 ----------
 function renderList(){const s=cur();const tb=$('listTable');tb.innerHTML='<tr><th>take</th><th>原本</th><th>事象</th><th></th></tr>';
-  if(s){const n=s.takes.length,ne=s.takes.reduce((a,t)=>a+t.events.filter(e=>e.cls!=='none').length,0),nn=s.takes.filter(t=>t.events.every(e=>e.cls==='none')).length;
-    $('listSummary').textContent=s.id+' — テイク '+n+' / 事象 '+ne+' / 負例テイク '+nn;
-    s.takes.forEach(t=>{const tr=document.createElement('tr');const cls=t.events.map(e=>(CLASSES.find(c=>c[0]===e.cls)||[e.cls,e.cls])[1]+(e.quad?'·'+e.quad:'')).join(', ');
+  if(s){const n=s.takes.length,ne=s.takes.reduce((a,t)=>a+t.events.filter(e=>e.cls!=='none').length,0),nn=s.takes.filter(t=>t.events.length&&t.events.every(e=>e.cls==='none')).length,n0=s.takes.filter(t=>!t.events.length).length;
+    $('listSummary').textContent=s.id+' — テイク '+n+' / 事象 '+ne+' / 負例テイク '+nn+(n0?' / 事象 0 件 '+n0+'（要処理）':'')+(s.excluded.length?' / 除外 '+s.excluded.length:'');
+    s.takes.forEach(t=>{const tr=document.createElement('tr');const cls=t.events.length?t.events.map(e=>(CLASSES.find(c=>c[0]===e.cls)||[e.cls,e.cls])[1]+(e.quad?'·'+e.quad:'')).join(', '):'（0 件）';
       tr.innerHTML='<td class="mono">'+t.take_id+'</td><td><input type="text" class="mono" value="'+t.file.replace(/"/g,'&quot;')+'" style="padding:6px 8px;font-size:14px;min-width:120px"></td><td>'+cls+'</td><td><button class="btn" style="min-height:36px;padding:6px 10px;font-size:13px">直す</button></td>';
       tr.querySelector('input').onchange=e=>{t.file=e.target.value.trim();save();};
-      tr.querySelector('button').onclick=()=>{editTakeId=t.take_id;selEv=t.events.length?1:null;showTab('take');};tb.appendChild(tr);});}
-  else $('listSummary').textContent='セッションなし';
+      tr.querySelector('button').onclick=()=>{editTakeId=t.take_id;selEv=t.events.length?1:null;showTab('take');};tb.appendChild(tr);});
+    $('exclBox').hidden=!s.excluded.length;const et=$('exclTable');et.innerHTML='<tr><th>原本</th><th>理由</th><th>時刻</th><th></th></tr>';
+    s.excluded.forEach((x,i)=>{const tr=document.createElement('tr');tr.innerHTML='<td class="mono">'+x.file+'</td><td>'+x.reason+'</td><td>'+x.at+'</td><td><button class="btn" style="min-height:36px;padding:6px 10px;font-size:13px">除外をやめる</button></td>';
+      tr.querySelector('button').onclick=()=>{s.excluded.splice(i,1);save();render();};et.appendChild(tr);});}
+  else{$('listSummary').textContent='セッションなし';$('exclBox').hidden=true;}
   const st=$('sessTable');st.innerHTML='<tr><th>session_id</th><th>区分</th><th>テイク</th><th></th></tr>';
   S.sessions.slice().reverse().forEach(x=>{const tr=document.createElement('tr');tr.innerHTML='<td class="mono">'+x.id+'</td><td>'+x.kubun+'</td><td>'+x.takes.length+'</td><td><button class="btn" style="min-height:36px;padding:6px 10px;font-size:13px">'+(x.id===S.cur?'開いている':'開く')+'</button></td>';
     tr.querySelector('button').onclick=()=>{S.cur=x.id;editTakeId=null;selEv=null;save();showTab('session');};st.appendChild(tr);});}
 
 // ---------- 出力 ----------
 function q(v){v=v==null?'':String(v);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
-function sessionCsv(){const rows=[S_COLS.join(',')];S.sessions.forEach(s=>{const r={session_id:s.id,'日付':s.date,'開始時刻':s.time,'場所':s.place,'区分':s.kubun,'用途':s.yoto,'装着':'ヘルメット','マイク高さ_cm':s.height,'校正原本':s.calibFile,'点検原本':s.checkFile,'LAeq_dB':s.laeq,'暗騒音区間_秒':s.win,'水準器OK':s.level,'正面ズレ_deg':s.front,'天候':s.weather,'風_3段':s.wind,'協力者':s.helper,'備考':s.note};
+function issuesOf(s){const out=[];if(s.take&&s.take.running)out.push({s:s,type:'open',text:s.id+' テイク '+s.take.take_id+'（'+s.take.file+'）を閉じていない。事象 '+s.take.events.length+' 件は CSV に入っていない'});
+  s.takes.forEach(t=>{if(!t.events.length)out.push({s:s,t:t,type:'empty',text:s.id+' テイク '+t.take_id+'（'+t.file+'）は事象 0 件。CSV に入っていない'});});
+  if(s.kubun==='歩行対比'){const byPair={};s.takes.forEach(t=>t.events.forEach(e=>{if(e.cls!=='none'&&e.pair){(byPair[e.pair]=byPair[e.pair]||new Set()).add(e.stand);}}));
+    Object.keys(byPair).forEach(p=>{if(!(byPair[p].has('静止')&&byPair[p].has('歩行')))out.push({s:s,type:'warn',text:s.id+' '+p+' は 静止と歩行の 2 本そろっていない（'+[...byPair[p]].join('・')+' だけ）。検査で止まる。もう 1 本録るか、その事象の pair を「なし」に'});});}
+  return out;}
+function allIssues(){return S.sessions.flatMap(issuesOf);}
+function sessionCsv(){const rows=[S_COLS.join(',')];S.sessions.forEach(s=>{const note=s.note+(s.excluded.length?(s.note?'／':'')+'除外: '+s.excluded.map(x=>x.file).join(' '):'');
+  const r={session_id:s.id,'日付':s.date,'開始時刻':s.time,'場所':s.place,'区分':s.kubun,'用途':s.yoto,'装着':'ヘルメット','マイク高さ_cm':s.height,'校正原本':s.calibFile,'点検原本':s.checkFile,'点検方式':(s.checkMode==='1'?'前1打':'4方位'),'LAeq_dB':s.laeq,'暗騒音区間_秒':s.win,'水準器OK':s.level,'正面ズレ_deg':s.front,'天候':s.weather,'風_3段':s.wind,'協力者':s.helper,'備考':note};
   rows.push(S_COLS.map(c=>q(r[c])).join(','));});return rows.join('\n')+'\n';}
 function eventsCsv(){const rows=[E_COLS.join(',')];S.sessions.forEach(s=>{s.takes.forEach(t=>{t.events.forEach(ev=>{
   const ncar=ev.cls==='none'?0:(ev.group?t.events.filter(e=>e.group===ev.group).length:1);const car=ev.cls==='car_drive';
   const r={session_id:s.id,take_id:t.take_id,event_id:ev.event_id,'原本':t.file,'class':ev.cls,'象限':ev.quad,'ラップ秒':ev.lap===''?'':String(ev.lap),n_car:ncar,overlap_group_id:ev.group,'車種':car?ev.power:'','車両区分':car?ev.vtype:'','確認方法':car?ev.confirm:'','速度':car?ev.speed:'','横距離m':DIST_CLASSES.has(ev.cls)?ev.dist:'','状態':ev.stand,pair_id:ev.pair,'特記':ev.note};
   rows.push(E_COLS.map(c=>q(r[c])).join(','));});});});return rows.join('\n')+'\n';}
-function renderOut(){$('outS').value=sessionCsv();$('outE').value=eventsCsv();}
-async function copyText(el){el.focus();el.select();try{await navigator.clipboard.writeText(el.value);toast('コピーした');return;}catch(e){}
-  try{if(document.execCommand('copy')){toast('コピーした');return;}}catch(e){}toast('コピーできない。長押しで選択して');}
+function cmdText(){const L=[];S.sessions.forEach(s=>{L.push('# ---- '+s.id+' ----');
+  if(s.excluded.length)L.push('# 除外（切り出さない・備考に記載済み）: '+s.excluded.map(x=>x.file).join(' '));
+  L.push('python scripts/step19e_check_azimuth.py --in raw/'+s.checkFile+(s.checkMode==='1'?' --expect 前':'')+'   # 点検（'+(s.checkMode==='1'?'前 1 打':'4 方位')+'）→ 正面ズレ_deg を session.csv に');
+  L.push('python scripts/step19_realsmoke_convert.py --in raw/ --calib raw/'+s.calibFile+' --laeq '+(s.laeq||'<LAeq_dB>')+(s.win&&s.win!=='0-60'?' --laeq-window '+s.win:'')+' --gain-only --out out/realsmoke/conv   # 校正 id = '+s.calibFile.replace(/\.wav$/i,''));});
+  L.push('# ---- 全セッション共通 ----');
+  L.push('python scripts/step19d_field_csv_to_ann.py --session session.csv --events events.csv --audio-dir raw/ --out out/realsmoke/ann_orig.csv');
+  L.push('python scripts/step19b_realsmoke_cut.py --mode event --in raw/ --ann out/realsmoke/ann_orig.csv --calib-dir out/realsmoke/conv --pitch 0 --roll 0 --yaw <正面ズレが10°超なら道具の値> --out out/realsmoke/clips --ann-out out/realsmoke/ann_all.csv');
+  L.push('python scripts/step19b_realsmoke_cut.py --mode negative --in raw/ --ann out/realsmoke/ann_orig.csv --calib-dir out/realsmoke/conv --pitch 0 --roll 0 --yaw 0 --out out/realsmoke/clips --ann-out out/realsmoke/ann_neg.csv');
+  L.push('python scripts/step19c_ann_validate.py --ann out/realsmoke/ann_all.csv --cut');
+  return L.join('\n')+'\n';}
+function renderOut(){const box=$('issues');box.innerHTML='';const iss=allIssues();const hard=iss.filter(x=>x.type!=='warn');
+  if(iss.length){const c=document.createElement('div');c.className='card alert';c.innerHTML='<b>'+(hard.length?'未処理 '+hard.length+' 件。片づくまで CSV のコピー・共有は止めてある':'注意 '+iss.length+' 件（コピーはできる）')+'</b>';
+    iss.forEach(x=>{const d=document.createElement('div');d.className='issue';d.innerHTML='<span>'+x.text+'</span>';const r=document.createElement('div');r.className='chips';
+      if(x.type==='warn'){}
+      else if(x.type==='open'){const b=document.createElement('button');b.type='button';b.className='chip';b.textContent='「事象」タブで閉じる／取り消す';b.onclick=()=>{S.cur=x.s.id;save();showTab('take');};r.appendChild(b);}
+      else{const b1=document.createElement('button');b1.type='button';b1.className='chip';b1.textContent='負例（none）にする';b1.onclick=()=>{x.t.events=[noneEvent(x.s)];save();render();};
+        const b2=document.createElement('button');b2.type='button';b2.className='chip';b2.textContent='除外する（切り出さない）';b2.onclick=()=>{x.s.excluded.push({file:x.t.file,reason:'事象 0 件',at:nowHM()});x.s.takes.splice(x.s.takes.indexOf(x.t),1);x.s.takes.forEach((t,k)=>t.take_id=k+1);save();render();};
+        r.appendChild(b1);r.appendChild(b2);}
+      d.appendChild(r);c.appendChild(d);});box.appendChild(c);}
+  ['btnCopyS','btnShareS','btnCopyE','btnShareE'].forEach(id=>$(id).disabled=hard.length>0);
+  $('outS').value=sessionCsv();$('outE').value=eventsCsv();$('outCmd').textContent=cmdText();}
+async function copyText(text,el){if(el){el.focus();el.select();}try{await navigator.clipboard.writeText(text);toast('コピーした');return;}catch(e){}
+  try{if(el&&document.execCommand('copy')){toast('コピーした');return;}}catch(e){}toast('コピーできない。長押しで選択して');}
 async function shareText(title,text){try{if(navigator.share){await navigator.share({title:title,text:text});return;}}catch(e){if(e&&e.name==='AbortError')return;}toast('共有が使えない端末。コピーを使って');}
-$('btnCopyS').onclick=()=>copyText($('outS'));$('btnCopyE').onclick=()=>copyText($('outE'));
+$('btnCopyS').onclick=()=>copyText(sessionCsv(),$('outS'));$('btnCopyE').onclick=()=>copyText(eventsCsv(),$('outE'));$('btnCopyC').onclick=()=>copyText(cmdText(),null);
 $('btnShareS').onclick=()=>shareText('session.csv',sessionCsv());$('btnShareE').onclick=()=>shareText('events.csv',eventsCsv());
-$('btnWipe').onclick=()=>{if(!armed('btnWipe','PC に貼り終えた？ もう一度押すと全部消す'))return;S={sessions:[],cur:null,prep:{},tab:'flow'};save();toast('消した');render();};
+$('btnWipe').onclick=()=>{if(!armed('btnWipe','PC に貼り終えた？ もう一度押すと全部消す'))return;S={sessions:[],cur:null,prep:{},tab:'flow',check4Done:false};save();toast('消した');render();};
 
 // ---------- 全体 ----------
 function render(){const s=cur();$('hdrSid').textContent=s?s.id+(s.take&&s.take.running?' ● 記録中':''):'セッションなし';
-  const nx=nextText();$('nextTxt').textContent=nx[0];
+  $('nextTxt').textContent=nextText();
   renderFlow();renderSession();renderTake();renderList();renderOut();}
 showTab(S.tab||'flow');
 })();
