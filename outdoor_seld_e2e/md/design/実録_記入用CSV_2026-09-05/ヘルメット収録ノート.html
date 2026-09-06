@@ -96,7 +96,7 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
 
 <div class="app">
 <header>
-  <div class="brand"><h1>ヘルメット収録ノート</h1><span class="sid mono" id="hdrSid">セッションなし</span></div>
+  <div class="brand"><h1>ヘルメット収録ノート</h1><span class="sid"><span class="mono" id="hdrSid">セッションなし</span> · <span id="savedAt">自動保存</span></span></div>
   <div class="next"><span class="lbl">次</span><span class="txt" id="nextTxt">セッションを作る</span></div>
 </header>
 
@@ -206,21 +206,22 @@ pre{font-family:"IBM Plex Mono",Consolas,monospace;font-size:12px;background:var
         <span class="mono small" id="takeFile">—</span>
         <span class="badge" id="takeState">待機</span>
       </div>
-      <div class="clock mono" id="clock">0.0</div>
+      <p class="small muted" style="margin:6px 0 10px">録音ボタンと純正ストップウォッチを同時に押す。来たらラップ → 「事象を足す」でその値を写す。</p>
       <div id="takeIdle">
-        <button class="btn primary big" id="btnRec">録音開始（H3-VR と同時に）</button>
+        <button class="btn primary big" id="btnRec">新しいテイク（録音を始めたら押す）</button>
         <div class="row" style="margin-top:8px"><button class="btn" style="flex:1" id="btnNoneTake">何も来なかったテイクを足す</button></div>
       </div>
       <div id="takeRun" hidden>
-        <button class="btn primary lap" id="btnLap">ラップ</button>
-        <div class="hint" id="lapHint">車: 前端（バンパー）が肩の線を通った瞬間</div>
-        <div class="row" style="margin-top:10px"><button class="btn" style="flex:1" id="btnStop">録音停止（テイク終了）</button><button class="btn ghost" id="btnAbort">取り消し</button></div>
+        <button class="btn primary lap" id="btnLap">事象を足す</button>
+        <div class="row" style="margin-top:10px"><button class="btn" style="flex:1" id="btnStop">テイクを閉じる（録音停止）</button><button class="btn ghost" id="btnAbort">取り消し</button></div>
       </div>
     </div>
 
     <div id="evEdit" hidden>
       <div class="card" style="margin-top:12px">
         <div class="row" style="justify-content:space-between"><b id="evTitle">事象 1</b><span class="mono" id="evLap"></span></div>
+        <div class="field"><label>ラップ秒（ストップウォッチの値をそのまま）</label><input type="number" inputmode="decimal" step="0.1" id="inLap" placeholder="8.4"></div>
+        <div class="hint" id="lapHint">車: 前端（バンパー）が肩の線を通った瞬間</div>
         <div class="field"><label>クラス</label><div class="chips" id="chipClass"></div></div>
         <div class="field" id="fQuad"><label>象限（マイク基準）</label><div class="chips" id="chipQuad"></div></div>
         <div class="field" id="fGroup" hidden><label>前の事象と重なっていたか</label><div class="chips" id="chipGroup"></div></div>
@@ -307,7 +308,10 @@ const E_COLS=['session_id','take_id','event_id','原本','class','象限','ラ�
 const KEY='helmet_note_v1';
 let S={sessions:[],cur:null,prep:{},tab:'flow'};
 try{const raw=localStorage.getItem(KEY); if(raw){const p=JSON.parse(raw); if(p&&Array.isArray(p.sessions)) S=Object.assign(S,p);}}catch(e){}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));const el=document.getElementById('savedAt');if(el)el.textContent='保存 '+nowHM();}catch(e){const el=document.getElementById('savedAt');if(el)el.textContent='保存できない';}}
+const _arm={};
+function armed(id,label){const b=$(id);if(_arm[id]&&Date.now()-_arm[id]<4000){_arm[id]=0;return true;}
+  _arm[id]=Date.now();const old=b.textContent;b.textContent=label;vib(30);setTimeout(()=>{if(b.textContent===label){b.textContent=old;_arm[id]=0;}},4000);return false;}
 const $=id=>document.getElementById(id);
 function cur(){return S.sessions.find(s=>s.id===S.cur)||null;}
 function toast(t){const el=$('toast');el.textContent=t;el.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>el.classList.remove('show'),1600);}
@@ -336,8 +340,8 @@ function nextText(){const s=cur();if(!s)return['セッションを作る（「�
   if(!s.ritual.check)return['点検（指パッチン '+(s.checkMode==='1'?'前 1 打':'前→右→後→左')+'）','session'];
   if(!s.height)return['マイク高さをメジャーで測って入れる','session'];
   if(!s.level)return['水準器を確かめて y/n','session'];
-  if(s.take&&s.take.running)return['来たら「ラップ」→ クラスと象限をタップ','take'];
-  return['車の気配がしたら「録音開始」を H3-VR と同時に','take'];}
+  if(s.take&&s.take.running)return['来たらラップ → 「事象を足す」→ ラップ秒・クラス・象限','take'];
+  return['車の気配がしたら 録音ボタン＋ストップウォッチ → 「新しいテイク」','take'];}
 
 // ---------- 流れ ----------
 function renderFlow(){const s=cur();const ol=$('flowSteps');ol.innerHTML='';
@@ -345,7 +349,7 @@ function renderFlow(){const s=cur();const ol=$('flowSteps');ol.innerHTML='';
    ['校正 60 秒','録音ボタン＋「60 秒を数える」。無言。騒音計の値を入れる',!!(s&&s.ritual.calib)],
    ['点検（指パッチン）','別テイク。前→右→後→左（2 日目以降は前だけ）',!!(s&&s.ritual.check)],
    ['マイク高さ・水準器','メジャーで cm。水準器がセンターか',!!(s&&s.height&&s.level)],
-   ['事象テイク','車の気配 → 録音開始（H3-VR と同時）→ ラップ → クラス・象限 → 録音停止。来なかったら「何も来なかった」',!!(s&&s.takes.length)],
+   ['事象テイク','車の気配 → 録音ボタンとストップウォッチを同時に → 「新しいテイク」→ 来たらラップ → 「事象を足す」で値を写し、クラス・象限 → 「テイクを閉じる」。来なかったら「何も来なかった」',!!(s&&s.takes.length)],
    ['出力','「出力」タブの 2 つをコピーして PC に貼る',false]];
   let nowSet=false;st.forEach((x,i)=>{const li=document.createElement('li');const now=!x[2]&&!nowSet;if(now)nowSet=true;
     li.className=x[2]?'done':(now?'now':'');li.innerHTML='<span class="n">'+(x[2]?'✓':(i+1))+'</span><div><div class="t">'+x[0]+'</div><div class="d">'+x[1]+'</div></div>';ol.appendChild(li);});
@@ -394,8 +398,8 @@ $('btnCheckStart').onclick=()=>{const s=cur();if(!s||checkT)return;
 $('btnCheckDone').onclick=()=>{const s=cur();if(!s)return;s.ritual.check=true;save();toast('点検を記録');render();};
 $('inHeight').onchange=()=>{const s=cur();if(!s)return;s.height=$('inHeight').value;save();render();};
 $('inNote').onchange=()=>{const s=cur();if(!s)return;s.note=$('inNote').value;save();};
-$('btnCloseSession').onclick=()=>{const s=cur();if(!s)return;if(s.take&&s.take.running){toast('録音中のテイクを止めてから');return;}
-  if(!confirm('セッション '+s.id+' を閉じますか？（データは残ります）'))return;S.cur=null;save();render();};
+$('btnCloseSession').onclick=()=>{const s=cur();if(!s)return;if(s.take&&s.take.running){toast('記録中のテイクを閉じてから');return;}
+  if(!armed('btnCloseSession','もう一度押すと閉じる（データは残る）'))return;S.cur=null;save();render();};
 
 function renderSession(){const s=cur();$('sessNone').hidden=!!s;$('sessOn').hidden=!s;
   if(!s){renderSessionForm();return;}
@@ -411,43 +415,41 @@ function renderSession(){const s=cur();$('sessNone').hidden=!!s;$('sessOn').hidd
   if(document.activeElement!==$('inNote'))$('inNote').value=s.note;}
 
 // ---------- 事象テイク ----------
-let clockT=null,wake=null,selEv=null;
-function startClock(){if(clockT)return;clockT=setInterval(()=>{const s=cur();if(!s||!s.take||!s.take.running){$('clock').textContent='0.0';return;}
-  $('clock').textContent=((Date.now()-s.take.t0)/1000).toFixed(1);},100);}
-async function wakeOn(){try{if(navigator.wakeLock&&!wake){wake=await navigator.wakeLock.request('screen');wake.addEventListener('release',()=>{wake=null;});}}catch(e){}}
-function wakeOff(){try{if(wake){wake.release();wake=null;}}catch(e){}}
+let selEv=null;
 function newEvent(s,lap){const take=s.take;const ev={event_id:take.events.length+1,cls:'car_drive',quad:'',lap:lap,group:'',power:'',vtype:'',confirm:'',speed:'',dist:'',stand:s.stand||'静止',pair:'',note:''};
   take.events.push(ev);selEv=ev.event_id;return ev;}
 $('btnRec').onclick=()=>{const s=cur();if(!s)return;
-  s.take={take_id:s.takes.length+1,file:fileName(s,s.nextFile),t0:Date.now(),running:true,events:[]};selEv=null;save();vib(60);wakeOn();render();};
-$('btnLap').onclick=()=>{const s=cur();if(!s||!s.take||!s.take.running)return;const lap=Math.round((Date.now()-s.take.t0)*10)/10;
-  newEvent(s,lap);save();vib(40);render();};
+  s.take={take_id:s.takes.length+1,file:fileName(s,s.nextFile),running:true,events:[]};selEv=null;save();vib(60);render();};
+$('btnLap').onclick=()=>{const s=cur();if(!s||!s.take||!s.take.running)return;
+  newEvent(s,'');save();vib(40);render();try{$('inLap').focus();}catch(e){}};
 $('btnStop').onclick=()=>{const s=cur();if(!s||!s.take)return;
-  if(!s.take.events.length){if(!confirm('事象がありません。「何も来なかった（none）」のテイクとして保存しますか？'))return;s.take.events.push({event_id:1,cls:'none',quad:'',lap:'',group:'',power:'',vtype:'',confirm:'',speed:'',dist:'',stand:s.stand||'静止',pair:'',note:''});}
-  const miss=s.take.events.filter(e=>e.cls!=='none'&&!e.quad);if(miss.length&&!confirm('象限が空の事象が '+miss.length+' 件あります。このまま止めますか？（一覧から直せます）'))return;
-  s.take.running=false;s.take.t_end=Math.round((Date.now()-s.take.t0)/1000);s.takes.push(s.take);s.nextFile++;s.take=null;selEv=null;save();wakeOff();toast('テイク '+s.takes.length+' を保存');render();};
-$('btnAbort').onclick=()=>{const s=cur();if(!s||!s.take)return;if(!confirm('このテイクを取り消しますか？（録音機のファイルも消すか、番号を手で直す）'))return;s.take=null;selEv=null;save();wakeOff();render();};
-$('btnNoneTake').onclick=()=>{const s=cur();if(!s)return;const t={take_id:s.takes.length+1,file:fileName(s,s.nextFile),t0:Date.now(),running:false,events:[{event_id:1,cls:'none',quad:'',lap:'',group:'',power:'',vtype:'',confirm:'',speed:'',dist:'',stand:s.stand||'静止',pair:'',note:''}]};
+  if(!s.take.events.length){toast('事象がありません。「事象を足す」か、取り消して「何も来なかった」を使う');return;}
+  const miss=s.take.events.filter(e=>e.cls!=='none'&&(!e.quad||e.lap==='')).length;
+  if(miss&&!armed('btnStop','象限かラップ秒が空の事象 '+miss+' 件。もう一度押すと閉じる'))return;
+  s.take.running=false;s.takes.push(s.take);s.nextFile++;s.take=null;selEv=null;save();toast('テイク '+s.takes.length+' を保存');render();};
+$('btnAbort').onclick=()=>{const s=cur();if(!s||!s.take)return;if(!armed('btnAbort','もう一度押すと取り消し'))return;s.take=null;selEv=null;save();render();};
+$('btnNoneTake').onclick=()=>{const s=cur();if(!s)return;const t={take_id:s.takes.length+1,file:fileName(s,s.nextFile),running:false,events:[{event_id:1,cls:'none',quad:'',lap:'',group:'',power:'',vtype:'',confirm:'',speed:'',dist:'',stand:s.stand||'静止',pair:'',note:''}]};
   s.takes.push(t);s.nextFile++;save();toast('負例テイクを足した（原本 '+t.file+'）');render();};
 $('btnEvDel').onclick=()=>{const s=cur();const t=editTake(s);if(!t)return;const i=t.events.findIndex(e=>e.event_id===selEv);if(i<0)return;
-  if(!confirm('事象 '+selEv+' を消しますか？'))return;t.events.splice(i,1);t.events.forEach((e,k)=>e.event_id=k+1);selEv=null;save();render();};
+  if(!armed('btnEvDel','もう一度押すと消す'))return;t.events.splice(i,1);t.events.forEach((e,k)=>e.event_id=k+1);selEv=null;save();render();};
 let editTakeId=null; // 一覧から選んだ過去テイク
 function editTake(s){if(!s)return null;if(s.take&&s.take.running)return s.take;if(editTakeId!=null)return s.takes.find(t=>t.take_id===editTakeId)||null;return s.takes[s.takes.length-1]||null;}
 $('inEvNote').onchange=()=>{const s=cur();const t=editTake(s);const ev=t&&t.events.find(e=>e.event_id===selEv);if(ev){ev.note=$('inEvNote').value;save();}};
+$('inLap').onchange=()=>{const s=cur();const t=editTake(s);const ev=t&&t.events.find(e=>e.event_id===selEv);if(ev){ev.lap=$('inLap').value.trim();save();render();}};
 
 function renderTake(){const s=cur();$('takeNeedSession').hidden=!!s;$('takeArea').hidden=!s;if(!s)return;
   const running=!!(s.take&&s.take.running);const t=editTake(s);
   $('takeNo').textContent=running?s.take.take_id:(t?t.take_id:s.takes.length+1);
   $('takeFile').textContent=running?s.take.file:(t?t.file:fileName(s,s.nextFile));
-  $('takeState').textContent=running?'録音中':(t?'テイク '+t.take_id+' を編集':'待機');$('takeState').className='badge'+(running?' bad':'');
-  $('takeIdle').hidden=running;$('takeRun').hidden=!running;startClock();
+  $('takeState').textContent=running?'記録中':(t?'テイク '+t.take_id+' を編集':'待機');$('takeState').className='badge'+(running?' bad':'');
+  $('takeIdle').hidden=running;$('takeRun').hidden=!running;
   const list=$('takeEvents');list.innerHTML='';
   if(t){t.events.forEach(ev=>{const d=document.createElement('div');d.className='ev'+(ev.event_id===selEv?' on':'');
     const cl=(CLASSES.find(c=>c[0]===ev.cls)||[ev.cls,ev.cls])[1];
-    d.innerHTML='<span class="l">'+ev.event_id+'. '+cl+(ev.quad?' / '+ev.quad:'')+(ev.group?' <span class="badge">'+ev.group+'</span>':'')+'</span><span class="r mono">'+(ev.lap===''?'—':ev.lap.toFixed(1)+' s')+'</span>';
+    d.innerHTML='<span class="l">'+ev.event_id+'. '+cl+(ev.quad?' / '+ev.quad:'')+(ev.group?' <span class="badge">'+ev.group+'</span>':'')+'</span><span class="r mono">'+(ev.lap===''?'ラップ秒 未':ev.lap+' s')+'</span>';
     d.onclick=()=>{selEv=ev.event_id;render();};list.appendChild(d);});}
   const ev=t&&t.events.find(e=>e.event_id===selEv);$('evEdit').hidden=!ev;
-  if(ev){$('evTitle').textContent='事象 '+ev.event_id+(running?'':'（テイク '+t.take_id+'）');$('evLap').textContent=ev.lap===''?'':'ラップ '+ev.lap.toFixed(1)+' s';
+  if(ev){$('evTitle').textContent='事象 '+ev.event_id+(running?'':'（テイク '+t.take_id+'）');$('evLap').textContent='';if(document.activeElement!==$('inLap'))$('inLap').value=ev.lap;
     chips($('chipClass'),CLASSES,ev.cls,v=>{ev.cls=v;if(v==='none'){ev.quad='';}save();render();});
     $('lapHint').textContent=CLASS_HINT[ev.cls]||'';
     $('fQuad').hidden=ev.cls==='none';chips($('chipQuad'),QUAD,ev.quad,v=>{ev.quad=v;save();render();},{wide:true});
@@ -463,7 +465,7 @@ function renderTake(){const s=cur();$('takeNeedSession').hidden=!!s;$('takeArea'
     const pairs=['','P1','P2','P3','P4','P5','P6'];chips($('chipPair'),pairs.map(p=>[p,p||'なし']),ev.pair,v=>{ev.pair=v;save();render();});
     chips($('chipNoteQ'),NOTEQ,'',v=>{ev.note=(ev.note?ev.note+'／':'')+v;save();render();});
     if(document.activeElement!==$('inEvNote'))$('inEvNote').value=ev.note;}
-  else{$('lapHint').textContent=CLASS_HINT.car_drive;}
+
 }
 
 // ---------- 一覧 ----------
@@ -485,7 +487,7 @@ function sessionCsv(){const rows=[S_COLS.join(',')];S.sessions.forEach(s=>{const
   rows.push(S_COLS.map(c=>q(r[c])).join(','));});return rows.join('\n')+'\n';}
 function eventsCsv(){const rows=[E_COLS.join(',')];S.sessions.forEach(s=>{s.takes.forEach(t=>{t.events.forEach(ev=>{
   const ncar=ev.cls==='none'?0:(ev.group?t.events.filter(e=>e.group===ev.group).length:1);const car=ev.cls==='car_drive';
-  const r={session_id:s.id,take_id:t.take_id,event_id:ev.event_id,'原本':t.file,'class':ev.cls,'象限':ev.quad,'ラップ秒':ev.lap===''?'':ev.lap.toFixed(1),n_car:ncar,overlap_group_id:ev.group,'車種':car?ev.power:'','車両区分':car?ev.vtype:'','確認方法':car?ev.confirm:'','速度':car?ev.speed:'','横距離m':DIST_CLASSES.has(ev.cls)?ev.dist:'','状態':ev.stand,pair_id:ev.pair,'特記':ev.note};
+  const r={session_id:s.id,take_id:t.take_id,event_id:ev.event_id,'原本':t.file,'class':ev.cls,'象限':ev.quad,'ラップ秒':ev.lap===''?'':String(ev.lap),n_car:ncar,overlap_group_id:ev.group,'車種':car?ev.power:'','車両区分':car?ev.vtype:'','確認方法':car?ev.confirm:'','速度':car?ev.speed:'','横距離m':DIST_CLASSES.has(ev.cls)?ev.dist:'','状態':ev.stand,pair_id:ev.pair,'特記':ev.note};
   rows.push(E_COLS.map(c=>q(r[c])).join(','));});});});return rows.join('\n')+'\n';}
 function renderOut(){$('outS').value=sessionCsv();$('outE').value=eventsCsv();}
 async function copyText(el){el.focus();el.select();try{await navigator.clipboard.writeText(el.value);toast('コピーした');return;}catch(e){}
@@ -493,13 +495,12 @@ async function copyText(el){el.focus();el.select();try{await navigator.clipboard
 async function shareText(title,text){try{if(navigator.share){await navigator.share({title:title,text:text});return;}}catch(e){if(e&&e.name==='AbortError')return;}toast('共有が使えない端末。コピーを使って');}
 $('btnCopyS').onclick=()=>copyText($('outS'));$('btnCopyE').onclick=()=>copyText($('outE'));
 $('btnShareS').onclick=()=>shareText('session.csv',sessionCsv());$('btnShareE').onclick=()=>shareText('events.csv',eventsCsv());
-$('btnWipe').onclick=()=>{if(!confirm('この端末の記録を全部消します。PC に貼り終えましたか？'))return;if(!confirm('本当に消しますか？'))return;S={sessions:[],cur:null,prep:{},tab:'flow'};save();toast('消した');render();};
+$('btnWipe').onclick=()=>{if(!armed('btnWipe','PC に貼り終えた？ もう一度押すと全部消す'))return;S={sessions:[],cur:null,prep:{},tab:'flow'};save();toast('消した');render();};
 
 // ---------- 全体 ----------
-function render(){const s=cur();$('hdrSid').textContent=s?s.id+(s.take&&s.take.running?' ● 録音中':''):'セッションなし';
+function render(){const s=cur();$('hdrSid').textContent=s?s.id+(s.take&&s.take.running?' ● 記録中':''):'セッションなし';
   const nx=nextText();$('nextTxt').textContent=nx[0];
   renderFlow();renderSession();renderTake();renderList();renderOut();}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){const s=cur();if(s&&s.take&&s.take.running)wakeOn();}});
 showTab(S.tab||'flow');
 })();
 </script>
