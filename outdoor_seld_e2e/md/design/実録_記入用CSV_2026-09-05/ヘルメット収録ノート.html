@@ -607,15 +607,25 @@ function today8(){return today().replace(/-/g,'');}
 function renderSaved(){const el=$('srvAt');if(el)el.textContent=!srv.ready?'サーバ —':(srv.ok?'サーバ ✓ '+srv.at:'サーバ ✗ '+(srv.err||''));
   const st=$('storeStatus');if(st)st.textContent='端末: 自動保存 / サーバ: '+(!srv.ready?'この画面では使えない（claude.ai の URL で開くと自動）':(srv.ok?'✓ '+srv.at+' に写した':'✗ '+(srv.err||'まだ')))+' / ファイル: 下のボタン';
   const sb=$('srvBox');if(sb)sb.hidden=!srv.ready;}
+const dirtyIds=new Set();   // サーバにまだ写していないセッション
 function dbSync(){if(!DBNS)return;clearTimeout(dbTimer);dbTimer=setTimeout(async()=>{try{
-  const snap=JSON.parse(JSON.stringify(S));const now=new Date().toISOString();
-  await DBNS.doc('notes/'+DEVICE).set({device:DEVICE,savedAt:now,n_sessions:S.sessions.length,cur:S.cur||'',state:snap});
-  const s=cur();if(s){await DBNS.doc('sessions/'+s.id).set({session_id:s.id,device:DEVICE,updatedAt:now,n_takes:s.takes.length,session_csv:sessionCsvOf([s]),events_csv:eventsCsvOf([s]),excluded:s.excluded.map(x=>x.file)});}
+  const now=new Date().toISOString();
+  // 端末ごとの目次（小さい文書）。セッション本体は notes/<device>/sessions/<id> に 1 文書ずつ（1 文書 256 KiB の上限に当たらない）
+  await DBNS.doc('notes/'+DEVICE).set({device:DEVICE,savedAt:now,n_sessions:S.sessions.length,cur:S.cur||'',prep:S.prep||{},check4Done:!!S.check4Done,session_ids:S.sessions.map(s=>s.id),layout:2});
+  const ids=new Set(dirtyIds);if(S.cur)ids.add(S.cur);
+  for(const id of ids){const s=S.sessions.find(x=>x.id===id);if(!s)continue;
+    await DBNS.doc('notes/'+DEVICE+'/sessions/'+id).set({session_id:id,updatedAt:now,session:JSON.parse(JSON.stringify(s))});
+    await DBNS.doc('sessions/'+id).set({session_id:id,device:DEVICE,updatedAt:now,n_takes:s.takes.length,session_csv:sessionCsvOf([s]),events_csv:eventsCsvOf([s]),excluded:s.excluded.map(x=>x.file)});
+    dirtyIds.delete(id);}
   srv={ok:true,at:nowHM(),err:'',ready:true};}catch(e){srv={ok:false,at:nowHM(),err:(e&&e.code)||'error',ready:true};}renderSaved();},1500);}
+function rebuildFromServer(meta,sessionDocs){const by={};sessionDocs.forEach(d=>{if(d&&d.session&&d.session.id)by[d.session.id]=d.session;});
+  const order=(meta.session_ids||[]).filter(id=>by[id]);Object.keys(by).forEach(id=>{if(!order.includes(id))order.push(id);});
+  if(meta.state&&Array.isArray(meta.state.sessions)&&!order.length)return meta.state;   // 旧形式（全状態 1 文書）
+  return {sessions:order.map(id=>by[id]),cur:meta.cur||null,prep:meta.prep||{},check4Done:!!meta.check4Done};}
 function backupJson(){return JSON.stringify({app:'helmet_note',version:1,device:DEVICE,savedAt:new Date().toISOString(),state:S},null,1);}
 function importBackup(text){const o=JSON.parse(text);const st=o&&o.state&&Array.isArray(o.state.sessions)?o.state:(o&&Array.isArray(o.sessions)?o:null);if(!st)throw new Error('バックアップの形式が違う');
   S={sessions:st.sessions,cur:st.cur||null,prep:st.prep||{},tab:'flow',check4Done:!!st.check4Done};S.sessions.forEach(s=>{if(!s.excluded)s.excluded=[];if(!s.ritual)s.ritual={calib:false,check:false};if(s.checkMode!=='1'&&s.checkMode!=='4')s.checkMode='4';});
-  selEv=null;editTakeId=null;save();render();return S.sessions.length;}
+  selEv=null;editTakeId=null;try{S.sessions.forEach(s=>dirtyIds.add(s.id));}catch(e){}save();render();return S.sessions.length;}
 async function saveFile(name,text){
   if(DLNS){try{await DLNS.save({filename:name,data:text});toast('保存した: '+name);}catch(e){const c=e&&e.code;if(c==='declined')return;toast('保存できない（'+(c||'')+'）');}return;}
   try{const blob=new Blob([text],{type:'text/plain'});
@@ -632,7 +642,9 @@ $('btnSrvList').onclick=async()=>{if(!DBNS)return;const box=$('srvList');box.inn
     if(q.empty){box.innerHTML='<p class="small muted">サーバに記録はまだ無い</p>';return;}
     q.docs.forEach(d=>{const x=d.data();const row=document.createElement('div');row.className='ev';row.innerHTML='<span class="l">'+(x.device===DEVICE?'この端末':'別の端末 '+x.device)+' <span class="badge">'+(x.n_sessions||0)+' セッション</span></span><span class="r mono">'+String(x.savedAt||'').replace('T',' ').slice(0,16)+'</span>';
       const b=document.createElement('button');b.type='button';b.className='btn';b.style.cssText='min-height:36px;padding:6px 10px;font-size:13px';b.textContent='復元';const bid='rs_'+d.id;b.id=bid;
-      b.onclick=()=>{if(!armed(bid,'今の記録と置き換える。もう一度押す'))return;try{const n=importBackup(JSON.stringify({state:x.state}));toast('サーバから復元: セッション '+n+' 件');}catch(e){toast('復元できない: '+e.message);}};
+      b.onclick=async()=>{if(!armed(bid,'今の記録と置き換える。もう一度押す'))return;try{
+        const qs=await DBNS.collection('notes/'+x.device+'/sessions').get();const st=rebuildFromServer(x,qs.docs.map(d=>d.data()));
+        const n=importBackup(JSON.stringify({state:st}));S.sessions.forEach(s=>dirtyIds.add(s.id));save();toast('サーバから復元: セッション '+n+' 件');}catch(e){toast('復元できない: '+((e&&e.message)||e));}};
       row.appendChild(b);box.appendChild(row);});
   }catch(e){box.innerHTML='<p class="small muted">読めない（'+((e&&e.code)||'error')+'）</p>';}};
 (async()=>{try{if(window.claude&&typeof window.claude.use==='function'){DBNS=await window.claude.use('db');DLNS=await window.claude.use('downloads');}}catch(e){DBNS=null;DLNS=null;}
@@ -640,7 +652,7 @@ $('btnSrvList').onclick=async()=>{if(!DBNS)return;const box=$('srvList');box.inn
   if(DBNS){dbSync();
     if(!S.sessions.length){try{const q=await DBNS.collection('notes').orderBy('savedAt','desc').limit(1).get();
       if(!q.empty&&(q.docs[0].data().n_sessions||0)>0){toast('サーバに保存された記録がある。「出力」→「サーバの記録を一覧」から戻せる');}}catch(e){}}}})();
-try{window.__note={backupJson:backupJson,importBackup:importBackup,sessionCsv:sessionCsv,eventsCsv:eventsCsv};}catch(e){}
+try{window.__note={backupJson:backupJson,importBackup:importBackup,sessionCsv:sessionCsv,eventsCsv:eventsCsv,rebuildFromServer:rebuildFromServer};}catch(e){}
 
 // ---------- 全体 ----------
 function render(){const s=cur();$('hdrSid').textContent=s?s.id+(s.take&&s.take.running?' ● 記録中':''):'セッションなし';
